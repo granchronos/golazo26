@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-bebas: 'Bebas Neue', sans-serif;
+    --font-noto: 'Noto Sans', sans-serif;
+    --font-jetbrains: 'JetBrains Mono', monospace;
+
+    --bg-primary: #FAFAFA;
+    --text-primary: #111111;
+    --fwc-blue: #2A398D;
+    --fwc-red: #E61D25;
+    --fwc-green: #3CAC3B;
+    --fwc-gold: #C9A84C;
+  }
+
+  .dark {
+    --bg-primary: #0a0a0f;
+    --text-primary: #F5F5F5;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-[var(--bg-primary)] text-[var(--text-primary)] font-body antialiased;
+  }
+
+  h1, h2, h3 {
+    @apply font-display tracking-wide;
+  }
+}
+
+@layer components {
+  /* Clean card */
+  .glass-card {
+    @apply bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-2xl;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-[#2A398D] to-[#E61D25] bg-clip-text text-transparent;
+  }
+
+  /* Shimmer skeleton */
+  .skeleton {
+    @apply animate-pulse bg-gray-100 dark:bg-white/10 rounded-lg;
+  }
+
+  /* Border gradient */
+  .border-gradient {
+    position: relative;
+    background: white;
+    border-radius: 1rem;
+  }
+  .border-gradient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 1rem;
+    padding: 1.5px;
+    background: linear-gradient(135deg, #2A398D, #E61D25);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Primary button */
+  .btn-fwc {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 font-body font-semibold text-sm text-white bg-[#2A398D] transition-all duration-150;
+  }
+  .btn-fwc:hover {
+    @apply bg-[#1e2b6e] shadow-md;
+  }
+  .btn-fwc:active {
+    @apply scale-[0.98];
+  }
+  .btn-fwc:disabled {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  /* Prediction card */
+  .prediction-card {
+    @apply glass-card p-3 cursor-pointer transition-all duration-150;
+  }
+  .prediction-card:hover {
+    @apply border-[#2A398D]/30;
+  }
+  .prediction-card.selected {
+    @apply border-[#2A398D] bg-[#2A398D]/5;
+  }
+  .prediction-card.locked {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Minimal scrollbar for desktop */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 2px;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: #333;
+  }
+}

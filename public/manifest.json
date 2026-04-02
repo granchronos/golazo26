@@ -1,0 +1,11 @@
+{
+  "name": "Golazo 26",
+  "short_name": "Golazo26",
+  "description": "Predice el FIFA World Cup 2026",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1A1A1A",
+  "theme_color": "#2A398D",
+  "orientation": "portrait",
+  "icons": []
+}
