@@ -16,13 +16,19 @@ export function RealtimeRoom({ roomId, currentUserId }: RealtimeRoomProps) {
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase
-      .channel(`room-members-${roomId}`)
+      .channel('room-members-changes')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'room_members', filter: `room_id=eq.${roomId}` },
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'room_members',
+        },
         async (payload) => {
+          // Filter client-side instead of using Supabase filter
+          if (payload.new.room_id !== roomId) return
           if (payload.new.user_id === currentUserId) return
-          // Fetch the new member's name
+
           const { data: profile } = await supabase
             .from('profiles')
             .select('name')
@@ -34,8 +40,9 @@ export function RealtimeRoom({ roomId, currentUserId }: RealtimeRoomProps) {
         }
       )
       .subscribe((status) => {
+        console.log('Realtime subscription status:', status)
         if (status === 'CHANNEL_ERROR') {
-          console.error('Realtime subscription error for room_members — ensure table is in supabase_realtime publication')
+          console.error('Realtime subscription error for room_members')
         }
       })
 
