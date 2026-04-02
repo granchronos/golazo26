@@ -332,6 +332,7 @@ CREATE TRIGGER room_member_init_scores
 -- =============================================
 ALTER PUBLICATION supabase_realtime ADD TABLE scores;
 ALTER PUBLICATION supabase_realtime ADD TABLE matches;
+ALTER PUBLICATION supabase_realtime ADD TABLE room_members;
 
 -- =============================================
 -- 8. SEED TEAMS (must match lib/constants/teams.ts)
