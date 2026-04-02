@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Share2, Copy, Check, ArrowLeft, Trophy, BarChart2, CalendarDays, GitCompareArrows, Network, Users, ChevronDown } from 'lucide-react'
+import { Share2, Copy, Check, ArrowLeft, Trophy, BarChart2, CalendarDays, GitCompareArrows, Network, Users, ChevronDown, X, MessageCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { PredictionMatrix } from '@/components/predictions/PredictionMatrix'
@@ -12,8 +12,9 @@ import { ComparisonView } from '@/components/predictions/ComparisonView'
 import { BracketPopup } from '@/components/predictions/BracketPopup'
 import { RealtimeRoom } from '@/components/groups/RealtimeRoom'
 import { Modal } from '@/components/ui/Modal'
-import { getWhatsAppShareUrl, getRoomShareUrl } from '@/lib/utils/rooms'
+import { getWhatsAppShareUrl, getFacebookShareUrl, getTwitterShareUrl, getRoomShareUrl } from '@/lib/utils/rooms'
 import { cn } from '@/lib/utils/cn'
+import { GROUP_LETTERS } from '@/lib/constants/teams'
 import type { Room, Profile, Match, GroupLetter, GroupPrediction } from '@/types/database'
 
 interface RoomMemberWithProfile {
@@ -63,13 +64,38 @@ export function GroupRoom({
   const [copied, setCopied] = useState(false)
   const [showBracket, setShowBracket] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
+  const [showShareMenu, setShowShareMenu] = useState(false)
+  const shareMenuRef = useRef<HTMLDivElement>(null)
 
-  const handleCopyCode = () => {
+  // Close share menu on outside click
+  useEffect(() => {
+    if (!showShareMenu) return
+    const handler = (e: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
+        setShowShareMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showShareMenu])
+
+  const handleCopyLink = () => {
     navigator.clipboard.writeText(getRoomShareUrl(room.invite_slug))
     setCopied(true)
     toast.success('Link copiado')
     setTimeout(() => setCopied(false), 2000)
   }
+
+  // Compute prediction progress per member
+  const memberProgress = useMemo(() => {
+    const result: Record<string, { groups: number; knockout: number; total: number }> = {}
+    for (const m of allMembersPredictions) {
+      const groups = GROUP_LETTERS.filter((l) => m.groupPredictions[l] != null).length
+      const knockout = Object.keys(m.knockoutPredictions).length
+      result[m.userId] = { groups, knockout, total: groups + knockout }
+    }
+    return result
+  }, [allMembersPredictions])
 
   const sortedMembers = useMemo(
     () => [...members].sort((a, b) => b.total_points - a.total_points),
@@ -144,20 +170,69 @@ export function GroupRoom({
             >
               <Network size={14} className="text-[#2A398D]" />
             </button>
-            <button
-              onClick={handleCopyCode}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
-            >
-              {copied ? <Check size={14} className="text-[#3CAC3B]" /> : <Copy size={14} className="text-gray-400" />}
-            </button>
-            <a
-              href={getWhatsAppShareUrl(room.invite_slug, room.name)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 transition-colors"
-            >
-              <Share2 size={14} className="text-[#25D366]" />
-            </a>
+            <div className="relative" ref={shareMenuRef}>
+              <button
+                onClick={() => setShowShareMenu((v) => !v)}
+                className="p-2 rounded-lg bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                title="Compartir"
+              >
+                <Share2 size={14} className="text-gray-400" />
+              </button>
+              <AnimatePresence>
+                {showShareMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-white/10 py-1.5 z-50"
+                  >
+                    <a
+                      href={getWhatsAppShareUrl(room.invite_slug, room.name)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-3 py-2 text-sm font-body hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors"
+                    >
+                      <span className="w-7 h-7 rounded-full bg-[#25D366]/10 flex items-center justify-center flex-shrink-0">
+                        <MessageCircle size={14} className="text-[#25D366]" />
+                      </span>
+                      WhatsApp
+                    </a>
+                    <a
+                      href={getFacebookShareUrl(room.invite_slug)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-3 py-2 text-sm font-body hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors"
+                    >
+                      <span className="w-7 h-7 rounded-full bg-[#1877F2]/10 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-[#1877F2]"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                      </span>
+                      Facebook
+                    </a>
+                    <a
+                      href={getTwitterShareUrl(room.invite_slug, room.name)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 px-3 py-2 text-sm font-body hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors"
+                    >
+                      <span className="w-7 h-7 rounded-full bg-black/[0.06] dark:bg-white/10 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-gray-800 dark:fill-white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                      </span>
+                      X (Twitter)
+                    </a>
+                    <div className="border-t border-gray-100 dark:border-white/[0.06] my-1" />
+                    <button
+                      onClick={() => { handleCopyLink(); setShowShareMenu(false) }}
+                      className="flex items-center gap-3 px-3 py-2 text-sm font-body hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors w-full"
+                    >
+                      <span className="w-7 h-7 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
+                        {copied ? <Check size={14} className="text-[#3CAC3B]" /> : <Copy size={14} className="text-gray-400" />}
+                      </span>
+                      Copiar link
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
@@ -172,26 +247,48 @@ export function GroupRoom({
             className="glass-card overflow-hidden"
           >
             <div className="px-3 py-2 border-b border-gray-100 dark:border-white/[0.06]">
-              <span className="text-[10px] font-body font-medium text-gray-400 uppercase tracking-wider">Miembros ({members.length})</span>
+              <span className="text-[10px] font-body font-medium text-gray-400 uppercase tracking-wider">Miembros ({members.length}/10)</span>
             </div>
             <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
               {members.map((member) => {
                 const isMe = member.user_id === currentUserId
+                const progress = memberProgress[member.user_id]
+                const groupsDone = progress?.groups ?? 0
+                const knockoutDone = progress?.knockout ?? 0
+                const isComplete = groupsDone === 12 && knockoutDone >= 31
                 return (
-                  <div key={member.user_id} className="flex items-center gap-2.5 px-3 py-2">
+                  <div key={member.user_id} className="flex items-center gap-2.5 px-3 py-2.5">
                     <div className={cn(
-                      'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0',
+                      'w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0',
                       isMe ? 'bg-[#2A398D] text-white' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
                     )}>
                       {member.profile?.name?.[0]?.toUpperCase() || '?'}
                     </div>
-                    <span className={cn(
-                      'text-sm font-body truncate dark:text-white',
-                      isMe && 'font-medium text-[#2A398D] dark:text-blue-400'
-                    )}>
-                      {member.profile?.name || 'Anónimo'}
-                    </span>
-                    {isMe && <span className="text-[10px] text-gray-400">(tú)</span>}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn(
+                          'text-sm font-body truncate dark:text-white',
+                          isMe && 'font-medium text-[#2A398D] dark:text-blue-400'
+                        )}>
+                          {member.profile?.name || 'Anónimo'}
+                        </span>
+                        {isMe && <span className="text-[10px] text-gray-400 flex-shrink-0">(tú)</span>}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] font-mono text-gray-400">
+                          Grupos {groupsDone}/12
+                        </span>
+                        <span className="text-gray-300 dark:text-gray-600">·</span>
+                        <span className="text-[10px] font-mono text-gray-400">
+                          Llaves {knockoutDone}/31
+                        </span>
+                      </div>
+                    </div>
+                    {isComplete ? (
+                      <span className="text-[10px] font-body font-medium text-[#3CAC3B] bg-[#3CAC3B]/10 px-2 py-0.5 rounded-full flex-shrink-0">Listo</span>
+                    ) : (
+                      <span className="text-[10px] font-body text-gray-400 bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded-full flex-shrink-0">Pendiente</span>
+                    )}
                   </div>
                 )
               })}
@@ -253,31 +350,73 @@ export function GroupRoom({
 
       <div className={activeTab === 'leaderboard' ? '' : 'hidden'}>
         <div className="glass-card overflow-hidden">
-          {sortedMembers.map((member, idx) => {
-            const isMe = member.user_id === currentUserId
-            return (
-              <div
-                key={member.user_id}
-                className={cn(
-                  'flex items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-white/[0.04] last:border-0',
-                  isMe && 'bg-[#2A398D]/[0.04] dark:bg-[#2A398D]/10'
-                )}
-              >
-                <span className="font-mono text-xs text-gray-400 w-5">{idx + 1}</span>
-                <div className={cn(
-                  'w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0',
-                  isMe ? 'bg-[#2A398D]' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
-                )}>
-                  {member.profile?.name?.[0]?.toUpperCase() || '?'}
+          <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
+            <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">Ranking de la Sala</span>
+          </div>
+          {sortedMembers.length === 0 ? (
+            <div className="px-4 py-8 text-center">
+              <Trophy size={24} className="mx-auto mb-2 text-gray-300 dark:text-white/10" />
+              <p className="text-sm font-body text-gray-400">No hay miembros aún</p>
+            </div>
+          ) : (
+            sortedMembers.map((member, idx) => {
+              const isMe = member.user_id === currentUserId
+              const progress = memberProgress[member.user_id]
+              const groupsDone = progress?.groups ?? 0
+              const knockoutDone = progress?.knockout ?? 0
+              const isComplete = groupsDone === 12 && knockoutDone >= 31
+              const champPick = allMembersPredictions.find((m) => m.userId === member.user_id)?.knockoutPredictions[103]
+              return (
+                <div
+                  key={member.user_id}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-white/[0.04] last:border-0',
+                    isMe && 'bg-[#2A398D]/[0.04] dark:bg-[#2A398D]/10'
+                  )}
+                >
+                  <span className={cn(
+                    'font-mono text-xs w-5 text-center font-bold',
+                    idx === 0 ? 'text-[#C9A84C]' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-amber-700' : 'text-gray-400'
+                  )}>
+                    {idx + 1}
+                  </span>
+                  <div className={cn(
+                    'w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0',
+                    isMe ? 'bg-[#2A398D]' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
+                  )}>
+                    {member.profile?.name?.[0]?.toUpperCase() || '?'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className={cn('text-sm font-body truncate dark:text-white', isMe && 'font-medium text-[#2A398D] dark:text-blue-400')}>
+                        {member.profile?.name || 'Anónimo'}
+                      </span>
+                      {isMe && <span className="text-[10px] text-gray-400">(tú)</span>}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {isComplete ? (
+                        <span className="text-[10px] font-body text-[#3CAC3B]">Apuestas completas</span>
+                      ) : (
+                        <span className="text-[10px] font-body text-gray-400">
+                          {groupsDone}/12 grupos · {knockoutDone}/31 llaves
+                        </span>
+                      )}
+                      {champPick && (
+                        <>
+                          <span className="text-gray-300 dark:text-gray-600">·</span>
+                          <span className="text-[10px]">🏆 {champPick.toUpperCase()}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <span className="font-mono text-sm font-bold text-gray-700 dark:text-gray-300">{member.total_points}</span>
+                    <span className="text-[10px] text-gray-400 ml-0.5">pts</span>
+                  </div>
                 </div>
-                <span className={cn('flex-1 text-sm font-body truncate dark:text-white', isMe && 'font-medium text-[#2A398D] dark:text-blue-400')}>
-                  {member.profile?.name || 'Anónimo'} {isMe && <span className="text-xs text-gray-400">(tú)</span>}
-                </span>
-                <span className="font-mono text-sm font-bold text-gray-700 dark:text-gray-300">{member.total_points}</span>
-                <span className="text-[10px] text-gray-400">pts</span>
-              </div>
-            )
-          })}
+              )
+            })
+          )}
         </div>
       </div>
 
