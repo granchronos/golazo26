@@ -1,237 +1,189 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X } from 'lucide-react'
+import { X, ChevronRight } from 'lucide-react'
+import { cn } from '@/lib/utils/cn'
 
-const TOUR_KEY = 'golazo26_predictions_tour_v2'
+const TOUR_KEY = 'golazo26_predictions_tour_v3'
 
-interface SpotlightRect {
-  top: number
-  left: number
-  width: number
-  height: number
+interface TourStep {
+  target: string
+  title: string
+  description: string
+  fallbackPosition?: { top: string; left: string }
 }
 
-const STEPS = [
+const STEPS: TourStep[] = [
   {
     target: '#tour-progress',
-    title: 'Tu progreso',
-    description: 'Aquí ves cuántos grupos has guardado y el tiempo restante.',
-    position: 'below' as const,
-  },
-  {
-    target: '#tour-team-list',
-    title: 'Elige 1° y 2°',
-    description: 'Toca un equipo para elegirlo como 1° (dorado). Toca otro para el 2° (azul).',
-    position: 'below' as const,
+    title: '📊 Tu progreso',
+    description: 'Aquí ves cuántos grupos llevas y el tiempo que falta para el cierre.',
   },
   {
     target: '#group-A',
-    title: 'Guarda por grupo',
-    description: 'Al elegir 1° y 2°, aparece "Guardar grupo" al final de la tarjeta.',
-    position: 'below' as const,
+    title: '🏴 Elige 1° y 2° lugar',
+    description: 'Toca un equipo para elegirlo como 1° (dorado). Toca otro para el 2° (azul). Luego presiona "Guardar grupo".',
   },
   {
-    target: '#group-B',
-    title: 'O guarda todo junto',
-    description: 'Llena varios grupos y un botón flotante te permite guardarlos todos de una vez.',
-    position: 'above' as const,
+    target: '#tour-save-all',
+    title: '💾 Guarda todo de una vez',
+    description: 'Cuando llenes varios grupos sin guardar, aparece este botón flotante para guardarlos todos juntos.',
+    fallbackPosition: { top: '70vh', left: '50%' },
+  },
+  {
+    target: '#knockout-section',
+    title: '⚔️ Fase eliminatoria',
+    description: 'Después de los grupos, desplázate hasta aquí. Se abren las rondas desde 32avos hasta la Final.',
+  },
+  {
+    target: '#knockout-round-0',
+    title: '🏟️ Ronda de 32',
+    description: 'Elige el ganador de cada partido. Los equipos se llenan automáticamente según lo que elegiste en los grupos.',
+  },
+  {
+    target: '#knockout-round-4',
+    title: '🏆 Camino al Campeón',
+    description: 'Sigue eligiendo ganadores ronda tras ronda: Octavos → Cuartos → Semis → ¡Final! Tu campeón se mostrará al terminar.',
+    fallbackPosition: { top: '40vh', left: '50%' },
   },
 ]
 
 export function PredictionsTour() {
   const [visible, setVisible] = useState(false)
   const [step, setStep] = useState(0)
-  const [rect, setRect] = useState<SpotlightRect | null>(null)
-  const tooltipRef = useRef<HTMLDivElement>(null)
-
-  const measureTarget = useCallback(() => {
-    const target = document.querySelector(STEPS[step]?.target)
-    if (!target) return
-    const r = target.getBoundingClientRect()
-    const pad = 6
-    setRect({
-      top: r.top - pad,
-      left: r.left - pad,
-      width: r.width + pad * 2,
-      height: r.height + pad * 2,
-    })
-    // Scroll target into view
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [step])
 
   useEffect(() => {
     if (!localStorage.getItem(TOUR_KEY)) {
-      // Small delay to let DOM render
-      const timer = setTimeout(() => setVisible(true), 600)
+      const timer = setTimeout(() => setVisible(true), 800)
       return () => clearTimeout(timer)
     }
   }, [])
 
-  useEffect(() => {
-    if (!visible) return
-    measureTarget()
-    window.addEventListener('resize', measureTarget)
-    window.addEventListener('scroll', measureTarget, true)
-    return () => {
-      window.removeEventListener('resize', measureTarget)
-      window.removeEventListener('scroll', measureTarget, true)
-    }
-  }, [visible, step, measureTarget])
-
-  const dismiss = () => {
+  const dismiss = useCallback(() => {
     setVisible(false)
     localStorage.setItem(TOUR_KEY, '1')
-  }
+  }, [])
 
-  const next = () => {
+  const next = useCallback(() => {
     if (step < STEPS.length - 1) {
-      setStep(step + 1)
+      setStep((s) => s + 1)
     } else {
       dismiss()
     }
-  }
+  }, [step, dismiss])
 
-  if (!visible || !rect) return null
+  const prev = useCallback(() => {
+    if (step > 0) setStep((s) => s - 1)
+  }, [step])
+
+  // Scroll target into view when step changes
+  useEffect(() => {
+    if (!visible) return
+    const current = STEPS[step]
+    const el = document.querySelector(current.target)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [step, visible])
+
+  if (!visible) return null
 
   const current = STEPS[step]
-
-  // Tooltip position relative to viewport
-  const tooltipY = current.position === 'below'
-    ? rect.top + rect.height + 12
-    : rect.top - 12
 
   return (
     <AnimatePresence>
       {visible && (
-        <div className="fixed inset-0 z-[100]" style={{ pointerEvents: 'none' }}>
-          {/* SVG overlay with cutout */}
-          <svg
-            className="fixed inset-0 w-full h-full"
-            style={{ pointerEvents: 'auto' }}
-            onClick={dismiss}
-          >
-            <defs>
-              <mask id="spotlight-mask">
-                <rect width="100%" height="100%" fill="white" />
-                <motion.rect
-                  initial={{ opacity: 0 }}
-                  animate={{
-                    x: rect.left,
-                    y: rect.top,
-                    width: rect.width,
-                    height: rect.height,
-                    opacity: 1,
-                  }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  rx={12}
-                  fill="black"
-                />
-              </mask>
-            </defs>
-            <rect
-              width="100%"
-              height="100%"
-              fill="rgba(0,0,0,0.55)"
-              mask="url(#spotlight-mask)"
-            />
-            {/* Animated ring around spotlight */}
-            <motion.rect
-              initial={{ opacity: 0 }}
-              animate={{
-                x: rect.left - 2,
-                y: rect.top - 2,
-                width: rect.width + 4,
-                height: rect.height + 4,
-                opacity: 1,
-              }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              rx={14}
-              fill="none"
-              stroke="#2A398D"
-              strokeWidth={2}
-              className="animate-pulse"
-            />
-          </svg>
-
-          {/* Tooltip */}
+        <>
+          {/* Backdrop */}
           <motion.div
-            ref={tooltipRef}
-            key={step}
-            initial={{ opacity: 0, y: current.position === 'below' ? -8 : 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, delay: 0.1 }}
-            className="fixed z-[101] w-[calc(100%-2rem)] max-w-xs"
-            style={{
-              pointerEvents: 'auto',
-              top: current.position === 'below' ? tooltipY : undefined,
-              bottom: current.position === 'above' ? `calc(100vh - ${tooltipY}px)` : undefined,
-              left: Math.min(
-                Math.max(16, rect.left),
-                typeof window !== 'undefined' ? window.innerWidth - 320 : 400
-              ),
-            }}
+            onClick={dismiss}
+            className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-[2px]"
+          />
+
+          {/* Center card */}
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="fixed z-[101] left-4 right-4 sm:left-auto sm:right-auto sm:w-[380px] sm:left-1/2 sm:-translate-x-1/2 bottom-20 sm:bottom-12"
           >
-            <div className="bg-white dark:bg-[#1a1a2e] rounded-2xl shadow-2xl border border-gray-200 dark:border-white/10 p-4">
-              {/* Step dots + close */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex gap-1.5">
-                  {STEPS.map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-1 rounded-full transition-all duration-300 ${
-                        i === step
-                          ? 'w-5 bg-[#2A398D]'
-                          : i < step
-                          ? 'w-2 bg-[#2A398D]/40'
-                          : 'w-2 bg-gray-200 dark:bg-white/10'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); dismiss() }}
-                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-                >
-                  <X size={14} />
-                </button>
+            <div className="bg-white dark:bg-[#1a1a2e] rounded-2xl shadow-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+              {/* Progress bar */}
+              <div className="h-1 bg-gray-100 dark:bg-white/[0.06]">
+                <div
+                  className="h-full bg-[#2A398D] transition-all duration-300"
+                  style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+                />
               </div>
 
-              <h3 className="font-display text-base text-gray-900 dark:text-white mb-1">
-                {current.title}
-              </h3>
-              <p className="text-sm font-body text-gray-500 dark:text-gray-400 leading-relaxed mb-4">
-                {current.description}
-              </p>
+              <div className="p-5">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-1">
+                  <h3 className="font-display text-lg text-gray-900 dark:text-white">
+                    {current.title}
+                  </h3>
+                  <button
+                    onClick={dismiss}
+                    className="p-1 -mt-0.5 -mr-1 rounded-lg text-gray-300 hover:text-gray-500 dark:hover:text-white transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
 
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={(e) => { e.stopPropagation(); dismiss() }}
-                  className="text-xs font-body text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                >
-                  Omitir
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); next() }}
-                  className="px-4 py-1.5 rounded-xl bg-[#2A398D] text-white text-sm font-body font-semibold hover:bg-[#1e2b6e] transition-colors"
-                >
-                  {step < STEPS.length - 1 ? 'Siguiente' : '¡Listo!'}
-                </button>
+                {/* Step indicator */}
+                <p className="text-[10px] font-mono text-gray-400 mb-3">
+                  {step + 1} de {STEPS.length}
+                </p>
+
+                <p className="text-sm font-body text-gray-500 dark:text-gray-400 leading-relaxed mb-5">
+                  {current.description}
+                </p>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={dismiss}
+                    className="text-xs font-body text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  >
+                    Omitir tour
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    {step > 0 && (
+                      <button
+                        onClick={prev}
+                        className="px-3 py-1.5 rounded-xl text-xs font-body font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+                      >
+                        Atrás
+                      </button>
+                    )}
+                    <button
+                      onClick={next}
+                      className={cn(
+                        'flex items-center gap-1 px-4 py-1.5 rounded-xl text-sm font-body font-semibold transition-colors',
+                        step === STEPS.length - 1
+                          ? 'bg-[#3CAC3B] text-white hover:bg-[#2e9a2e]'
+                          : 'bg-[#2A398D] text-white hover:bg-[#1e2b6e]'
+                      )}
+                    >
+                      {step < STEPS.length - 1 ? (
+                        <>Siguiente <ChevronRight size={14} /></>
+                      ) : (
+                        '¡Empezar!'
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Arrow */}
-            <div
-              className={`absolute left-8 w-3 h-3 bg-white dark:bg-[#1a1a2e] border-gray-200 dark:border-white/10 rotate-45 ${
-                current.position === 'below'
-                  ? '-top-1.5 border-l border-t'
-                  : '-bottom-1.5 border-r border-b'
-              }`}
-            />
           </motion.div>
-        </div>
+        </>
       )}
     </AnimatePresence>
   )

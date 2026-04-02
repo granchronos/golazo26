@@ -105,12 +105,12 @@ export function KnockoutPredictions({
       </div>
 
       {/* Rounds */}
-      {BRACKET_ROUNDS.map((round) => {
+      {BRACKET_ROUNDS.map((round, roundIndex) => {
         const isCollapsed = collapsed[round.id]
         const roundPicked = round.matches.filter((m) => picks[m.matchNumber]).length
 
         return (
-          <div key={round.id} className="glass-card overflow-hidden">
+          <div key={round.id} id={`knockout-round-${roundIndex}`} className="glass-card overflow-hidden">
             {/* Round header */}
             <button
               onClick={() => setCollapsed((p) => ({ ...p, [round.id]: !p[round.id] }))}

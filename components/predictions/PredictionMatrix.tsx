@@ -230,7 +230,7 @@ export function PredictionMatrix({
       </div>
 
       {/* Knockout predictions section */}
-      <div className="border-t border-gray-100 dark:border-white/[0.06] pt-6">
+      <div id="knockout-section" className="border-t border-gray-100 dark:border-white/[0.06] pt-6">
         <KnockoutPredictions
           roomId={roomId}
           groupSelections={selections}

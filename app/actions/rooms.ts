@@ -34,8 +34,9 @@ export async function createRoom(_prevState: unknown, formData: FormData) {
     .single()
 
   if (error) {
+    console.error('[createRoom] DB error:', error.message, error.details, error.code)
     if (error.message.includes('máximo')) return { error: error.message }
-    return { error: 'Error creando sala. Intenta de nuevo.' }
+    return { error: `Error creando sala: ${error.message}` }
   }
 
   // Auto-join as admin
