@@ -81,12 +81,13 @@ export async function register(_prevState: unknown, formData: FormData) {
   redirect(next)
 }
 
-export async function loginWithGoogle() {
+export async function loginWithGoogle(formData: FormData) {
+  const next = (formData.get('next') as string) || '/'
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   })
 

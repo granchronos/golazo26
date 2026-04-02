@@ -39,7 +39,7 @@ export default async function GroupDetailPage({ params }: PageProps) {
     console.error('Error fetching room_members:', membersError)
   }
 
-  // Fetch profiles separately to avoid join issues
+  // Fetch profiles separately to avoid implicit join issues
   const memberUserIds = (rawMembers || []).map((m) => m.user_id)
   const [{ data: profiles }, { data: allScores }] = await Promise.all([
     memberUserIds.length > 0

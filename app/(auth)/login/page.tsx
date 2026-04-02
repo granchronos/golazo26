@@ -75,6 +75,7 @@ export default function LoginPage() {
 
           {/* Google button */}
           <form action={loginWithGoogle} className="mb-4">
+            {next && <input type="hidden" name="next" value={next} />}
             <button
               type="submit"
               className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-sm font-body font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors"

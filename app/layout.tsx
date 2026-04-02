@@ -27,13 +27,13 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Mundial 2026 Predictor',
-    template: '%s | Mundial 2026 Predictor',
+    default: 'Golazo 26',
+    template: '%s | Golazo 26',
   },
   description: 'Predice el campeón del FIFA World Cup 2026. Compite con amigos en tu sala privada.',
   keywords: ['mundial 2026', 'world cup 2026', 'predictor', 'apuestas deportivas', 'FIFA'],
   openGraph: {
-    title: 'Mundial 2026 Predictor',
+    title: 'Golazo 26 - Predictor del FIFA World Cup 2026',
     description: 'Predice los resultados del FIFA World Cup 2026',
     type: 'website',
     locale: 'es_MX',
