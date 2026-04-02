@@ -28,27 +28,34 @@ export default async function GroupDetailPage({ params }: PageProps) {
   if (!membership) redirect('/groups')
 
   // Parallel fetch: members + all group predictions + all knockout predictions + all matches
-  const [{ data: rawMembers }, { data: allGroupPreds }, { data: allKnockoutPreds }, { data: rawMatches }] = await Promise.all([
-    admin.from('room_members').select(`
-      user_id,
-      profiles!inner(id, user_id, name, avatar_url, created_at, updated_at)
-    `).eq('room_id', id),
+  const [{ data: rawMembers, error: membersError }, { data: allGroupPreds }, { data: allKnockoutPreds }, { data: rawMatches }] = await Promise.all([
+    admin.from('room_members').select('user_id, joined_at').eq('room_id', id),
     admin.from('group_predictions').select('*').eq('room_id', id),
     admin.from('predictions').select('user_id, match_id, predicted_winner_id, predicted_home_score, predicted_away_score, matches!inner(match_number)').eq('room_id', id),
     admin.from('matches').select('*').order('match_number', { ascending: true }),
   ])
 
-  // Batch fetch scores for all members in this room
-  const memberUserIds = (rawMembers || []).map((m) => m.user_id)
-  const { data: allScores } = memberUserIds.length > 0
-    ? await admin.from('scores').select('user_id, total_points').eq('room_id', id).in('user_id', memberUserIds)
-    : { data: [] }
+  if (membersError) {
+    console.error('Error fetching room_members:', membersError)
+  }
 
+  // Fetch profiles separately to avoid join issues
+  const memberUserIds = (rawMembers || []).map((m) => m.user_id)
+  const [{ data: profiles }, { data: allScores }] = await Promise.all([
+    memberUserIds.length > 0
+      ? admin.from('profiles').select('id, user_id, name, avatar_url, created_at, updated_at').in('user_id', memberUserIds)
+      : { data: [] as Profile[], error: null },
+    memberUserIds.length > 0
+      ? admin.from('scores').select('user_id, total_points').eq('room_id', id).in('user_id', memberUserIds)
+      : { data: [] as { user_id: string; total_points: number }[], error: null },
+  ])
+
+  const profilesMap = new Map((profiles || []).map((p) => [p.user_id, p as Profile]))
   const scoresMap = new Map((allScores || []).map((s) => [s.user_id, s.total_points]))
 
   const members = (rawMembers || []).map((m) => ({
     user_id: m.user_id,
-    profile: m.profiles as unknown as Profile,
+    profile: profilesMap.get(m.user_id) ?? { id: '', user_id: m.user_id, name: 'Anónimo', avatar_url: null, created_at: '', updated_at: '' } as Profile,
     total_points: scoresMap.get(m.user_id) ?? 0,
   }))
 
