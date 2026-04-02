@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useMemo, useTransition } from 'react'
+import { useState, useMemo, useTransition, useEffect } from 'react'
 import { Check, X, Clock, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils/cn'
 import { TEAMS } from '@/lib/constants/teams'
 import { ROUND_LABELS, SCORE_BONUS } from '@/lib/constants/points'
 import { ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
-import { formatShortDate } from '@/lib/utils/date'
+import { formatShortDate, formatMatchDate } from '@/lib/utils/date'
 import { saveMatchScorePrediction } from '@/app/actions/predictions'
 import type { Match, GroupLetter, GroupPrediction } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
@@ -123,11 +123,6 @@ interface MatchRowProps {
 function MatchRow({ roomId, match, knockoutPrediction, savedScore }: MatchRowProps) {
   const homeTeam = match.home_team_id ? TEAMS_BY_ID[match.home_team_id] : null
   const awayTeam = match.away_team_id ? TEAMS_BY_ID[match.away_team_id] : null
-  const matchTime = new Date(match.match_date).toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'America/Mexico_City',
-  })
 
   const isFinished = match.status === 'finished'
   const isLive = match.status === 'live'
@@ -137,11 +132,15 @@ function MatchRow({ roomId, match, knockoutPrediction, savedScore }: MatchRowPro
   const [homeScore, setHomeScore] = useState<string>(savedScore?.home?.toString() ?? '')
   const [awayScore, setAwayScore] = useState<string>(savedScore?.away?.toString() ?? '')
   const [isPending, startTransition] = useTransition()
+  const [isBeforeDeadline, setIsBeforeDeadline] = useState(true)
+
+  useEffect(() => {
+    const deadline = new Date(match.match_date)
+    deadline.setMinutes(deadline.getMinutes() - 10)
+    setIsBeforeDeadline(new Date() < deadline)
+  }, [match.match_date])
 
   const canPredict = isScheduled && homeTeam && awayTeam
-  const deadline = new Date(match.match_date)
-  deadline.setMinutes(deadline.getMinutes() - 10)
-  const isBeforeDeadline = new Date() < deadline
 
   const handleScoreSave = () => {
     const h = parseInt(homeScore)
@@ -199,7 +198,7 @@ function MatchRow({ roomId, match, knockoutPrediction, savedScore }: MatchRowPro
             <span className="font-mono text-xs font-bold text-[#E61D25]">EN VIVO</span>
           </div>
         ) : (
-          <span className="font-mono text-xs text-gray-400">{matchTime}</span>
+          <span className="font-mono text-xs text-gray-400">{formatMatchDate(match.match_date)}</span>
         )}
 
         {/* Score prediction inputs */}

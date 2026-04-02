@@ -186,7 +186,9 @@ export function Sidebar({ profile }: NavigationProps) {
 
 export function useSidebarWidth() {
   const [collapsed, setCollapsed] = useState(false)
+  const [mounted, setMounted] = useState(false)
   useEffect(() => {
+    setMounted(true)
     const check = () => setCollapsed(localStorage.getItem(SIDEBAR_KEY) === 'true')
     check()
     window.addEventListener('storage', check)
@@ -196,5 +198,7 @@ export function useSidebarWidth() {
       window.removeEventListener('sidebar-toggle', check)
     }
   }, [])
+  // Return consistent default before mount to avoid hydration mismatch
+  if (!mounted) return 'sm:pl-56'
   return collapsed ? 'sm:pl-16' : 'sm:pl-56'
 }

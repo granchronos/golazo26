@@ -11,7 +11,19 @@ interface CountdownTimerProps {
 }
 
 export function CountdownTimer({ deadline, label = 'Cierre de apuestas', variant = 'full' }: CountdownTimerProps) {
-  const { days, hours, minutes, seconds, expired } = useCountdown(deadline)
+  const { days, hours, minutes, seconds, expired, mounted } = useCountdown(deadline)
+
+  if (!mounted) {
+    return (
+      <div className={cn(
+        'flex items-center gap-2 text-gray-400 font-body animate-pulse',
+        variant === 'compact' ? 'text-xs' : 'text-sm'
+      )}>
+        <Clock size={variant === 'compact' ? 12 : 16} />
+        <span>--:--:--</span>
+      </div>
+    )
+  }
 
   if (expired) {
     return (
