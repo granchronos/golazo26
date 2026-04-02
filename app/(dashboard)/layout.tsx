@@ -19,8 +19,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .eq('user_id', user.id)
     .single()
 
-  if (!profile) {
-    const fallbackName = user.user_metadata?.name || user.email?.split('@')[0] || 'Usuario'
+  if (!profile || !profile.name) {
+    const fallbackName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Usuario'
     const { data: newProfile } = await admin
       .from('profiles')
       .upsert({
