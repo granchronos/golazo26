@@ -15,8 +15,26 @@ function SubmitBtn() {
   )
 }
 
-export function JoinRoomForm() {
+export function JoinRoomForm({ variant = 'default' }: { variant?: 'default' | 'compact' }) {
   const [state, formAction] = useFormState(joinRoom, null)
+
+  if (variant === 'compact') {
+    return (
+      <form action={formAction} className="flex items-center gap-1.5">
+        <input
+          name="code"
+          type="text"
+          placeholder="CÓDIGO"
+          maxLength={6}
+          className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-mono uppercase font-bold focus:outline-none focus:ring-2 focus:ring-[#2A398D] dark:text-white placeholder:text-gray-400 placeholder:normal-case transition-all tracking-wider min-w-0"
+        />
+        <button type="submit" className="flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/10 text-xs font-body font-medium text-gray-600 dark:text-gray-300 transition-colors flex-shrink-0">
+          <LogIn size={14} />
+          Unirse
+        </button>
+      </form>
+    )
+  }
 
   return (
     <form action={formAction} className="glass-card p-4 flex flex-col justify-between gap-3">

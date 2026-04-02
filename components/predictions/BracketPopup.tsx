@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
 import { Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { TEAMS } from '@/lib/constants/teams'
@@ -21,22 +20,12 @@ interface BracketPopupProps {
   knockoutPredictions: Record<number, string>
 }
 
-// Resolve which team the user picked for a given slot in a bracket match
 function resolveTeam(
   match: BracketMatchDef,
   side: 'home' | 'away',
   predictions: Record<number, string>
 ): TeamData | null {
-  const slot = match[side]
-  const { source } = slot
-  if (source.kind === '1st' || source.kind === '2nd' || source.kind === '3rd_pool') {
-    // For R32: the resolved team comes from the user's pick on that match
-    // Since the user picked a winner for this match, we can look at who they
-    // chose in the match. But we need the two candidates. For R32 teams come
-    // from group predictions, which we don't have here directly.
-    // Instead, just show the winner the user picked for THIS match if any.
-    return null
-  }
+  const { source } = match[side]
   if (source.kind === 'winner') {
     const winnerId = predictions[source.matchNumber]
     return winnerId ? TEAMS_BY_ID[winnerId] ?? null : null
@@ -44,142 +33,186 @@ function resolveTeam(
   return null
 }
 
-export function BracketPopup({ knockoutPredictions }: BracketPopupProps) {
-  // The user's championship path: just show picks per round
-  const champion = knockoutPredictions[103] ? TEAMS_BY_ID[knockoutPredictions[103]] : null
+// ─── Bracket Node (a single match) ────────────────────────────────
 
-  // Build round data
-  const rounds = useMemo(() => [
-    { label: 'Ronda de 32', short: '32avos', matches: R32_BRACKET, color: 'text-gray-500' },
-    { label: 'Octavos', short: '8vos', matches: R16_BRACKET, color: 'text-[#2A398D]' },
-    { label: 'Cuartos', short: '4tos', matches: QF_BRACKET, color: 'text-[#3CAC3B]' },
-    { label: 'Semis', short: 'Semis', matches: SF_BRACKET, color: 'text-[#C9A84C]' },
-    { label: 'Final', short: 'Final', matches: FINAL_BRACKET, color: 'text-[#E61D25]' },
-  ], [])
-
-  return (
-    <div className="space-y-3 max-h-[70vh] overflow-y-auto overscroll-contain pr-1">
-      {/* Champion banner */}
-      {champion && (
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex flex-col items-center gap-1 py-3 rounded-xl bg-gradient-to-r from-[#C9A84C]/20 via-[#C9A84C]/10 to-[#C9A84C]/20 border border-[#C9A84C]/30"
-        >
-          <Trophy size={20} className="text-[#C9A84C]" />
-          <span className="text-2xl">{champion.flag_emoji}</span>
-          <span className="text-sm font-display text-[#C9A84C] tracking-wide">{champion.name}</span>
-          <span className="text-[10px] font-mono text-gray-400">MI CAMPEÓN</span>
-        </motion.div>
-      )}
-
-      {/* Bracket rounds — from Final down to R32 (reverse for top-down view) */}
-      {[...rounds].reverse().map((round, roundIdx) => (
-        <div key={round.label}>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className={cn('text-[10px] font-display uppercase tracking-wider', round.color)}>
-              {round.label}
-            </span>
-            <div className="flex-1 h-px bg-gray-100 dark:bg-white/[0.06]" />
-          </div>
-          <div className="grid gap-1.5" style={{
-            gridTemplateColumns: round.matches.length <= 2
-              ? 'repeat(auto-fit, minmax(0, 1fr))'
-              : 'repeat(auto-fill, minmax(140px, 1fr))',
-          }}>
-            {round.matches.map((match) => (
-              <BracketMatchCard
-                key={match.matchNumber}
-                match={match}
-                predictions={knockoutPredictions}
-                roundColor={round.color}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-
-      {/* Empty state */}
-      {!champion && Object.keys(knockoutPredictions).length === 0 && (
-        <div className="text-center py-6">
-          <p className="text-sm font-body text-gray-400">
-            Aún no has elegido ningún equipo en la fase de eliminación
-          </p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Single Bracket Match Card ───────────────────────────────────────
-
-interface BracketMatchCardProps {
+function BracketNode({
+  match,
+  predictions,
+  accentColor,
+  size = 'normal',
+}: {
   match: BracketMatchDef
   predictions: Record<number, string>
-  roundColor: string
-}
-
-function BracketMatchCard({ match, predictions, roundColor }: BracketMatchCardProps) {
+  accentColor: string
+  size?: 'normal' | 'large'
+}) {
   const winner = predictions[match.matchNumber]
   const winnerTeam = winner ? TEAMS_BY_ID[winner] : null
-
-  // Try to resolve home/away from previous-round predictions
   const homeTeam = resolveTeam(match, 'home', predictions)
   const awayTeam = resolveTeam(match, 'away', predictions)
 
+  const isLarge = size === 'large'
+
   if (!winnerTeam && !homeTeam && !awayTeam) {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.04]">
+      <div className={cn(
+        'rounded-lg border border-dashed border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-center',
+        isLarge ? 'h-14' : 'h-11'
+      )}>
         <span className="text-[10px] font-mono text-gray-300 dark:text-gray-600">P{match.matchNumber}</span>
-        <span className="text-[10px] text-gray-300 dark:text-gray-600">—</span>
+      </div>
+    )
+  }
+
+  if (homeTeam && awayTeam) {
+    return (
+      <div className={cn(
+        'rounded-lg border overflow-hidden',
+        isLarge ? 'border-2' : '',
+        winnerTeam ? 'border-gray-200 dark:border-white/10' : 'border-dashed border-gray-200 dark:border-white/10'
+      )}>
+        <TeamRow team={homeTeam} isWinner={winnerTeam?.id === homeTeam.id} isLarge={isLarge} accentColor={accentColor} />
+        <div className="h-px bg-gray-100 dark:bg-white/[0.06]" />
+        <TeamRow team={awayTeam} isWinner={winnerTeam?.id === awayTeam.id} isLarge={isLarge} accentColor={accentColor} />
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.06]">
-      <span className="text-[10px] font-mono text-gray-300 dark:text-gray-600 w-6 flex-shrink-0">P{match.matchNumber}</span>
-
-      {/* Show vs if we have both teams */}
-      {homeTeam && awayTeam ? (
-        <div className="flex items-center gap-1 flex-1 min-w-0">
-          <TeamBadge
-            team={homeTeam}
-            isWinner={winnerTeam?.id === homeTeam.id}
-          />
-          <span className="text-[9px] text-gray-300 dark:text-gray-600 flex-shrink-0">vs</span>
-          <TeamBadge
-            team={awayTeam}
-            isWinner={winnerTeam?.id === awayTeam.id}
-          />
-        </div>
-      ) : winnerTeam ? (
-        <div className="flex items-center gap-1 flex-1 min-w-0">
-          <span className="text-sm flex-shrink-0">{winnerTeam.flag_emoji}</span>
-          <span className={cn('text-xs font-body truncate font-medium', roundColor)}>
-            {winnerTeam.code}
-          </span>
-        </div>
-      ) : null}
+    <div className={cn(
+      'rounded-lg border border-gray-200 dark:border-white/10 flex items-center gap-2 px-2.5',
+      isLarge ? 'h-14' : 'h-11'
+    )}>
+      <span className={isLarge ? 'text-xl' : 'text-base'}>{winnerTeam?.flag_emoji}</span>
+      <span className={cn('font-body font-semibold truncate', accentColor, isLarge ? 'text-sm' : 'text-xs')}>
+        {winnerTeam?.name ?? winnerTeam?.code}
+      </span>
     </div>
   )
 }
 
-function TeamBadge({ team, isWinner }: { team: TeamData; isWinner: boolean }) {
+function TeamRow({ team, isWinner, isLarge, accentColor }: {
+  team: TeamData
+  isWinner: boolean
+  isLarge: boolean
+  accentColor: string
+}) {
   return (
     <div className={cn(
-      'flex items-center gap-0.5 px-1 py-0.5 rounded',
-      isWinner
-        ? 'bg-[#3CAC3B]/10 ring-1 ring-[#3CAC3B]/30'
-        : 'opacity-40'
+      'flex items-center gap-2 px-2.5 transition-colors',
+      isLarge ? 'py-1.5' : 'py-1',
+      isWinner ? 'bg-[#3CAC3B]/10' : 'bg-white dark:bg-white/[0.02]'
     )}>
-      <span className="text-xs flex-shrink-0">{team.flag_emoji}</span>
+      <span className={isLarge ? 'text-base' : 'text-sm'}>{team.flag_emoji}</span>
       <span className={cn(
-        'text-[10px] font-body truncate',
-        isWinner ? 'font-semibold text-[#3CAC3B]' : 'text-gray-400'
+        'font-body truncate flex-1',
+        isLarge ? 'text-xs' : 'text-[11px]',
+        isWinner ? 'font-semibold text-[#3CAC3B]' : 'text-gray-500 dark:text-gray-400'
       )}>
         {team.code}
       </span>
+      {isWinner && (
+        <span className="text-[8px] font-mono text-[#3CAC3B]">▶</span>
+      )}
+    </div>
+  )
+}
+
+// ─── Main Bracket ──────────────────────────────────────────────────
+
+export function BracketPopup({ knockoutPredictions }: BracketPopupProps) {
+  const champion = knockoutPredictions[103] ? TEAMS_BY_ID[knockoutPredictions[103]] : null
+
+  const rounds = useMemo(() => [
+    { label: '32avos', matches: R32_BRACKET, color: 'text-gray-500', accent: 'text-gray-600 dark:text-gray-300' },
+    { label: 'Octavos', matches: R16_BRACKET, color: 'text-[#2A398D]', accent: 'text-[#2A398D]' },
+    { label: 'Cuartos', matches: QF_BRACKET, color: 'text-[#3CAC3B]', accent: 'text-[#3CAC3B]' },
+    { label: 'Semifinales', matches: SF_BRACKET, color: 'text-[#C9A84C]', accent: 'text-[#C9A84C]' },
+    { label: 'FINAL', matches: FINAL_BRACKET, color: 'text-[#E61D25]', accent: 'text-[#E61D25]' },
+  ], [])
+
+  const hasAnyPicks = Object.keys(knockoutPredictions).length > 0
+
+  return (
+    <div className="max-h-[75vh] overflow-y-auto overscroll-contain space-y-0 pr-1">
+      {/* Champion crown */}
+      {champion && (
+        <div className="flex flex-col items-center gap-1.5 pt-2 pb-4">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#C9A84C] to-[#D4AF37] flex items-center justify-center shadow-lg shadow-[#C9A84C]/20">
+            <Trophy size={22} className="text-white" />
+          </div>
+          <span className="text-3xl">{champion.flag_emoji}</span>
+          <span className="text-sm font-display text-[#C9A84C] tracking-wide">{champion.name}</span>
+          <span className="text-[9px] font-mono text-gray-400 uppercase tracking-widest">Campeón</span>
+          {/* Connector line down */}
+          <div className="w-px h-4 bg-gradient-to-b from-[#C9A84C]/40 to-gray-200 dark:to-white/10" />
+        </div>
+      )}
+
+      {/* Rounds bottom-up: Final → R32 */}
+      {[...rounds].reverse().map((round, roundIdx) => {
+        const isFirst = roundIdx === 0
+        const matchCount = round.matches.length
+        const isFinal = matchCount === 1
+        const isSemis = matchCount === 2
+
+        return (
+          <div key={round.label} className="relative">
+            {/* Round label */}
+            <div className="flex items-center gap-2 mb-2">
+              <div className={cn('w-1.5 h-1.5 rounded-full', round.color.replace('text-', 'bg-'))} />
+              <span className={cn('text-[10px] font-display uppercase tracking-wider', round.color)}>
+                {round.label}
+              </span>
+              <div className="flex-1 h-px bg-gray-100 dark:bg-white/[0.06]" />
+              <span className="text-[10px] font-mono text-gray-300 dark:text-gray-600">
+                {round.matches.filter(m => knockoutPredictions[m.matchNumber]).length}/{matchCount}
+              </span>
+            </div>
+
+            {/* Match grid */}
+            <div className={cn(
+              'grid gap-2 mb-3',
+              isFinal ? 'grid-cols-1 max-w-[200px] mx-auto' :
+              isSemis ? 'grid-cols-2' :
+              matchCount <= 4 ? 'grid-cols-2' :
+              'grid-cols-2 sm:grid-cols-4'
+            )}>
+              {round.matches.map((match) => (
+                <BracketNode
+                  key={match.matchNumber}
+                  match={match}
+                  predictions={knockoutPredictions}
+                  accentColor={round.accent}
+                  size={isFinal ? 'large' : 'normal'}
+                />
+              ))}
+            </div>
+
+            {/* Connector arrows between rounds */}
+            {!isFirst && (
+              <div className="flex justify-center py-1">
+                <div className="flex flex-col items-center">
+                  <div className="w-px h-3 bg-gray-200 dark:bg-white/10" />
+                  <svg width="10" height="6" viewBox="0 0 10 6" className="text-gray-300 dark:text-gray-600">
+                    <path d="M5 0L10 6H0z" fill="currentColor" />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      {/* Empty state */}
+      {!hasAnyPicks && (
+        <div className="text-center py-8">
+          <Trophy size={24} className="mx-auto mb-2 text-gray-300 dark:text-white/10" />
+          <p className="text-sm font-body text-gray-400">
+            Aún no has elegido ningún equipo en la fase de eliminación
+          </p>
+        </div>
+      )}
     </div>
   )
 }

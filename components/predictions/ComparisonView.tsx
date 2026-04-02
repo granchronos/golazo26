@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { GitCompareArrows } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { TEAMS, GROUP_LETTERS } from '@/lib/constants/teams'
@@ -28,27 +28,13 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
 
   const me = allMembers.find((m) => m.userId === currentUserId)
   const other = compareWith ? allMembers.find((m) => m.userId === compareWith) : null
+  const otherMembers = allMembers.filter((m) => m.userId !== currentUserId)
 
-  const completedMembers = allMembers.filter((m) => m.isComplete && m.userId !== currentUserId)
-
-  if (!me?.isComplete) {
+  if (otherMembers.length === 0) {
     return (
       <div className="glass-card p-6 text-center">
         <GitCompareArrows size={24} className="mx-auto mb-2 text-gray-300 dark:text-white/10" />
-        <p className="text-sm font-body text-gray-400">
-          Completa todas tus apuestas para comparar con otros miembros
-        </p>
-      </div>
-    )
-  }
-
-  if (completedMembers.length === 0) {
-    return (
-      <div className="glass-card p-6 text-center">
-        <GitCompareArrows size={24} className="mx-auto mb-2 text-gray-300 dark:text-white/10" />
-        <p className="text-sm font-body text-gray-400">
-          Ningún otro miembro ha completado sus apuestas
-        </p>
+        <p className="text-sm font-body text-gray-400">Aún no hay otros miembros para comparar</p>
       </div>
     )
   }
@@ -58,7 +44,7 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
       {/* Member selector */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-body text-gray-400">Comparar con:</span>
-        {completedMembers.map((m) => (
+        {otherMembers.map((m) => (
           <button
             key={m.userId}
             onClick={() => setCompareWith(m.userId === compareWith ? null : m.userId)}
@@ -76,43 +62,52 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
 
       {other && me && (
         <div className="space-y-3">
+          {/* Column headers */}
+          <div className="flex items-center px-4 gap-2">
+            <span className="w-4" />
+            <span className="flex-1 text-[10px] font-display uppercase tracking-wider text-[#2A398D] dark:text-blue-400">Tú</span>
+            <span className="w-6" />
+            <span className="flex-1 text-[10px] font-display uppercase tracking-wider text-right text-[#E61D25]">{other.name.split(' ')[0]}</span>
+          </div>
+
           {/* Groups comparison */}
           <div className="glass-card overflow-hidden">
-            <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
+            <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
               <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">Fase de Grupos</span>
+              {(() => {
+                let matches = 0, total = 0
+                for (const letter of GROUP_LETTERS) {
+                  const mp = me.groupPredictions[letter]
+                  const tp = other.groupPredictions[letter]
+                  if (mp && tp) { total += 2; if (mp.team_1st_id === tp.team_1st_id) matches++; if (mp.team_2nd_id === tp.team_2nd_id) matches++ }
+                }
+                return total > 0 ? <span className="text-[10px] font-mono text-[#3CAC3B]">{matches}/{total} iguales</span> : null
+              })()}
             </div>
             <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
               {GROUP_LETTERS.map((letter) => {
                 const myPred = me.groupPredictions[letter]
                 const theirPred = other.groupPredictions[letter]
-                if (!myPred || !theirPred) return null
-                const same1st = myPred.team_1st_id === theirPred.team_1st_id
-                const same2nd = myPred.team_2nd_id === theirPred.team_2nd_id
-                const my1st = TEAMS_BY_ID[myPred.team_1st_id]
-                const my2nd = TEAMS_BY_ID[myPred.team_2nd_id]
-                const their1st = TEAMS_BY_ID[theirPred.team_1st_id]
-                const their2nd = TEAMS_BY_ID[theirPred.team_2nd_id]
+                if (!myPred && !theirPred) return null
+                const same1st = myPred && theirPred && myPred.team_1st_id === theirPred.team_1st_id
+                const same2nd = myPred && theirPred && myPred.team_2nd_id === theirPred.team_2nd_id
+                const my1st = myPred ? TEAMS_BY_ID[myPred.team_1st_id] : null
+                const my2nd = myPred ? TEAMS_BY_ID[myPred.team_2nd_id] : null
+                const their1st = theirPred ? TEAMS_BY_ID[theirPred.team_1st_id] : null
+                const their2nd = theirPred ? TEAMS_BY_ID[theirPred.team_2nd_id] : null
                 return (
-                  <div key={letter} className="flex items-center px-4 py-2 gap-2">
-                    <span className="text-[10px] font-mono text-gray-400 w-4">{letter}</span>
-                    <div className="flex-1 flex items-center gap-1">
-                      <span className={cn('text-xs', same1st && 'text-[#3CAC3B] font-semibold')}>
-                        {my1st?.flag_emoji} {my1st?.code}
-                      </span>
-                      <span className="text-gray-300 dark:text-gray-600">/</span>
-                      <span className={cn('text-xs', same2nd && 'text-[#3CAC3B] font-semibold')}>
-                        {my2nd?.flag_emoji} {my2nd?.code}
-                      </span>
+                  <div key={letter} className="flex items-center px-4 py-2.5 gap-2">
+                    <span className="text-[10px] font-mono font-bold text-gray-400 w-4">{letter}</span>
+                    <div className="flex-1 flex items-center gap-1.5">
+                      {my1st ? <span className={cn('text-xs font-body', same1st ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{my1st.flag_emoji} {my1st.code}</span> : <span className="text-xs text-gray-300">—</span>}
+                      <span className="text-gray-200 dark:text-gray-700">/</span>
+                      {my2nd ? <span className={cn('text-xs font-body', same2nd ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{my2nd.flag_emoji} {my2nd.code}</span> : <span className="text-xs text-gray-300">—</span>}
                     </div>
-                    <span className="text-[10px] text-gray-300 dark:text-gray-600">vs</span>
-                    <div className="flex-1 flex items-center gap-1 justify-end">
-                      <span className={cn('text-xs', same1st && 'text-[#3CAC3B] font-semibold')}>
-                        {their1st?.flag_emoji} {their1st?.code}
-                      </span>
-                      <span className="text-gray-300 dark:text-gray-600">/</span>
-                      <span className={cn('text-xs', same2nd && 'text-[#3CAC3B] font-semibold')}>
-                        {their2nd?.flag_emoji} {their2nd?.code}
-                      </span>
+                    <span className={cn('text-[10px] w-6 text-center', same1st && same2nd ? 'text-[#3CAC3B]' : 'text-gray-300 dark:text-gray-600')}>{same1st && same2nd ? '✓' : 'vs'}</span>
+                    <div className="flex-1 flex items-center gap-1.5 justify-end">
+                      {their1st ? <span className={cn('text-xs font-body', same1st ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{their1st.flag_emoji} {their1st.code}</span> : <span className="text-xs text-gray-300">—</span>}
+                      <span className="text-gray-200 dark:text-gray-700">/</span>
+                      {their2nd ? <span className={cn('text-xs font-body', same2nd ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{their2nd.flag_emoji} {their2nd.code}</span> : <span className="text-xs text-gray-300">—</span>}
                     </div>
                   </div>
                 )
@@ -122,37 +117,31 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
 
           {/* Knockout comparison */}
           {BRACKET_ROUNDS.map((round) => {
-            const diffs = round.matches.filter((m) => {
-              const myPick = me.knockoutPredictions[m.matchNumber]
-              const theirPick = other.knockoutPredictions[m.matchNumber]
-              return myPick && theirPick
-            })
-            if (diffs.length === 0) return null
+            const matchesWithPicks = round.matches.filter((m) => me.knockoutPredictions[m.matchNumber] || other.knockoutPredictions[m.matchNumber])
+            if (matchesWithPicks.length === 0) return null
+            const sameCount = matchesWithPicks.filter((m) => me.knockoutPredictions[m.matchNumber] && me.knockoutPredictions[m.matchNumber] === other.knockoutPredictions[m.matchNumber]).length
             return (
               <div key={round.id} className="glass-card overflow-hidden">
-                <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
+                <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
                   <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">{round.label}</span>
+                  <span className="text-[10px] font-mono text-[#3CAC3B]">{sameCount}/{matchesWithPicks.length} iguales</span>
                 </div>
                 <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
-                  {diffs.map((m) => {
-                    const myTeam = TEAMS_BY_ID[me.knockoutPredictions[m.matchNumber]]
-                    const theirTeam = TEAMS_BY_ID[other.knockoutPredictions[m.matchNumber]]
-                    const same = myTeam?.id === theirTeam?.id
+                  {matchesWithPicks.map((m) => {
+                    const myTeamId = me.knockoutPredictions[m.matchNumber]
+                    const theirTeamId = other.knockoutPredictions[m.matchNumber]
+                    const myTeam = myTeamId ? TEAMS_BY_ID[myTeamId] : null
+                    const theirTeam = theirTeamId ? TEAMS_BY_ID[theirTeamId] : null
+                    const same = myTeamId && myTeamId === theirTeamId
                     return (
-                      <div key={m.matchNumber} className="flex items-center px-4 py-2 gap-2">
-                        <span className="text-[10px] font-mono text-gray-400 w-7">P{m.matchNumber}</span>
+                      <div key={m.matchNumber} className="flex items-center px-4 py-2.5 gap-2">
+                        <span className="text-[10px] font-mono text-gray-400 w-4">P{m.matchNumber}</span>
                         <div className="flex-1 flex items-center gap-1">
-                          <span className={cn('text-xs font-body', same ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>
-                            {myTeam?.flag_emoji} {myTeam?.code}
-                          </span>
+                          {myTeam ? <span className={cn('text-xs font-body', same ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{myTeam.flag_emoji} {myTeam.code}</span> : <span className="text-xs text-gray-300">—</span>}
                         </div>
-                        <span className={cn('text-[10px]', same ? 'text-[#3CAC3B]' : 'text-gray-300 dark:text-gray-600')}>
-                          {same ? '=' : '≠'}
-                        </span>
+                        <span className={cn('text-[10px] w-6 text-center', same ? 'text-[#3CAC3B]' : 'text-gray-300 dark:text-gray-600')}>{same ? '✓' : '≠'}</span>
                         <div className="flex-1 flex items-center gap-1 justify-end">
-                          <span className={cn('text-xs font-body', same ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>
-                            {theirTeam?.flag_emoji} {theirTeam?.code}
-                          </span>
+                          {theirTeam ? <span className={cn('text-xs font-body', same ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{theirTeam.flag_emoji} {theirTeam.code}</span> : <span className="text-xs text-gray-300">—</span>}
                         </div>
                       </div>
                     )

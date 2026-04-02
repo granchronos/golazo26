@@ -13,7 +13,7 @@ function SubmitBtn() {
   return <Button type="submit" loading={pending} className="w-full">Crear sala</Button>
 }
 
-export function CreateRoomModal() {
+export function CreateRoomModal({ variant = 'default' }: { variant?: 'default' | 'compact' }) {
   const [open, setOpen] = useState(false)
   const [state, formAction] = useFormState(createRoom, null)
 
@@ -21,10 +21,13 @@ export function CreateRoomModal() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="btn-fwc w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-base"
+        className={variant === 'compact'
+          ? 'flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#2A398D]/10 hover:bg-[#2A398D]/20 text-[#2A398D] text-xs font-body font-medium transition-colors'
+          : 'btn-fwc w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-base'
+        }
       >
-        <Plus size={20} />
-        Crear nueva sala
+        <Plus size={variant === 'compact' ? 14 : 20} />
+        {variant === 'compact' ? 'Crear' : 'Crear nueva sala'}
       </button>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Crear sala">
