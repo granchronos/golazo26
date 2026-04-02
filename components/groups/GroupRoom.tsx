@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { Share2, Copy, Check, ArrowLeft, Trophy, BarChart2, CalendarDays, GitCompareArrows, Network } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Share2, Copy, Check, ArrowLeft, Trophy, BarChart2, CalendarDays, GitCompareArrows, Network, Users, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { PredictionMatrix } from '@/components/predictions/PredictionMatrix'
@@ -62,6 +62,7 @@ export function GroupRoom({
   const [activeTab, setActiveTab] = useState<Tab>('predictions')
   const [copied, setCopied] = useState(false)
   const [showBracket, setShowBracket] = useState(false)
+  const [showMembers, setShowMembers] = useState(false)
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(getRoomShareUrl(room.invite_slug))
@@ -125,7 +126,14 @@ export function GroupRoom({
             )}
             <div className="flex items-center gap-3 mt-1.5">
               <span className="text-[10px] font-mono text-gray-400 tracking-wider bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded">{room.code}</span>
-              <span className="text-xs text-gray-400 font-body">{members.length} miembros</span>
+              <button
+                onClick={() => setShowMembers((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-xs font-body text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/10 px-2.5 py-1 rounded-full transition-colors"
+              >
+                <Users size={12} />
+                <span className="font-medium">{members.length}</span>
+                <ChevronDown size={10} className={cn('transition-transform', showMembers && 'rotate-180')} />
+              </button>
             </div>
           </div>
           <div className="flex gap-1.5">
@@ -153,6 +161,44 @@ export function GroupRoom({
           </div>
         </div>
       </div>
+
+      {/* Expandable member list */}
+      <AnimatePresence>
+        {showMembers && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="glass-card overflow-hidden"
+          >
+            <div className="px-3 py-2 border-b border-gray-100 dark:border-white/[0.06]">
+              <span className="text-[10px] font-body font-medium text-gray-400 uppercase tracking-wider">Miembros ({members.length})</span>
+            </div>
+            <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
+              {members.map((member) => {
+                const isMe = member.user_id === currentUserId
+                return (
+                  <div key={member.user_id} className="flex items-center gap-2.5 px-3 py-2">
+                    <div className={cn(
+                      'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0',
+                      isMe ? 'bg-[#2A398D] text-white' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
+                    )}>
+                      {member.profile?.name?.[0]?.toUpperCase() || '?'}
+                    </div>
+                    <span className={cn(
+                      'text-sm font-body truncate dark:text-white',
+                      isMe && 'font-medium text-[#2A398D] dark:text-blue-400'
+                    )}>
+                      {member.profile?.name || 'Anónimo'}
+                    </span>
+                    {isMe && <span className="text-[10px] text-gray-400">(tú)</span>}
+                  </div>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Champion / Runner-up summary */}
       <BetSummary

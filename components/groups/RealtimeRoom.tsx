@@ -33,7 +33,11 @@ export function RealtimeRoom({ roomId, currentUserId }: RealtimeRoomProps) {
           router.refresh()
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Realtime subscription error for room_members — ensure table is in supabase_realtime publication')
+        }
+      })
 
     return () => { supabase.removeChannel(channel) }
   }, [roomId, currentUserId, router])
