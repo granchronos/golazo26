@@ -24,17 +24,19 @@ const NAV_ITEMS = [
 
 interface NavigationProps {
   profile: Profile | null
+  hasRooms?: boolean
 }
 
-export function MobileNav({ profile }: NavigationProps) {
+export function MobileNav({ profile, hasRooms = true }: NavigationProps) {
   const pathname = usePathname()
+  const items = hasRooms ? NAV_ITEMS : NAV_ITEMS.filter((i) => i.href === '/' || i.href === '/groups')
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 sm:hidden">
       <div className="mx-2 mb-2">
         <div className="bg-white/95 dark:bg-[#111118]/95 backdrop-blur-md border border-gray-200 dark:border-white/10 rounded-2xl">
           <div className="flex items-center justify-around px-1 py-1.5">
-            {NAV_ITEMS.map((item) => {
+            {items.map((item) => {
               const isActive = pathname === item.href
               const Icon = item.icon
               return (
@@ -67,9 +69,10 @@ export function MobileNav({ profile }: NavigationProps) {
 
 const SIDEBAR_KEY = 'golazo26_sidebar_collapsed'
 
-export function Sidebar({ profile }: NavigationProps) {
+export function Sidebar({ profile, hasRooms = true }: NavigationProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+  const sidebarItems = hasRooms ? NAV_ITEMS : NAV_ITEMS.filter((i) => i.href === '/' || i.href === '/groups')
 
   useEffect(() => {
     const stored = localStorage.getItem(SIDEBAR_KEY)
@@ -116,7 +119,7 @@ export function Sidebar({ profile }: NavigationProps) {
 
       {/* Nav items */}
       <nav className="flex-1 px-2 py-4 space-y-0.5">
-        {NAV_ITEMS.map((item) => {
+        {sidebarItems.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
           return (

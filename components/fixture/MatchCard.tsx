@@ -31,7 +31,7 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
   return (
     <motion.div
       whileHover={{ y: -2 }}
-      className="glass-card p-4 hover:shadow-md transition-shadow"
+      className="glass-card p-3 sm:p-4 hover:shadow-md transition-shadow"
     >
       {/* Top row */}
       <div className="flex items-center justify-between mb-3">
@@ -104,8 +104,8 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
       {/* Venue */}
       {!compact && (
         <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-400 font-body">
-          <MapPin size={11} />
-          <span>{match.city} — {match.venue}</span>
+          <MapPin size={11} className="flex-shrink-0" />
+          <span className="truncate">{match.city} — {match.venue}</span>
         </div>
       )}
     </motion.div>

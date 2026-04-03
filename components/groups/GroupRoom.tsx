@@ -165,18 +165,18 @@ export function GroupRoom({
           <div className="flex gap-1.5">
             <button
               onClick={() => setShowBracket(true)}
-              className="p-2 rounded-lg bg-[#2A398D]/10 hover:bg-[#2A398D]/20 transition-colors"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#2A398D]/10 hover:bg-[#2A398D]/20 transition-colors"
               title="Mi Bracket"
             >
-              <Network size={14} className="text-[#2A398D]" />
+              <Network size={16} className="text-[#2A398D]" />
             </button>
             <div className="relative" ref={shareMenuRef}>
               <button
                 onClick={() => setShowShareMenu((v) => !v)}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                 title="Compartir"
               >
-                <Share2 size={14} className="text-gray-400" />
+                <Share2 size={16} className="text-gray-400" />
               </button>
               <AnimatePresence>
                 {showShareMenu && (
@@ -184,7 +184,7 @@ export function GroupRoom({
                     initial={{ opacity: 0, scale: 0.95, y: -4 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                    className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-white/10 py-1.5 z-50"
+                    className="absolute right-0 top-full mt-1 w-[calc(100vw-2rem)] sm:w-52 max-w-[13rem] bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-white/10 py-1.5 z-50"
                   >
                     <a
                       href={getWhatsAppShareUrl(room.invite_slug, room.name)}

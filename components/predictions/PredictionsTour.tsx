@@ -63,6 +63,8 @@ export function PredictionsTour() {
   const dismiss = useCallback(() => {
     setVisible(false)
     localStorage.setItem(TOUR_KEY, '1')
+    // Scroll to top so user starts picking groups
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
   const next = useCallback(() => {

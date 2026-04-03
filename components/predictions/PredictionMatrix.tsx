@@ -154,7 +154,7 @@ export function PredictionMatrix({
       <PredictionsTour />
 
       {/* Progress + Countdown */}
-      <div id="tour-progress" className="glass-card p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+      <div id="tour-progress" className="glass-card p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-body text-gray-500">
@@ -245,7 +245,7 @@ export function PredictionMatrix({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-24 sm:bottom-8 left-1/2 -translate-x-1/2 z-40"
+            className="fixed bottom-24 sm:bottom-8 left-1/2 -translate-x-1/2 z-50"
           >
             <button
               id="tour-save-all"

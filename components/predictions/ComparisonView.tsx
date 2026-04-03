@@ -49,7 +49,7 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
             key={m.userId}
             onClick={() => setCompareWith(m.userId === compareWith ? null : m.userId)}
             className={cn(
-              'px-3 py-1.5 rounded-lg text-xs font-body font-medium transition-colors',
+              'px-3 py-2 rounded-lg text-xs font-body font-medium transition-colors min-h-[44px] flex items-center',
               compareWith === m.userId
                 ? 'bg-[#2A398D] text-white'
                 : 'bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10'
@@ -63,7 +63,7 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
       {other && me && (
         <div className="space-y-3">
           {/* Column headers */}
-          <div className="flex items-center px-4 gap-2">
+          <div className="flex items-center px-2 sm:px-4 gap-2">
             <span className="w-4" />
             <span className="flex-1 text-[10px] font-display uppercase tracking-wider text-[#2A398D] dark:text-blue-400">Tú</span>
             <span className="w-6" />
@@ -96,7 +96,7 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                 const their1st = theirPred ? TEAMS_BY_ID[theirPred.team_1st_id] : null
                 const their2nd = theirPred ? TEAMS_BY_ID[theirPred.team_2nd_id] : null
                 return (
-                  <div key={letter} className="flex items-center px-4 py-2.5 gap-2">
+                  <div key={letter} className="flex items-center px-2 sm:px-4 py-2.5 gap-1.5 sm:gap-2">
                     <span className="text-[10px] font-mono font-bold text-gray-400 w-4">{letter}</span>
                     <div className="flex-1 flex items-center gap-1.5">
                       {my1st ? <span className={cn('text-xs font-body', same1st ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{my1st.flag_emoji} {my1st.code}</span> : <span className="text-xs text-gray-300">—</span>}
@@ -134,7 +134,7 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                     const theirTeam = theirTeamId ? TEAMS_BY_ID[theirTeamId] : null
                     const same = myTeamId && myTeamId === theirTeamId
                     return (
-                      <div key={m.matchNumber} className="flex items-center px-4 py-2.5 gap-2">
+                      <div key={m.matchNumber} className="flex items-center px-2 sm:px-4 py-2.5 gap-1.5 sm:gap-2">
                         <span className="text-[10px] font-mono text-gray-400 w-4">P{m.matchNumber}</span>
                         <div className="flex-1 flex items-center gap-1">
                           {myTeam ? <span className={cn('text-xs font-body', same ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{myTeam.flag_emoji} {myTeam.code}</span> : <span className="text-xs text-gray-300">—</span>}

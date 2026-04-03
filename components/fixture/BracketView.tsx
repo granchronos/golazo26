@@ -27,7 +27,7 @@ function BracketMatchBox({ match }: { match: BracketMatch }) {
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
-      className="glass-card p-2 min-w-[160px] text-xs font-body"
+      className="glass-card p-1.5 sm:p-2 min-w-[130px] sm:min-w-[160px] text-xs font-body"
     >
       <div className={cn(
         'flex items-center gap-2 py-1 px-1 rounded',
@@ -69,9 +69,9 @@ export function BracketView({ rounds }: BracketViewProps) {
 
   return (
     <div className="overflow-x-auto scrollbar-hide">
-      <div className="flex gap-8 min-w-max py-6 px-4">
+      <div className="flex gap-4 sm:gap-8 min-w-max py-4 sm:py-6 px-2 sm:px-4">
         {rounds.map((round, rIdx) => (
-          <div key={round.label} className="flex flex-col justify-around gap-4">
+          <div key={round.label} className="flex flex-col justify-around gap-3 sm:gap-4">
             {/* Round label */}
             <div className="text-center mb-2">
               <span className="font-display text-lg tracking-wide gradient-text">{round.label}</span>
@@ -95,6 +95,7 @@ export function BracketView({ rounds }: BracketViewProps) {
           </div>
         ))}
       </div>
+      <p className="sm:hidden text-center text-[10px] text-gray-400 pb-2">← Desliza para ver más →</p>
     </div>
   )
 }
