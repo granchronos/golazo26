@@ -428,10 +428,11 @@ export function GroupRoom({
       </div>
 
       {/* Bracket Popup */}
-      <Modal open={showBracket} onClose={() => setShowBracket(false)} title="Mi Bracket" size="lg">
-        <div className="px-4 pb-4">
-          <BracketPopup knockoutPredictions={knockoutPredictions} />
-        </div>
+      <Modal open={showBracket} onClose={() => setShowBracket(false)} title="Mi Bracket" size="xl">
+        <BracketPopup
+          knockoutPredictions={knockoutPredictions}
+          userName={members.find((m) => m.user_id === currentUserId)?.profile?.name}
+        />
       </Modal>
     </div>
   )

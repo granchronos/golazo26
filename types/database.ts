@@ -190,6 +190,7 @@ export interface Database {
         Update: {
           name?: string
           description?: string | null
+          admin_id?: string
           image_url?: string | null
         }
         Relationships: []

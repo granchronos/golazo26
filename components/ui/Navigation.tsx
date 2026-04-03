@@ -3,14 +3,17 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { useFormStatus } from 'react-dom'
 import { motion } from 'framer-motion'
 import {
   Home,
   Calendar,
   Users,
   LogOut,
+  Loader2,
   PanelLeftClose,
   PanelLeft,
+  UserCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { logout } from '@/app/actions/auth'
@@ -60,6 +63,24 @@ export function MobileNav({ profile, hasRooms = true }: NavigationProps) {
                 </Link>
               )
             })}
+            {/* Profile icon */}
+            <Link
+              href="/profile"
+              className={cn(
+                'relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors min-w-[48px]',
+                pathname === '/profile'
+                  ? 'text-[#2A398D] dark:text-blue-400'
+                  : 'text-gray-400 dark:text-gray-500'
+              )}
+            >
+              {pathname === '/profile' && (
+                <motion.div
+                  layoutId="mobile-active"
+                  className="absolute inset-0 bg-[#2A398D]/8 dark:bg-[#2A398D]/15 rounded-xl"
+                />
+              )}
+              <UserCircle size={20} strokeWidth={pathname === '/profile' ? 2.5 : 1.5} className="relative z-10" />
+            </Link>
           </div>
         </div>
       </div>
@@ -151,36 +172,26 @@ export function Sidebar({ profile, hasRooms = true }: NavigationProps) {
       {/* User & Logout */}
       <div className="px-2 py-4 border-t border-gray-100 dark:border-white/[0.06] space-y-2">
         {profile && !collapsed && (
-          <div className="flex items-center gap-2.5 px-3 py-1">
+          <Link href="/profile" className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors">
             <div className="w-7 h-7 rounded-full bg-[#2A398D] flex items-center justify-center flex-shrink-0">
               <span className="text-white text-xs font-semibold font-body">
                 {profile.name?.[0]?.toUpperCase()}
               </span>
             </div>
             <p className="text-[13px] font-body font-medium truncate dark:text-white">{profile.name}</p>
-          </div>
+          </Link>
         )}
         {profile && collapsed && (
-          <div className="flex justify-center py-1">
-            <div className="w-7 h-7 rounded-full bg-[#2A398D] flex items-center justify-center">
+          <Link href="/profile" className="flex justify-center py-1">
+            <div className="w-7 h-7 rounded-full bg-[#2A398D] flex items-center justify-center hover:ring-2 hover:ring-[#2A398D]/30 transition-shadow">
               <span className="text-white text-xs font-semibold font-body">
                 {profile.name?.[0]?.toUpperCase()}
               </span>
             </div>
-          </div>
+          </Link>
         )}
         <form action={logout}>
-          <button
-            type="submit"
-            title={collapsed ? 'Cerrar sesión' : undefined}
-            className={cn(
-              'w-full flex items-center gap-2.5 py-2 rounded-xl text-[13px] font-body text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors',
-              collapsed ? 'justify-center px-0' : 'px-3'
-            )}
-          >
-            <LogOut size={14} />
-            {!collapsed && 'Cerrar sesión'}
-          </button>
+          <LogoutButton collapsed={collapsed} />
         </form>
       </div>
     </aside>
@@ -204,4 +215,22 @@ export function useSidebarWidth() {
   // Return consistent default before mount to avoid hydration mismatch
   if (!mounted) return 'sm:pl-56'
   return collapsed ? 'sm:pl-16' : 'sm:pl-56'
+}
+
+function LogoutButton({ collapsed }: { collapsed: boolean }) {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      title={collapsed ? 'Cerrar sesión' : undefined}
+      className={cn(
+        'w-full flex items-center gap-2.5 py-2 rounded-xl text-[13px] font-body text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 disabled:opacity-50 transition-colors',
+        collapsed ? 'justify-center px-0' : 'px-3'
+      )}
+    >
+      {pending ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />}
+      {!collapsed && (pending ? 'Saliendo...' : 'Cerrar sesión')}
+    </button>
+  )
 }
