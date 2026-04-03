@@ -3,7 +3,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { PageTransition } from '@/components/animations/PageTransition'
 import { GroupRoom } from '@/components/groups/GroupRoom'
 import { GROUP_LETTERS } from '@/lib/constants/teams'
-import type { Room, Profile, Match, GroupLetter, GroupPrediction } from '@/types/database'
+import type { Room, Profile, Match, GroupLetter, GroupPrediction, PaymentStatus } from '@/types/database'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -29,7 +29,7 @@ export default async function GroupDetailPage({ params }: PageProps) {
 
   // Parallel fetch: members + all group predictions + all knockout predictions + all matches
   const [{ data: rawMembers, error: membersError }, { data: allGroupPreds }, { data: allKnockoutPreds }, { data: rawMatches }] = await Promise.all([
-    admin.from('room_members').select('user_id, joined_at').eq('room_id', id),
+    admin.from('room_members').select('user_id, joined_at, payment_status').eq('room_id', id),
     admin.from('group_predictions').select('*').eq('room_id', id),
     admin.from('predictions').select('user_id, match_id, predicted_winner_id, predicted_home_score, predicted_away_score, matches!inner(match_number)').eq('room_id', id),
     admin.from('matches').select('*').order('match_number', { ascending: true }),
@@ -57,6 +57,7 @@ export default async function GroupDetailPage({ params }: PageProps) {
     user_id: m.user_id,
     profile: profilesMap.get(m.user_id) ?? { id: '', user_id: m.user_id, name: 'Anónimo', avatar_url: null, created_at: '', updated_at: '' } as Profile,
     total_points: scoresMap.get(m.user_id) ?? 0,
+    payment_status: (m.payment_status as 'pending' | 'confirmed' | 'exempt') ?? 'pending',
   }))
 
   // Current user's group predictions
