@@ -331,7 +331,7 @@ export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProp
     try {
       const dataUrl = await toPng(bracketRef.current, {
         backgroundColor: '#ffffff',
-        pixelRatio: 2,
+        pixelRatio: 3,
         style: { padding: '24px' },
       })
       const res = await fetch(dataUrl)
@@ -353,13 +353,9 @@ export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProp
     const file = new File([blob], fileName, { type: 'image/png' })
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({
-          files: [file],
-          title: 'Mi Bracket - Golazo 2026',
-          text: champion
-            ? `Mi campeón: ${champion.name} ${champion.flag_emoji}`
-            : 'Mi bracket del Mundial 2026',
-        })
+        // Only send files — adding title/text causes some browsers
+        // to append the file path into the shared message
+        await navigator.share({ files: [file] })
       } catch {
         /* cancelled */
       }
@@ -372,7 +368,7 @@ export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProp
       URL.revokeObjectURL(url)
     }
     setExporting(false)
-  }, [generateImage, fileName, champion])
+  }, [generateImage, fileName])
 
   const handleDownload = useCallback(async () => {
     setExporting(true)
