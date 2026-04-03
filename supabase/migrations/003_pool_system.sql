@@ -6,8 +6,8 @@
 ALTER TABLE rooms
   ADD COLUMN pool_enabled    BOOLEAN NOT NULL DEFAULT false,
   ADD COLUMN pool_buy_in     INTEGER NOT NULL DEFAULT 0,
-  ADD COLUMN pool_currency   TEXT NOT NULL DEFAULT 'MXN'
-    CHECK (pool_currency IN ('MXN','USD','EUR','PEN','COP','ARS','CLP','BRL')),
+  ADD COLUMN pool_currency   TEXT NOT NULL DEFAULT 'PEN'
+    CHECK (pool_currency IN ('PEN','MXN','USD','EUR','COP','ARS','CLP','BRL')),
   ADD COLUMN pool_split      JSONB NOT NULL DEFAULT '[{"place":1,"pct":70},{"place":2,"pct":20},{"place":3,"pct":10}]';
 
 -- Add payment tracking to room_members

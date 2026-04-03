@@ -15,10 +15,10 @@ interface PoolConfigPanelProps {
 }
 
 const CURRENCY_OPTIONS = [
+  { value: 'PEN', label: '🇵🇪 PEN', symbol: 'S/' },
   { value: 'MXN', label: '🇲🇽 MXN', symbol: '$' },
   { value: 'USD', label: '🇺🇸 USD', symbol: '$' },
   { value: 'EUR', label: '🇪🇺 EUR', symbol: '€' },
-  { value: 'PEN', label: '🇵🇪 PEN', symbol: 'S/' },
   { value: 'COP', label: '🇨🇴 COP', symbol: '$' },
   { value: 'ARS', label: '🇦🇷 ARS', symbol: '$' },
   { value: 'CLP', label: '🇨🇱 CLP', symbol: '$' },
@@ -39,7 +39,7 @@ export function PoolConfigPanel({ room, onClose, open }: PoolConfigPanelProps) {
 
   const [enabled, setEnabled] = useState(room.pool_enabled)
   const [buyIn, setBuyIn] = useState(room.pool_buy_in || 100)
-  const [currency, setCurrency] = useState(room.pool_currency || 'MXN')
+  const [currency, setCurrency] = useState(room.pool_currency || 'PEN')
   const [split, setSplit] = useState<PoolSplit[]>(poolSplit)
   const [isPending, startTransition] = useTransition()
 

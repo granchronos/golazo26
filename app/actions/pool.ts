@@ -94,7 +94,7 @@ export async function updatePoolConfig(
     return { error: 'Monto de entrada inválido' }
   }
 
-  const validCurrencies = ['MXN', 'USD', 'EUR', 'PEN', 'COP', 'ARS', 'CLP', 'BRL']
+  const validCurrencies = ['PEN', 'MXN', 'USD', 'EUR', 'COP', 'ARS', 'CLP', 'BRL']
   if (!validCurrencies.includes(currency)) {
     return { error: 'Moneda inválida' }
   }
