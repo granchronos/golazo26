@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Share2, Copy, Check, ArrowLeft, Trophy, BarChart2, CalendarDays, GitCompareArrows, Network, Users, ChevronDown, X, MessageCircle } from 'lucide-react'
+import { Share2, Copy, Check, ArrowLeft, Trophy, BarChart2, CalendarDays, GitCompareArrows, Network, Users, ChevronDown, X, MessageCircle, Coins } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { PredictionMatrix } from '@/components/predictions/PredictionMatrix'
@@ -11,16 +11,21 @@ import { BetSummary } from '@/components/predictions/BetSummary'
 import { ComparisonView } from '@/components/predictions/ComparisonView'
 import { BracketPopup } from '@/components/predictions/BracketPopup'
 import { RealtimeRoom } from '@/components/groups/RealtimeRoom'
+import { PoolConfigButton } from '@/components/pool/PoolConfigPanel'
+import { PoolBanner } from '@/components/pool/PoolBanner'
+import { PaymentManager } from '@/components/pool/PaymentManager'
+import { PrizeBreakdown } from '@/components/pool/PrizeBreakdown'
 import { Modal } from '@/components/ui/Modal'
 import { getWhatsAppShareUrl, getFacebookShareUrl, getTwitterShareUrl, getRoomShareUrl } from '@/lib/utils/rooms'
 import { cn } from '@/lib/utils/cn'
 import { GROUP_LETTERS } from '@/lib/constants/teams'
-import type { Room, Profile, Match, GroupLetter, GroupPrediction } from '@/types/database'
+import type { Room, Profile, Match, GroupLetter, GroupPrediction, PaymentStatus } from '@/types/database'
 
 interface RoomMemberWithProfile {
   user_id: string
   profile: Profile | null
   total_points: number
+  payment_status: PaymentStatus
 }
 
 interface MemberPredictions {
@@ -41,9 +46,9 @@ interface GroupRoomProps {
   allMembersPredictions: MemberPredictions[]
 }
 
-type Tab = 'predictions' | 'results' | 'leaderboard' | 'comparison'
+type Tab = 'predictions' | 'results' | 'leaderboard' | 'comparison' | 'pool'
 
-const TABS: { id: Tab; label: string; icon: typeof Trophy }[] = [
+const BASE_TABS: { id: Tab; label: string; icon: typeof Trophy }[] = [
   { id: 'predictions', label: 'Apuestas', icon: Trophy },
   { id: 'results', label: 'Resultados', icon: CalendarDays },
   { id: 'leaderboard', label: 'Ranking', icon: BarChart2 },
@@ -66,6 +71,18 @@ export function GroupRoom({
   const [showMembers, setShowMembers] = useState(false)
   const [showShareMenu, setShowShareMenu] = useState(false)
   const shareMenuRef = useRef<HTMLDivElement>(null)
+
+  const isAdmin = room.admin_id === currentUserId
+
+  console.log('[DEBUG Pool]', { admin_id: room.admin_id, currentUserId, isAdmin: room.admin_id === currentUserId, pool_enabled: room.pool_enabled, roomKeys: Object.keys(room) })
+
+  const TABS = useMemo(() => {
+    const tabs = [...BASE_TABS]
+    if (room.pool_enabled) {
+      tabs.push({ id: 'pool', label: 'Polla', icon: Coins })
+    }
+    return tabs
+  }, [room.pool_enabled])
 
   // Close share menu on outside click
   useEffect(() => {
@@ -163,6 +180,7 @@ export function GroupRoom({
             </div>
           </div>
           <div className="flex gap-1.5">
+            {isAdmin && <PoolConfigButton room={room} />}
             <button
               onClick={() => setShowBracket(true)}
               className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#2A398D]/10 hover:bg-[#2A398D]/20 transition-colors"
@@ -303,6 +321,16 @@ export function GroupRoom({
         allMembersPredictions={allMembersChampions}
       />
 
+      {/* Pool banner */}
+      {room.pool_enabled && (
+        <PoolBanner
+          room={room}
+          paidCount={members.filter((m) => m.payment_status === 'confirmed' || m.payment_status === 'exempt').length}
+          totalMembers={members.length}
+          myPaymentStatus={members.find((m) => m.user_id === currentUserId)?.payment_status ?? 'pending'}
+        />
+      )}
+
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-gray-100 dark:bg-white/[0.04] rounded-xl">
         {TABS.map((tab) => {
@@ -412,6 +440,14 @@ export function GroupRoom({
                   <div className="text-right flex-shrink-0">
                     <span className="font-mono text-sm font-bold text-gray-700 dark:text-gray-300">{member.total_points}</span>
                     <span className="text-[10px] text-gray-400 ml-0.5">pts</span>
+                    {room.pool_enabled && (
+                      <div className="mt-0.5">
+                        {member.payment_status === 'confirmed' || member.payment_status === 'exempt'
+                          ? <span className="text-[9px] text-[#C9A84C]">💰</span>
+                          : <span className="text-[9px] text-gray-300 dark:text-gray-600">sin pago</span>
+                        }
+                      </div>
+                    )}
                   </div>
                 </div>
               )
@@ -426,6 +462,35 @@ export function GroupRoom({
           allMembers={comparisonMembers}
         />
       </div>
+
+      {room.pool_enabled && (
+        <div className={activeTab === 'pool' ? '' : 'hidden'}>
+          <div className="space-y-4">
+            <PaymentManager
+              room={room}
+              members={members.map((m) => ({
+                user_id: m.user_id,
+                profile: m.profile,
+                total_points: m.total_points,
+                payment_status: m.payment_status,
+              }))}
+              currentUserId={currentUserId}
+              isAdmin={isAdmin}
+            />
+            <PrizeBreakdown
+              room={room}
+              rankedMembers={sortedMembers.map((m, idx) => ({
+                user_id: m.user_id,
+                name: m.profile?.name || 'Anónimo',
+                total_points: m.total_points,
+                payment_status: m.payment_status,
+                rank: idx + 1,
+              }))}
+              currentUserId={currentUserId}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Bracket Popup */}
       <Modal open={showBracket} onClose={() => setShowBracket(false)} title="Mi Bracket" size="xl">

@@ -175,6 +175,10 @@ export interface Database {
           invite_slug: string
           admin_id: string
           image_url: string | null
+          pool_enabled: boolean
+          pool_buy_in: number
+          pool_currency: string
+          pool_split: Json
           created_at: string
         }
         Insert: {
@@ -185,6 +189,10 @@ export interface Database {
           invite_slug: string
           admin_id: string
           image_url?: string | null
+          pool_enabled?: boolean
+          pool_buy_in?: number
+          pool_currency?: string
+          pool_split?: Json
           created_at?: string
         }
         Update: {
@@ -192,6 +200,10 @@ export interface Database {
           description?: string | null
           admin_id?: string
           image_url?: string | null
+          pool_enabled?: boolean
+          pool_buy_in?: number
+          pool_currency?: string
+          pool_split?: Json
         }
         Relationships: []
       }
@@ -201,14 +213,24 @@ export interface Database {
           room_id: string
           user_id: string
           joined_at: string
+          payment_status: 'pending' | 'confirmed' | 'exempt'
+          payment_confirmed_at: string | null
+          payment_confirmed_by: string | null
         }
         Insert: {
           id?: string
           room_id: string
           user_id: string
           joined_at?: string
+          payment_status?: 'pending' | 'confirmed' | 'exempt'
+          payment_confirmed_at?: string | null
+          payment_confirmed_by?: string | null
         }
-        Update: Record<string, never>
+        Update: {
+          payment_status?: 'pending' | 'confirmed' | 'exempt'
+          payment_confirmed_at?: string | null
+          payment_confirmed_by?: string | null
+        }
         Relationships: []
       }
       scores: {
@@ -276,3 +298,9 @@ export type Room = Database['public']['Tables']['rooms']['Row']
 export type RoomMember = Database['public']['Tables']['room_members']['Row']
 export type Score = Database['public']['Tables']['scores']['Row']
 export type LeaderboardEntry = Database['public']['Views']['leaderboard']['Row']
+
+export type PaymentStatus = 'pending' | 'confirmed' | 'exempt'
+export interface PoolSplit {
+  place: number
+  pct: number
+}
