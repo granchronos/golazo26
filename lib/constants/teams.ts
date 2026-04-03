@@ -110,3 +110,72 @@ export const CONFEDERATION_COLORS: Record<Confederation, string> = {
   AFC: '#FF4500',
   OFC: '#00AACC',
 }
+
+// ── World Cup Historical Data ──────────────────────────────────────
+
+export interface WCHistoryEntry {
+  /** Number of World Cup titles */
+  titles: number
+  /** Best achievement if no titles */
+  best?: 'Final' | 'Semi' | 'Cuartos' | 'Octavos' | 'Grupos' | 'Debut'
+  /** Year of best achievement (most recent occurrence) */
+  bestYear?: number
+}
+
+export const WC_HISTORY: Record<string, WCHistoryEntry> = {
+  // Champions
+  bra: { titles: 5 },
+  ger: { titles: 4 },
+  arg: { titles: 3 },
+  fra: { titles: 2 },
+  uru: { titles: 2 },
+  eng: { titles: 1 },
+  esp: { titles: 1 },
+  // Runners-up (never won)
+  ned: { titles: 0, best: 'Final', bestYear: 2010 },
+  cro: { titles: 0, best: 'Final', bestYear: 2018 },
+  cze: { titles: 0, best: 'Final', bestYear: 1962 }, // as Czechoslovakia
+  swe: { titles: 0, best: 'Final', bestYear: 1958 },
+  // Semi-finalists
+  tur: { titles: 0, best: 'Semi', bestYear: 2002 },
+  kor: { titles: 0, best: 'Semi', bestYear: 2002 },
+  bel: { titles: 0, best: 'Semi', bestYear: 2018 },
+  mar: { titles: 0, best: 'Semi', bestYear: 2022 },
+  por: { titles: 0, best: 'Semi', bestYear: 2006 },
+  aut: { titles: 0, best: 'Semi', bestYear: 1954 },
+  usa: { titles: 0, best: 'Semi', bestYear: 1930 },
+  // Quarter-finalists
+  mex: { titles: 0, best: 'Cuartos', bestYear: 1986 },
+  pry: { titles: 0, best: 'Cuartos', bestYear: 2010 },
+  col: { titles: 0, best: 'Cuartos', bestYear: 2014 },
+  sui: { titles: 0, best: 'Cuartos', bestYear: 1954 },
+  sen: { titles: 0, best: 'Cuartos', bestYear: 2002 },
+  gha: { titles: 0, best: 'Cuartos', bestYear: 2010 },
+  // Round of 16
+  jpn: { titles: 0, best: 'Octavos', bestYear: 2022 },
+  aus: { titles: 0, best: 'Octavos', bestYear: 2022 },
+  ecu: { titles: 0, best: 'Octavos', bestYear: 2006 },
+  alg: { titles: 0, best: 'Octavos', bestYear: 2014 },
+  ksa: { titles: 0, best: 'Octavos', bestYear: 1994 },
+  nor: { titles: 0, best: 'Octavos', bestYear: 1998 },
+  // Group stage
+  rsa: { titles: 0, best: 'Grupos', bestYear: 2010 },
+  can: { titles: 0, best: 'Grupos', bestYear: 2022 },
+  bih: { titles: 0, best: 'Grupos', bestYear: 2014 },
+  qat: { titles: 0, best: 'Grupos', bestYear: 2022 },
+  hai: { titles: 0, best: 'Grupos', bestYear: 1974 },
+  sco: { titles: 0, best: 'Grupos', bestYear: 1998 },
+  tun: { titles: 0, best: 'Grupos', bestYear: 2022 },
+  egy: { titles: 0, best: 'Grupos', bestYear: 1990 },
+  irn: { titles: 0, best: 'Grupos', bestYear: 2022 },
+  nzl: { titles: 0, best: 'Grupos', bestYear: 2010 },
+  irq: { titles: 0, best: 'Grupos', bestYear: 1986 },
+  civ: { titles: 0, best: 'Grupos', bestYear: 2014 },
+  cod: { titles: 0, best: 'Grupos', bestYear: 1974 },
+  pan: { titles: 0, best: 'Grupos', bestYear: 2018 },
+  // Debut (first World Cup ever)
+  cuw: { titles: 0, best: 'Debut' },
+  cpv: { titles: 0, best: 'Debut' },
+  uzb: { titles: 0, best: 'Debut' },
+  jor: { titles: 0, best: 'Debut' },
+}
