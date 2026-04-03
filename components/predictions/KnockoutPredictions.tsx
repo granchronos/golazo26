@@ -148,6 +148,15 @@ export function KnockoutPredictions({
                   className="overflow-hidden"
                 >
                   <div className="border-t border-gray-100 dark:border-white/[0.06] divide-y divide-gray-50 dark:divide-white/[0.04]">
+                    {round.id === 'round_of_32' && (
+                      <div className="px-4 py-2.5 bg-[#2A398D]/[0.03] dark:bg-[#2A398D]/[0.06]">
+                        <p className="text-[10px] font-body text-gray-500 dark:text-gray-400 leading-relaxed">
+                          <span className="font-semibold text-[#2A398D] dark:text-blue-400">Formato 2026:</span>{' '}
+                          12 grupos × 2 clasificados = 24 equipos + los <span className="font-semibold">8 mejores terceros</span> de los 12 grupos.
+                          Elige al ganador de cada enfrentamiento entre los terceros de sus respectivos grupos.
+                        </p>
+                      </div>
+                    )}
                     {round.matches.map((matchDef) => (
                       <MatchCard
                         key={matchDef.matchNumber}
@@ -208,51 +217,61 @@ function MatchCard({
   })
 
   if (isPool) {
-    // Pool match: flatten teams from both home and away pool sources
+    // Pool match: split into two sides (home pool vs away pool)
     const homeSource = matchDef.home.source
     const awaySource = matchDef.away.source
     const homeGroups = homeSource.kind === '3rd_pool' ? homeSource.groups : null
     const awayGroups = awaySource.kind === '3rd_pool' ? awaySource.groups : null
-    const poolTeams = [
-      ...(homeGroups ? getPoolTeams(homeGroups) : []),
-      ...(awayGroups ? getPoolTeams(awayGroups) : []),
-    ]
+    const homePoolTeams = homeGroups ? getPoolTeams(homeGroups) : []
+    const awayPoolTeams = awayGroups ? getPoolTeams(awayGroups) : []
+    const noTeams = homePoolTeams.length === 0 && awayPoolTeams.length === 0
 
     return (
-      <div className="px-4 py-3 space-y-2">
+      <div className="px-4 py-3 space-y-2.5">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] font-mono text-gray-400">
-              P{matchDef.matchNumber} · {matchDef.home.label} vs {matchDef.away.label}
+              P{matchDef.matchNumber} · {dateLabel} · {timeLabel}
             </p>
-            <p className="text-[10px] text-gray-400 font-body">{dateLabel} · {timeLabel}</p>
           </div>
           <SaveIndicator isSaving={isSaving} pick={pick} />
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {poolTeams.length === 0 ? (
-            <p className="text-xs text-gray-400 font-body italic">
-              Llena primero tus pronósticos de grupos para ver los equipos disponibles
-            </p>
-          ) : (
-            poolTeams.map((team) => (
-              <button
-                key={team.id}
-                onClick={() => onPick(matchDef.matchNumber, team.id)}
-                disabled={isSaving}
-                className={cn(
-                  'flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-body transition-all',
-                  pick === team.id
-                    ? 'bg-[#2A398D] border-[#2A398D] text-white font-semibold'
-                    : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-[#2A398D]/40 hover:bg-[#2A398D]/5'
-                )}
-              >
-                <span>{team.flag_emoji}</span>
-                <span>{team.code}</span>
-              </button>
-            ))
-          )}
-        </div>
+
+        {noTeams ? (
+          <p className="text-xs text-gray-400 font-body italic">
+            Llena primero tus pronósticos de grupos para ver los equipos disponibles
+          </p>
+        ) : (
+          <div className="flex items-stretch gap-2">
+            {/* Home pool */}
+            <PoolSide
+              label={matchDef.home.label}
+              teams={homePoolTeams}
+              pick={pick}
+              isSaving={isSaving}
+              onPick={(teamId) => onPick(matchDef.matchNumber, teamId)}
+            />
+
+            <div className="flex items-center justify-center w-7 flex-shrink-0">
+              <span className="text-[10px] font-mono text-gray-300 dark:text-white/20">vs</span>
+            </div>
+
+            {/* Away pool */}
+            <PoolSide
+              label={matchDef.away.label}
+              teams={awayPoolTeams}
+              pick={pick}
+              isSaving={isSaving}
+              onPick={(teamId) => onPick(matchDef.matchNumber, teamId)}
+            />
+          </div>
+        )}
+
+        {pick && (
+          <p className="text-[10px] text-center font-body text-[#3CAC3B]">
+            Ganador: {TEAMS_BY_ID[pick]?.flag_emoji} {TEAMS_BY_ID[pick]?.name}
+          </p>
+        )}
       </div>
     )
   }
@@ -358,6 +377,57 @@ function TeamButton({ team, label, isPicked, isLoser, disabled, isFinal, onClick
         </span>
       )}
     </button>
+  )
+}
+
+// ─── Pool Side (3rd-place column) ─────────────────────────────────────
+
+function PoolSide({
+  label,
+  teams,
+  pick,
+  isSaving,
+  onPick,
+}: {
+  label: string
+  teams: TeamData[]
+  pick: string | null
+  isSaving: boolean
+  onPick: (teamId: string) => void
+}) {
+  const hasPick = teams.some((t) => t.id === pick)
+  return (
+    <div
+      className={cn(
+        'flex-1 rounded-xl border p-2 transition-all',
+        hasPick
+          ? 'border-[#2A398D] bg-[#2A398D]/5'
+          : 'border-gray-200 dark:border-white/[0.08]'
+      )}
+    >
+      <p className="text-[9px] font-body text-gray-400 text-center mb-1.5 leading-tight">
+        {label}
+      </p>
+      <div className="flex flex-col gap-1">
+        {teams.map((team) => (
+          <button
+            key={team.id}
+            onClick={() => onPick(team.id)}
+            disabled={isSaving}
+            className={cn(
+              'flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-body transition-all',
+              pick === team.id
+                ? 'bg-[#2A398D] text-white font-semibold shadow-sm'
+                : 'hover:bg-gray-50 dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300'
+            )}
+          >
+            <span className="text-sm leading-none">{team.flag_emoji}</span>
+            <span className="flex-1 text-left">{team.name}</span>
+            <WCBadge teamId={team.id} size="xs" className={pick === team.id ? '!text-white/70' : ''} />
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 
