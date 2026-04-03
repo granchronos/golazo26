@@ -74,6 +74,8 @@ export function GroupRoom({
 
   const isAdmin = room.admin_id === currentUserId
 
+  console.log('[DEBUG Pool]', { admin_id: room.admin_id, currentUserId, isAdmin: room.admin_id === currentUserId, pool_enabled: room.pool_enabled, roomKeys: Object.keys(room) })
+
   const TABS = useMemo(() => {
     const tabs = [...BASE_TABS]
     if (room.pool_enabled) {
