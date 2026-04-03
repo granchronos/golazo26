@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion'
 import { Coins, CheckCircle2, Clock } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
 import type { Room, PaymentStatus } from '@/types/database'
 
 interface PoolBannerProps {
@@ -44,15 +43,9 @@ export function PoolBanner({ room, paidCount, totalMembers, myPaymentStatus }: P
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          {myPaymentStatus === 'confirmed' || myPaymentStatus === 'exempt' ? (
-            <span className={cn(
-              'inline-flex items-center gap-1 text-[10px] font-body font-medium px-2 py-0.5 rounded-full',
-              myPaymentStatus === 'exempt'
-                ? 'text-[#2A398D] bg-[#2A398D]/10'
-                : 'text-[#3CAC3B] bg-[#3CAC3B]/10'
-            )}>
-              <CheckCircle2 size={10} />
-              {myPaymentStatus === 'exempt' ? 'Admin' : 'Pagado'}
+          {myPaymentStatus === 'confirmed' ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-body font-medium px-2 py-0.5 rounded-full text-[#3CAC3B] bg-[#3CAC3B]/10">
+              <CheckCircle2 size={10} /> Pagado
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 text-[10px] font-body font-medium text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">

@@ -50,19 +50,8 @@ export async function togglePool(roomId: string, enabled: boolean) {
 
   if (dbError) return { error: 'Error actualizando la sala' }
 
-  if (enabled) {
-    // Set admin as exempt
-    await admin!
-      .from('room_members')
-      .update({
-        payment_status: 'exempt' as const,
-        payment_confirmed_at: new Date().toISOString(),
-        payment_confirmed_by: user!.id,
-      })
-      .eq('room_id', roomId)
-      .eq('user_id', user!.id)
-  } else {
-    // Reset all payment statuses
+  if (!enabled) {
+    // Reset all payment statuses when disabling
     await admin!
       .from('room_members')
       .update({
@@ -150,17 +139,6 @@ export async function confirmPayment(roomId: string, memberId: string) {
 export async function revokePayment(roomId: string, memberId: string) {
   const { error, admin } = await verifyAdmin(roomId)
   if (error) return { error }
-
-  // Don't allow revoking admin's exempt status
-  const { data: room } = await admin!
-    .from('rooms')
-    .select('admin_id')
-    .eq('id', roomId)
-    .single()
-
-  if (room?.admin_id === memberId) {
-    return { error: 'No se puede revocar el estado del admin' }
-  }
 
   const { error: dbError } = await admin!
     .from('room_members')

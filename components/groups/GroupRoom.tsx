@@ -325,7 +325,7 @@ export function GroupRoom({
       {room.pool_enabled && (
         <PoolBanner
           room={room}
-          paidCount={members.filter((m) => m.payment_status === 'confirmed' || m.payment_status === 'exempt').length}
+          paidCount={members.filter((m) => m.payment_status === 'confirmed').length}
           totalMembers={members.length}
           myPaymentStatus={members.find((m) => m.user_id === currentUserId)?.payment_status ?? 'pending'}
         />
@@ -442,7 +442,7 @@ export function GroupRoom({
                     <span className="text-[10px] text-gray-400 ml-0.5">pts</span>
                     {room.pool_enabled && (
                       <div className="mt-0.5">
-                        {member.payment_status === 'confirmed' || member.payment_status === 'exempt'
+                        {member.payment_status === 'confirmed'
                           ? <span className="text-[9px] text-[#C9A84C]">💰</span>
                           : <span className="text-[9px] text-gray-300 dark:text-gray-600">sin pago</span>
                         }

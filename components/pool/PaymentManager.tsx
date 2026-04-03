@@ -29,8 +29,8 @@ export function PaymentManager({ room, members, currentUserId, isAdmin }: Paymen
   const [isPending, startTransition] = useTransition()
 
   const symbol = CURRENCY_SYMBOLS[room.pool_currency] || '$'
-  const paidCount = members.filter((m) => m.payment_status === 'confirmed' || m.payment_status === 'exempt').length
-  const potTotal = members.filter((m) => m.payment_status === 'confirmed').length * room.pool_buy_in
+  const paidCount = members.filter((m) => m.payment_status === 'confirmed').length
+  const potTotal = paidCount * room.pool_buy_in
   const poolSplit = Array.isArray(room.pool_split)
     ? (room.pool_split as unknown as PoolSplit[])
     : []
@@ -51,9 +51,9 @@ export function PaymentManager({ room, members, currentUserId, isAdmin }: Paymen
     })
   }
 
-  // Sort: admin first, then confirmed, then pending
+  // Sort: confirmed first, then pending
   const sorted = [...members].sort((a, b) => {
-    const order: Record<PaymentStatus, number> = { exempt: 0, confirmed: 1, pending: 2 }
+    const order: Record<PaymentStatus, number> = { confirmed: 0, exempt: 1, pending: 2 }
     return order[a.payment_status] - order[b.payment_status]
   })
 
@@ -124,7 +124,7 @@ export function PaymentManager({ room, members, currentUserId, isAdmin }: Paymen
         <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
           {sorted.map((member) => {
             const isMe = member.user_id === currentUserId
-            const isRoomAdmin = member.payment_status === 'exempt'
+            const isMemberAdmin = member.user_id === room.admin_id
             return (
               <div
                 key={member.user_id}
@@ -148,11 +148,12 @@ export function PaymentManager({ room, members, currentUserId, isAdmin }: Paymen
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {isRoomAdmin ? (
+                  {isMemberAdmin && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-body font-medium text-[#2A398D] bg-[#2A398D]/10 px-2 py-0.5 rounded-full">
                       <Shield size={10} /> Admin
                     </span>
-                  ) : member.payment_status === 'confirmed' ? (
+                  )}
+                  {member.payment_status === 'confirmed' ? (
                     <span className="inline-flex items-center gap-1 text-[10px] font-body font-medium text-[#3CAC3B] bg-[#3CAC3B]/10 px-2 py-0.5 rounded-full">
                       <CheckCircle2 size={10} /> Pagado
                     </span>
@@ -161,7 +162,7 @@ export function PaymentManager({ room, members, currentUserId, isAdmin }: Paymen
                       <XCircle size={10} /> Pendiente
                     </span>
                   )}
-                  {isAdmin && !isRoomAdmin && (
+                  {isAdmin && (
                     <button
                       onClick={() =>
                         member.payment_status === 'confirmed'
