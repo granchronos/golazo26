@@ -6,10 +6,14 @@ import { PageTransition, StaggerContainer, StaggerItem } from '@/components/anim
 import { GROUP_LETTERS, TEAMS_BY_GROUP, TEAMS_BY_ID } from '@/lib/constants/teams'
 import { GROUP_STAGE_MATCHES } from '@/lib/constants/fixture'
 import { cn } from '@/lib/utils/cn'
-import { MapPin } from 'lucide-react'
+import { MapPin, ChevronRight } from 'lucide-react'
 import { WCBadge } from '@/components/ui/WCBadge'
 import { WCHistory } from '@/components/fixture/WCHistory'
+import { FixtureBracket } from '@/components/fixture/FixtureBracket'
+import { MatchDetailModal } from '@/components/fixture/MatchDetailModal'
 import type { GroupLetter } from '@/types/database'
+import type { TeamData } from '@/lib/constants/teams'
+import type { FixtureMatch } from '@/lib/constants/fixture'
 
 type Tab = 'groups' | 'bracket' | 'calendar'
 
@@ -42,6 +46,7 @@ function groupMatchesByDate(matches: typeof GROUP_STAGE_MATCHES) {
 export default function FixturePage() {
   const [activeTab, setActiveTab] = useState<Tab>('groups')
   const [groupFilter, setGroupFilter] = useState<GroupLetter | 'all'>('all')
+  const [selectedMatch, setSelectedMatch] = useState<FixtureMatch | null>(null)
 
   const filteredMatches = useMemo(() => {
     const matches = groupFilter === 'all'
@@ -131,26 +136,7 @@ export default function FixturePage() {
 
       {/* Bracket tab */}
       {activeTab === 'bracket' && (
-        <div className="glass-card p-8 text-center">
-          <p className="font-display text-xl text-gray-300 dark:text-gray-600 mb-2">Bracket Eliminatorio</p>
-          <p className="text-sm text-gray-400 font-body mb-6">
-            Se construye al terminar la fase de grupos
-          </p>
-          <div className="flex flex-col gap-2 max-w-xs mx-auto">
-            {[
-              { label: 'Ronda de 32', date: '29 Jun – 2 Jul' },
-              { label: 'Octavos de Final', date: '5 – 8 Jul' },
-              { label: 'Cuartos de Final', date: '11 – 12 Jul' },
-              { label: 'Semifinales', date: '14 – 15 Jul' },
-              { label: 'Final', date: '19 Jul' },
-            ].map((round) => (
-              <div key={round.label} className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-white/[0.03]">
-                <span className="text-sm font-body text-gray-700 dark:text-gray-300">{round.label}</span>
-                <span className="text-xs font-mono text-gray-400">{round.date}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <FixtureBracket />
       )}
 
       {/* Calendar tab */}
@@ -197,7 +183,14 @@ export default function FixturePage() {
                     const home = m.home_team_id ? TEAMS_BY_ID[m.home_team_id] : null
                     const away = m.away_team_id ? TEAMS_BY_ID[m.away_team_id] : null
                     return (
-                      <div key={m.match_number} className="glass-card flex items-center gap-3 px-4 py-3">
+                      <button
+                        key={m.match_number}
+                        onClick={() => home && away ? setSelectedMatch(m) : undefined}
+                        className={cn(
+                          'glass-card flex items-center gap-3 px-4 py-3 w-full text-left transition-colors',
+                          home && away && 'hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer'
+                        )}
+                      >
                         {/* Time */}
                         <span className="font-mono text-xs text-gray-400 w-10 flex-shrink-0">
                           {formatMatchTime(m.match_date)}
@@ -219,13 +212,31 @@ export default function FixturePage() {
                           <MapPin size={10} />
                           <span className="truncate max-w-[140px]">{m.city}</span>
                         </div>
-                      </div>
+                        {/* Arrow hint */}
+                        {home && away && (
+                          <ChevronRight size={14} className="text-gray-300 dark:text-gray-600 flex-shrink-0" />
+                        )}
+                      </button>
                     )
                   })}
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Match detail modal */}
+          {selectedMatch && selectedMatch.home_team_id && selectedMatch.away_team_id && (
+            <MatchDetailModal
+              open={!!selectedMatch}
+              onClose={() => setSelectedMatch(null)}
+              home={TEAMS_BY_ID[selectedMatch.home_team_id]}
+              away={TEAMS_BY_ID[selectedMatch.away_team_id]}
+              matchDate={selectedMatch.match_date}
+              venue={selectedMatch.venue}
+              city={selectedMatch.city}
+              groupLetter={selectedMatch.group_letter ?? ''}
+            />
+          )}
         </div>
       )}
     </PageTransition>
