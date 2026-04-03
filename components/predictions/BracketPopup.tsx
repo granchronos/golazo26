@@ -24,9 +24,11 @@ const MATCH_H = 44
 const COL_GAP = 20 // extra space for date labels
 const CONN_W = 28
 const LABEL_H = 22
+const DATE_H = 14 // height of the date label below each card
 
 // Vertical positions computed from R16 (4 cards)
-const MATCH_AREA_H = 4 * MATCH_H + 3 * COL_GAP // 236
+// Add DATE_H so the last card's date doesn't clip
+const MATCH_AREA_H = 4 * MATCH_H + 3 * COL_GAP + DATE_H // 250
 const R16_TOPS = [0, MATCH_H + COL_GAP, 2 * (MATCH_H + COL_GAP), 3 * (MATCH_H + COL_GAP)]
 const R16_CENTERS = R16_TOPS.map((t) => t + MATCH_H / 2)
 
@@ -328,7 +330,7 @@ export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProp
     if (!bracketRef.current) return null
     try {
       const dataUrl = await toPng(bracketRef.current, {
-        backgroundColor: '#0a0a0f',
+        backgroundColor: '#ffffff',
         pixelRatio: 2,
         style: { padding: '24px' },
       })

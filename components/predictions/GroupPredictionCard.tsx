@@ -2,6 +2,7 @@
 
 import { Check, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { WCBadge } from '@/components/ui/WCBadge'
 import type { GroupLetter } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
 
@@ -95,6 +96,7 @@ export function GroupPredictionCard({
               <span className="flex-1 text-sm font-body text-gray-800 dark:text-gray-200">
                 {team.name}
               </span>
+              <WCBadge teamId={team.id} size="xs" />
               {isFirst && (
                 <span className="text-[10px] font-body font-semibold text-[#C9A84C] bg-[#C9A84C]/10 px-2 py-0.5 rounded-full">
                   1°

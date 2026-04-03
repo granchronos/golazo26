@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Loader2, ChevronDown, Trophy, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils/cn'
+import { WCBadge } from '@/components/ui/WCBadge'
 import { saveKnockoutPrediction } from '@/app/actions/predictions'
 import { TEAMS, TEAMS_BY_GROUP } from '@/lib/constants/teams'
 import { BRACKET_ROUNDS, ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
@@ -350,6 +351,7 @@ function TeamButton({ team, label, isPicked, isLoser, disabled, isFinal, onClick
       >
         {team.code}
       </span>
+      <WCBadge teamId={team.id} size="xs" />
       {isPicked && (
         <span className="text-[8px] font-mono font-bold uppercase tracking-wider text-[#2A398D] dark:text-blue-400">
           {isFinal ? '🏆' : '✓'}

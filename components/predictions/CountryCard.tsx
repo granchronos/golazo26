@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Check, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { WCBadge } from '@/components/ui/WCBadge'
 import type { TeamData } from '@/lib/constants/teams'
 
 interface CountryCardProps {
@@ -66,6 +67,9 @@ export function CountryCard({ team, state, points, rank, onClick }: CountryCardP
       )}>
         {team.code}
       </span>
+
+      {/* WC history */}
+      <WCBadge teamId={team.id} size="xs" />
 
       {/* Points */}
       {points !== undefined && isSelected && (

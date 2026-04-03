@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
+import { WCBadge } from '@/components/ui/WCBadge'
 import type { TeamData } from '@/lib/constants/teams'
 
 interface BracketMatch {
@@ -37,6 +38,7 @@ function BracketMatchBox({ match }: { match: BracketMatch }) {
         <span className="flex-1 font-medium truncate dark:text-white">
           {match.homeTeam?.code || 'TBD'}
         </span>
+        {match.homeTeam && <WCBadge teamId={match.homeTeam.id} size="xs" />}
         <span className="font-mono font-bold text-[#2A398D] dark:text-blue-400 w-4 text-center">
           {match.homeScore ?? '-'}
         </span>
@@ -50,6 +52,7 @@ function BracketMatchBox({ match }: { match: BracketMatch }) {
         <span className="flex-1 font-medium truncate dark:text-white">
           {match.awayTeam?.code || 'TBD'}
         </span>
+        {match.awayTeam && <WCBadge teamId={match.awayTeam.id} size="xs" />}
         <span className="font-mono font-bold text-[#2A398D] dark:text-blue-400 w-4 text-center">
           {match.awayScore ?? '-'}
         </span>

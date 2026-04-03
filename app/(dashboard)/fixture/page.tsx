@@ -7,6 +7,8 @@ import { GROUP_LETTERS, TEAMS_BY_GROUP, TEAMS_BY_ID } from '@/lib/constants/team
 import { GROUP_STAGE_MATCHES } from '@/lib/constants/fixture'
 import { cn } from '@/lib/utils/cn'
 import { MapPin } from 'lucide-react'
+import { WCBadge } from '@/components/ui/WCBadge'
+import { WCHistory } from '@/components/fixture/WCHistory'
 import type { GroupLetter } from '@/types/database'
 
 type Tab = 'groups' | 'bracket' | 'calendar'
@@ -83,7 +85,10 @@ export default function FixturePage() {
 
       {/* Groups tab */}
       {activeTab === 'groups' && (
-        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="flex flex-col xl:flex-row gap-4">
+          {/* Groups grid */}
+          <div className="flex-1">
+            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-3">
           {GROUP_LETTERS.map((letter) => {
             const teams = TEAMS_BY_GROUP[letter] || []
             return (
@@ -106,6 +111,7 @@ export default function FixturePage() {
                         </span>
                         <span className="text-lg leading-none">{team.flag_emoji}</span>
                         <span className="text-sm font-body text-gray-800 dark:text-gray-200">{team.name}</span>
+                        <WCBadge teamId={team.id} size="xs" />
                       </div>
                     ))}
                   </div>
@@ -113,7 +119,14 @@ export default function FixturePage() {
               </StaggerItem>
             )
           })}
-        </StaggerContainer>
+            </StaggerContainer>
+          </div>
+
+          {/* WC History sidebar */}
+          <div className="xl:w-80 flex-shrink-0">
+            <WCHistory />
+          </div>
+        </div>
       )}
 
       {/* Bracket tab */}

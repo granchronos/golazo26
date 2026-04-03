@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { Badge } from '@/components/ui/Badge'
+import { WCBadge } from '@/components/ui/WCBadge'
 import type { GroupLetter } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
 
@@ -102,6 +103,7 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
                     <span className="font-medium dark:text-white truncate max-w-[120px]">
                       {compact ? row.team.code : row.team.name}
                     </span>
+                    <WCBadge teamId={row.team.id} size="xs" />
                   </div>
                 </td>
                 {!compact && (
