@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useCallback, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
-import { Save, ChevronDown, Award } from 'lucide-react'
+import { Save, ChevronDown, Award, Search, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { StaggerContainer, StaggerItem } from '@/components/animations/PageTransition'
 import { GroupPredictionCard } from './GroupPredictionCard'
@@ -12,7 +12,7 @@ import { KnockoutPredictions } from './KnockoutPredictions'
 import { triggerWinConfetti } from '@/components/animations/ConfettiEffect'
 import { saveGroupPrediction, saveAllGroupPredictions, saveAgnosticPredictions } from '@/app/actions/predictions'
 import { GROUP_STAGE_DEADLINE, CHAMPION_GOLEADOR_DEADLINE } from '@/lib/constants/points'
-import { GROUP_LETTERS, TEAMS_BY_GROUP, TEAMS } from '@/lib/constants/teams'
+import { GROUP_LETTERS, TEAMS } from '@/lib/constants/teams'
 import { isBeforeDeadline } from '@/lib/utils/date'
 import { cn } from '@/lib/utils/cn'
 import type { GroupLetter, GroupPrediction } from '@/types/database'
@@ -26,6 +26,9 @@ interface PredictionMatrixProps {
 }
 
 type Selections = Record<GroupLetter, { first: string | null; second: string | null }>
+
+// Helper to find team by ID
+const findTeam = (id: string) => TEAMS.find((t) => t.id === id)
 
 export function PredictionMatrix({
   roomId,
@@ -67,23 +70,35 @@ export function PredictionMatrix({
   const [predictedChampionId, setPredictedChampionId] = useState<string | null>(initialChampionId)
   const [predictedGoleador, setPredictedGoleador] = useState<string>(initialGoleador)
 
-  // Search state for Goleador autocomplete
+  // Track what was last saved for agnostic auto-save
+  const [savedChampionId, setSavedChampionId] = useState<string | null>(initialChampionId)
+  const [savedGoleador, setSavedGoleador] = useState<string>(initialGoleador)
+  const [agnosticAutoSaving, setAgnosticAutoSaving] = useState(false)
+
+  // Champion combobox state
+  const [championSearch, setChampionSearch] = useState('')
+  const [showChampionDropdown, setShowChampionDropdown] = useState(false)
+  const championComboboxRef = useRef<HTMLDivElement>(null)
+
+  // Goleador combobox state
   const [goleadorSearch, setGoleadorSearch] = useState(initialGoleador)
   const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string; position: string; teamId: string; teamName: string; flagEmoji: string }>>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [loadingPlayers, setLoadingPlayers] = useState(false)
   const [stars, setStars] = useState<Array<{ id: string; name: string; position: string; teamId: string; teamName: string; flagEmoji: string }>>([])
-  const [isAgnosticPending, startAgnosticTransition] = useTransition()
-  const comboboxRef = useRef<HTMLDivElement>(null)
+  const [selectedGoleadorFlag, setSelectedGoleadorFlag] = useState<string>('')
+  const goleadorComboboxRef = useRef<HTMLDivElement>(null)
 
   // Sync state with props
   useEffect(() => {
     setPredictedChampionId(initialChampionId)
+    setSavedChampionId(initialChampionId)
   }, [initialChampionId])
 
   useEffect(() => {
     setPredictedGoleador(initialGoleador)
     setGoleadorSearch(initialGoleador)
+    setSavedGoleador(initialGoleador)
   }, [initialGoleador])
 
   // Fetch star players on mount
@@ -94,13 +109,27 @@ export function PredictionMatrix({
         const data = await res.json()
         if (data.players) {
           setStars(data.players)
+          // If we have an initial goleador, try to find their flag
+          if (initialGoleador) {
+            const match = data.players.find((p: any) => p.name === initialGoleador)
+            if (match) setSelectedGoleadorFlag(match.flagEmoji)
+          }
         }
       } catch (err) {
         console.error('Error fetching stars:', err)
       }
     }
     fetchStars()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Also try to find goleador flag from search results
+  useEffect(() => {
+    if (predictedGoleador && searchResults.length > 0) {
+      const match = searchResults.find((p) => p.name === predictedGoleador)
+      if (match) setSelectedGoleadorFlag(match.flagEmoji)
+    }
+  }, [predictedGoleador, searchResults])
 
   // Goleador search debounce
   useEffect(() => {
@@ -127,10 +156,21 @@ export function PredictionMatrix({
     return () => clearTimeout(delayDebounce)
   }, [goleadorSearch])
 
-  // Click outside combobox to close dropdown
+  // Click outside champion combobox to close
   useEffect(() => {
     const clickHandler = (e: MouseEvent) => {
-      if (comboboxRef.current && !comboboxRef.current.contains(e.target as Node)) {
+      if (championComboboxRef.current && !championComboboxRef.current.contains(e.target as Node)) {
+        setShowChampionDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', clickHandler)
+    return () => document.removeEventListener('mousedown', clickHandler)
+  }, [])
+
+  // Click outside goleador combobox to close
+  useEffect(() => {
+    const clickHandler = (e: MouseEvent) => {
+      if (goleadorComboboxRef.current && !goleadorComboboxRef.current.contains(e.target as Node)) {
         setShowDropdown(false)
       }
     }
@@ -138,17 +178,34 @@ export function PredictionMatrix({
     return () => document.removeEventListener('mousedown', clickHandler)
   }, [])
 
-  const handleSaveAgnostic = () => {
-    startAgnosticTransition(async () => {
-      const result = await saveAgnosticPredictions(roomId, predictedChampionId, predictedGoleador)
-      if (result?.error) {
-        toast.error(result.error)
-      } else {
-        toast.success('Elecciones agnósticas guardadas con éxito')
-        triggerWinConfetti()
+  // ── Auto-save agnostic predictions ──────────────────────────────────
+  useEffect(() => {
+    if (!isChampGoleadorOpen) return
+    const champChanged = predictedChampionId !== savedChampionId
+    const goleadorChanged = predictedGoleador !== savedGoleador
+    if (!champChanged && !goleadorChanged) return
+
+    const timer = setTimeout(async () => {
+      setAgnosticAutoSaving(true)
+      try {
+        const result = await saveAgnosticPredictions(roomId, predictedChampionId, predictedGoleador)
+        if (result?.error) {
+          toast.error(result.error)
+        } else {
+          setSavedChampionId(predictedChampionId)
+          setSavedGoleador(predictedGoleador)
+          toast.success('Predicciones especiales guardadas')
+        }
+      } catch {
+        toast.error('Error guardando predicciones')
+      } finally {
+        setAgnosticAutoSaving(false)
       }
-    })
-  }
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [predictedChampionId, predictedGoleador, roomId, isChampGoleadorOpen])
 
   // Keep a ref to saved so the auto-save effect doesn't need it in deps
   const savedRef = useRef(saved)
@@ -241,163 +298,261 @@ export function PredictionMatrix({
     })
   }
 
+  // Filtered teams for champion search
+  const filteredTeams = championSearch.trim().length > 0
+    ? TEAMS.filter((t) =>
+        t.name.toLowerCase().includes(championSearch.toLowerCase()) ||
+        t.code.toLowerCase().includes(championSearch.toLowerCase())
+      )
+    : TEAMS
+
+  const selectedChampionTeam = predictedChampionId ? findTeam(predictedChampionId) : null
+
   return (
     <div className="space-y-6">
       <PredictionsTour />
 
-      {/* Agnostic Selections Card */}
-      <div className="glass-card p-4 sm:p-5 border-l-4 border-l-[#C9A84C] relative overflow-hidden bg-gradient-to-r from-amber-50/50 to-white dark:from-amber-950/20 dark:to-zinc-900/50">
+      {/* ── Special Predictions Card ── */}
+      <div className="glass-card p-4 sm:p-5 border-l-4 border-l-[#C9A84C] relative bg-gradient-to-r from-amber-50/50 to-white dark:from-amber-950/20 dark:to-zinc-900/50">
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#C9A84C]/10 rounded-full blur-2xl pointer-events-none" />
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="font-display text-sm sm:text-base text-gray-900 dark:text-white flex items-center gap-2">
-              <Award className="text-[#C9A84C]" size={18} /> Campeón y Goleador Agnósticos
+              <Award className="text-[#C9A84C]" size={18} /> Mis Predicciones Especiales
             </h3>
             <p className="text-[11px] sm:text-xs font-body text-gray-500 mt-1">
-              Escoge al Campeón y al Goleador del mundial de forma independiente a tu bracket.
+              Elige al Campeón y al Goleador del Mundial, independiente de tu bracket.
               <span className="font-bold text-amber-600 dark:text-amber-400"> ¡Suma 15 y 10 puntos extra!</span>
             </p>
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {agnosticAutoSaving && (
+              <span className="text-[10px] font-body text-amber-500 animate-pulse">Guardando…</span>
+            )}
             <CountdownTimer deadline={CHAMPION_GOLEADOR_DEADLINE} label="Cierre elecciones" variant="compact" />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          {/* Champion Selector */}
-          <div className="space-y-1.5">
+          {/* Champion Combobox Selector */}
+          <div className="space-y-1.5" ref={championComboboxRef}>
             <label className="block text-[11px] font-body font-semibold text-gray-700 dark:text-gray-300">
-              Campeón del Mundo
+              🏆 Campeón del Mundo
             </label>
             <div className="relative">
-              <select
-                value={predictedChampionId || ''}
-                onChange={(e) => {
-                  if (!isChampGoleadorOpen) return
-                  setPredictedChampionId(e.target.value || null)
-                }}
-                disabled={!isChampGoleadorOpen}
-                className="w-full pl-3 pr-10 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm focus:border-[#2A398D] focus:ring-1 focus:ring-[#2A398D] disabled:opacity-75 transition-colors appearance-none"
-              >
-                <option value="">-- Selecciona un equipo --</option>
-                {TEAMS.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.flag_emoji} {team.name}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                <ChevronDown size={14} />
-              </div>
+              {/* Display selected champion or show search input */}
+              {selectedChampionTeam && !showChampionDropdown ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isChampGoleadorOpen) {
+                      setShowChampionDropdown(true)
+                      setChampionSearch('')
+                    }
+                  }}
+                  disabled={!isChampGoleadorOpen}
+                  className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm hover:border-[#C9A84C]/50 disabled:opacity-75 transition-colors text-left"
+                >
+                  <span className="text-base">{selectedChampionTeam.flag_emoji}</span>
+                  <span className="font-semibold">{selectedChampionTeam.name}</span>
+                  <span className="text-[10px] text-gray-400 font-mono">({selectedChampionTeam.code})</span>
+                  {isChampGoleadorOpen && (
+                    <ChevronDown size={12} className="ml-auto text-gray-400" />
+                  )}
+                </button>
+              ) : (
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={championSearch}
+                    onChange={(e) => {
+                      setChampionSearch(e.target.value)
+                      setShowChampionDropdown(true)
+                    }}
+                    onFocus={() => {
+                      if (isChampGoleadorOpen) setShowChampionDropdown(true)
+                    }}
+                    placeholder="Buscar selección..."
+                    disabled={!isChampGoleadorOpen}
+                    autoFocus={showChampionDropdown}
+                    className="w-full pl-9 pr-8 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm focus:border-[#C9A84C] focus:ring-1 focus:ring-[#C9A84C] disabled:opacity-75 transition-colors"
+                  />
+                  {selectedChampionTeam && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowChampionDropdown(false)
+                        setChampionSearch('')
+                      }}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Champion Autocomplete Dropdown */}
+              <AnimatePresence>
+                {showChampionDropdown && isChampGoleadorOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="absolute z-[60] w-full left-0 mt-1 max-h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 shadow-xl scrollbar-thin"
+                  >
+                    <div className="py-1 divide-y divide-gray-100 dark:divide-white/[0.04]">
+                      {filteredTeams.length === 0 ? (
+                        <div className="px-4 py-3 text-xs font-body text-gray-500">
+                          No se encontraron selecciones.
+                        </div>
+                      ) : (
+                        filteredTeams.map((team) => (
+                          <button
+                            key={team.id}
+                            type="button"
+                            onClick={() => {
+                              setPredictedChampionId(team.id)
+                              setShowChampionDropdown(false)
+                              setChampionSearch('')
+                            }}
+                            className={cn(
+                              'w-full text-left px-4 py-2.5 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors flex items-center gap-2.5 text-xs sm:text-sm font-body',
+                              predictedChampionId === team.id
+                                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300'
+                                : 'text-gray-900 dark:text-white'
+                            )}
+                          >
+                            <span className="text-base flex-shrink-0">{team.flag_emoji}</span>
+                            <span className="font-semibold">{team.name}</span>
+                            <span className="text-[10px] text-gray-400 font-mono ml-auto">{team.code} · {team.group_letter}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
           {/* Goleador Selector (Combobox) */}
-          <div className="space-y-1.5 relative" ref={comboboxRef}>
+          <div className="space-y-1.5" ref={goleadorComboboxRef}>
             <label className="block text-[11px] font-body font-semibold text-gray-700 dark:text-gray-300">
-              Goleador del Torneo (Bota de Oro)
+              ⚽ Goleador del Torneo (Bota de Oro)
             </label>
             <div className="relative">
-              <input
-                type="text"
-                value={goleadorSearch}
-                onChange={(e) => {
-                  if (!isChampGoleadorOpen) return
-                  setGoleadorSearch(e.target.value)
-                  setPredictedGoleador(e.target.value)
-                  setShowDropdown(true)
-                }}
-                onFocus={() => {
-                  if (isChampGoleadorOpen) setShowDropdown(true)
-                }}
-                placeholder="Busca o escribe un jugador..."
-                disabled={!isChampGoleadorOpen}
-                className="w-full px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm focus:border-[#2A398D] focus:ring-1 focus:ring-[#2A398D] disabled:opacity-75 transition-colors"
-              />
-              {isChampGoleadorOpen && goleadorSearch && (
+              {/* If a goleador is selected and dropdown is not open, show display mode */}
+              {predictedGoleador && !showDropdown ? (
                 <button
                   type="button"
                   onClick={() => {
-                    setGoleadorSearch('')
-                    setPredictedGoleador('')
-                    setShowDropdown(true)
+                    if (isChampGoleadorOpen) {
+                      setShowDropdown(true)
+                      setGoleadorSearch('')
+                    }
                   }}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 text-xs"
+                  disabled={!isChampGoleadorOpen}
+                  className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm hover:border-[#C9A84C]/50 disabled:opacity-75 transition-colors text-left"
                 >
-                  ✕
+                  {selectedGoleadorFlag && <span className="text-base">{selectedGoleadorFlag}</span>}
+                  <span className="font-semibold">{predictedGoleador}</span>
+                  {isChampGoleadorOpen && (
+                    <X
+                      size={14}
+                      className="ml-auto text-gray-400 hover:text-gray-600"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setPredictedGoleador('')
+                        setGoleadorSearch('')
+                        setSelectedGoleadorFlag('')
+                        setShowDropdown(true)
+                      }}
+                    />
+                  )}
                 </button>
+              ) : (
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={goleadorSearch}
+                    onChange={(e) => {
+                      if (!isChampGoleadorOpen) return
+                      setGoleadorSearch(e.target.value)
+                      setPredictedGoleador(e.target.value)
+                      setSelectedGoleadorFlag('')
+                      setShowDropdown(true)
+                    }}
+                    onFocus={() => {
+                      if (isChampGoleadorOpen) setShowDropdown(true)
+                    }}
+                    placeholder="Busca o escribe un jugador..."
+                    disabled={!isChampGoleadorOpen}
+                    autoFocus={showDropdown}
+                    className="w-full pl-9 pr-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm focus:border-[#C9A84C] focus:ring-1 focus:ring-[#C9A84C] disabled:opacity-75 transition-colors"
+                  />
+                </div>
               )}
-            </div>
 
-            {/* Autocomplete Dropdown */}
-            <AnimatePresence>
-              {showDropdown && isChampGoleadorOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute z-50 w-full left-0 mt-1 max-h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 shadow-xl scrollbar-thin"
-                >
-                  {loadingPlayers && (
-                    <div className="px-4 py-3 text-xs font-body text-gray-500 animate-pulse">
-                      Buscando jugadores...
-                    </div>
-                  )}
-                  
-                  {!loadingPlayers && searchResults.length === 0 && goleadorSearch.trim().length >= 2 && (
-                    <div className="px-4 py-3 text-xs font-body text-gray-500">
-                      No se encontraron coincidencias. Se guardará &quot;{goleadorSearch}&quot;.
-                    </div>
-                  )}
-
-                  {!loadingPlayers && (searchResults.length > 0 || (goleadorSearch.trim().length < 2 && stars.length > 0)) && (
-                    <div className="py-1.5 divide-y divide-gray-100 dark:divide-white/[0.04]">
-                      <div className="px-3 py-1 text-[9px] font-semibold font-body text-amber-600 uppercase tracking-wider bg-amber-50/50 dark:bg-amber-950/10">
-                        {searchResults.length > 0 ? 'Resultados de búsqueda' : 'Estrellas Recomendadas'}
+              {/* Autocomplete Dropdown */}
+              <AnimatePresence>
+                {showDropdown && isChampGoleadorOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="absolute z-[60] w-full left-0 mt-1 max-h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 shadow-xl scrollbar-thin"
+                  >
+                    {loadingPlayers && (
+                      <div className="px-4 py-3 text-xs font-body text-gray-500 animate-pulse">
+                        Buscando jugadores...
                       </div>
-                      {(searchResults.length > 0 ? searchResults : stars).map((player) => (
-                        <button
-                          key={player.id}
-                          type="button"
-                          onClick={() => {
-                            setGoleadorSearch(player.name)
-                            setPredictedGoleador(player.name)
-                            setShowDropdown(false)
-                          }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors flex items-center justify-between text-xs sm:text-sm font-body text-gray-900 dark:text-white"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">{player.flagEmoji}</span>
-                            <span className="font-semibold">{player.name}</span>
-                            <span className="text-[10px] text-gray-400 font-mono">({player.teamId.toUpperCase()})</span>
-                          </div>
-                          <span className="text-[9px] bg-gray-100 dark:bg-white/10 text-gray-500 px-1.5 py-0.5 rounded">
-                            {player.position}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    )}
+                    
+                    {!loadingPlayers && searchResults.length === 0 && goleadorSearch.trim().length >= 2 && (
+                      <div className="px-4 py-3 text-xs font-body text-gray-500">
+                        No se encontraron coincidencias. Se guardará &quot;{goleadorSearch}&quot;.
+                      </div>
+                    )}
+
+                    {!loadingPlayers && (searchResults.length > 0 || (goleadorSearch.trim().length < 2 && stars.length > 0)) && (
+                      <div className="py-1.5 divide-y divide-gray-100 dark:divide-white/[0.04]">
+                        <div className="px-3 py-1 text-[9px] font-semibold font-body text-amber-600 uppercase tracking-wider bg-amber-50/50 dark:bg-amber-950/10">
+                          {searchResults.length > 0 ? 'Resultados de búsqueda' : 'Estrellas Recomendadas'}
+                        </div>
+                        {(searchResults.length > 0 ? searchResults : stars).map((player) => (
+                          <button
+                            key={player.id}
+                            type="button"
+                            onClick={() => {
+                              setGoleadorSearch(player.name)
+                              setPredictedGoleador(player.name)
+                              setSelectedGoleadorFlag(player.flagEmoji)
+                              setShowDropdown(false)
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors flex items-center justify-between text-xs sm:text-sm font-body text-gray-900 dark:text-white"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">{player.flagEmoji}</span>
+                              <span className="font-semibold">{player.name}</span>
+                              <span className="text-[10px] text-gray-400 font-mono">({player.teamId.toUpperCase()})</span>
+                            </div>
+                            <span className="text-[9px] bg-gray-100 dark:bg-white/10 text-gray-500 px-1.5 py-0.5 rounded">
+                              {player.position}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
-
-        {/* Save button for agnostic choices */}
-        {isChampGoleadorOpen && (
-          <div className="flex justify-end mt-4">
-            <button
-              onClick={handleSaveAgnostic}
-              disabled={isAgnosticPending}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2A398D] text-white font-body font-semibold text-xs shadow-md hover:bg-[#1e2b6e] disabled:opacity-50 transition-colors"
-            >
-              <Save size={12} />
-              {isAgnosticPending ? 'Guardando...' : 'Guardar Elección'}
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Progress + Countdown */}
@@ -457,7 +612,7 @@ export function PredictionMatrix({
                     <div id={`group-${letter}`}>
                       <GroupPredictionCard
                         groupLetter={letter}
-                        teams={TEAMS_BY_GROUP[letter] || []}
+                        teams={TEAMS.filter((t) => t.group_letter === letter)}
                         first={selections[letter].first}
                         second={selections[letter].second}
                         savedFirst={saved[letter].first}

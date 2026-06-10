@@ -70,7 +70,7 @@ export function BetSummary({
         )}>
           {predictedChampionId && (
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase font-mono text-gray-400 tracking-wider">Mi Campeón Agnóstico:</span>
+              <span className="text-[10px] uppercase font-mono text-gray-400 tracking-wider">Mi Campeón:</span>
               <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-1">
                 {TEAMS_BY_ID[predictedChampionId]?.flag_emoji} {TEAMS_BY_ID[predictedChampionId]?.name}
               </span>
@@ -78,7 +78,7 @@ export function BetSummary({
           )}
           {predictedGoleador && (
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase font-mono text-gray-400 tracking-wider">Mi Goleador Agnóstico:</span>
+              <span className="text-[10px] uppercase font-mono text-gray-400 tracking-wider">Mi Goleador:</span>
               <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-1">
                 ⚽ {predictedGoleador}
               </span>

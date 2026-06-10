@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, Trophy, User, Layers } from 'lucide-react'
+import { useMemo } from 'react'
+import { CheckCircle2, AlertCircle, Trophy, User, Layers, Target } from 'lucide-react'
 import { GROUP_LETTERS } from '@/lib/constants/teams'
 import type { GroupLetter, GroupPrediction } from '@/types/database'
 import { cn } from '@/lib/utils/cn'
@@ -20,7 +19,6 @@ export function ProgressSidebar({
   predictedChampionId,
   predictedGoleador,
 }: ProgressSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
 
   // Calculate completion statuses
   const groupStats = useMemo(() => {
@@ -50,147 +48,131 @@ export function ProgressSidebar({
   const completedItems = groupStats.count + knockoutCount + (isChampionComplete ? 1 : 0) + (isGoleadorComplete ? 1 : 0)
   const percent = Math.round((completedItems / totalItems) * 100)
 
+  const isAllDone = percent === 100
+
   return (
-    <div className="fixed right-0 top-1/4 z-50 flex items-start pointer-events-none">
-      {/* Trigger button when collapsed */}
-      <AnimatePresence>
-        {isCollapsed && (
-          <motion.button
-            initial={{ x: 50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 50, opacity: 0 }}
-            onClick={() => setIsCollapsed(false)}
-            className="pointer-events-auto flex flex-col items-center gap-2 py-4 px-2 rounded-l-2xl bg-gradient-to-b from-[#E61D25] to-red-700 text-white shadow-2xl hover:from-red-700 hover:to-red-800 transition-all border-l border-y border-red-500/30"
-          >
-            <ChevronLeft size={18} className="animate-pulse" />
-            <span className="font-display text-xs uppercase tracking-wider [writing-mode:vertical-lr] rotate-180">
-              Progreso
+    <div className={cn(
+      'glass-card p-4 sm:p-5 border-l-4 transition-colors',
+      isAllDone
+        ? 'border-l-emerald-500 bg-gradient-to-r from-emerald-50/30 to-white dark:from-emerald-950/10 dark:to-zinc-900/50'
+        : 'border-l-[#2A398D] bg-gradient-to-r from-blue-50/30 to-white dark:from-blue-950/10 dark:to-zinc-900/50'
+    )}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Target size={16} className={isAllDone ? 'text-emerald-500' : 'text-[#2A398D]'} />
+          <h3 className="font-display text-sm text-gray-900 dark:text-white">Tu Progreso</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">{completedItems}/{totalItems}</span>
+          {isAllDone && (
+            <span className="text-[10px] font-body font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">
+              ¡Completo!
             </span>
-            <div className="w-7 h-7 rounded-full bg-black/20 flex items-center justify-center font-mono text-[10px] font-bold mt-1">
-              {percent}%
+          )}
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="h-2 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden mb-4">
+        <div
+          className={cn(
+            'h-full rounded-full transition-all duration-700',
+            isAllDone
+              ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+              : 'bg-gradient-to-r from-[#2A398D] to-blue-500'
+          )}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+
+      {/* Grid of statuses */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Groups */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-body font-medium text-gray-600 dark:text-gray-300">Fase de Grupos</span>
+            <span className="font-mono text-gray-400">{groupStats.count}/12</span>
+          </div>
+          <div className="grid grid-cols-6 sm:grid-cols-4 gap-1">
+            {GROUP_LETTERS.map((letter) => {
+              const isOk = groupStats.completed[letter]
+              return (
+                <div
+                  key={letter}
+                  className={cn(
+                    'h-6 rounded flex items-center justify-center font-display text-[10px] border transition-colors',
+                    isOk
+                      ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-gray-50 dark:bg-white/[0.03] border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500'
+                  )}
+                  title={`Grupo ${letter}: ${isOk ? 'Completado' : 'Pendiente'}`}
+                >
+                  {letter}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Knockout */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-body font-medium text-gray-600 dark:text-gray-300 flex items-center gap-1">
+              <Layers size={12} className="text-[#2A398D]" /> Bracket
+            </span>
+            <span className={cn(
+              'font-mono',
+              knockoutCount >= 31 ? 'text-emerald-500' : 'text-gray-400'
+            )}>
+              {knockoutCount}/31
+            </span>
+          </div>
+          <div className="h-1.5 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
+            <div
+              className={cn(
+                'h-full rounded-full transition-all duration-500',
+                knockoutCount >= 31 ? 'bg-emerald-400' : 'bg-[#2A398D]'
+              )}
+              style={{ width: `${Math.round((knockoutCount / 31) * 100)}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-gray-400 font-body leading-tight">
+            32avos hasta la Gran Final
+          </p>
+        </div>
+
+        {/* Special Picks */}
+        <div className="space-y-2">
+          <span className="text-xs font-body font-medium text-gray-600 dark:text-gray-300">
+            Predicciones Especiales
+          </span>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs bg-gray-50 dark:bg-white/[0.03] p-2 rounded-lg border border-gray-100 dark:border-white/[0.06]">
+              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                <Trophy size={12} className={isChampionComplete ? 'text-[#C9A84C]' : 'text-gray-400'} />
+                <span className="font-body">Campeón</span>
+              </div>
+              {isChampionComplete ? (
+                <CheckCircle2 size={14} className="text-emerald-400" />
+              ) : (
+                <AlertCircle size={14} className="text-amber-500" />
+              )}
             </div>
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      {/* Expanded Sidebar Panel */}
-      <AnimatePresence>
-        {!isCollapsed && (
-          <motion.div
-            initial={{ x: 300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 300, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="pointer-events-auto w-64 bg-zinc-900 text-white rounded-l-3xl shadow-2xl border-l border-y border-red-600/30 overflow-hidden flex flex-col relative"
-          >
-            {/* Header banner */}
-            <div className="bg-[#E61D25] p-3.5 flex items-center justify-between border-b border-red-600/20">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
-                <span className="font-display text-sm tracking-wide">Tu Progreso</span>
+            <div className="flex items-center justify-between text-xs bg-gray-50 dark:bg-white/[0.03] p-2 rounded-lg border border-gray-100 dark:border-white/[0.06]">
+              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                <User size={12} className={isGoleadorComplete ? 'text-[#C9A84C]' : 'text-gray-400'} />
+                <span className="font-body">Goleador</span>
               </div>
-              <button
-                onClick={() => setIsCollapsed(true)}
-                className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
-              >
-                <ChevronRight size={18} />
-              </button>
+              {isGoleadorComplete ? (
+                <CheckCircle2 size={14} className="text-emerald-400" />
+              ) : (
+                <AlertCircle size={14} className="text-amber-500" />
+              )}
             </div>
-
-            {/* Sidebar content */}
-            <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto scrollbar-thin">
-              {/* Overall progress ring/bar */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs font-mono text-zinc-400">
-                  <span>Completado</span>
-                  <span className="text-white font-bold">{completedItems} / {totalItems}</span>
-                </div>
-                <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-red-500 to-[#E61D25] rounded-full transition-all duration-500"
-                    style={{ width: `${percent}%` }}
-                  />
-                </div>
-                <div className="text-[10px] text-zinc-400 text-right">
-                  {percent}% listo
-                </div>
-              </div>
-
-              {/* Group Checklist Grid */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-display text-zinc-300">Fase de Grupos</span>
-                  <span className="font-mono text-zinc-400">{groupStats.count}/12</span>
-                </div>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {GROUP_LETTERS.map((letter) => {
-                    const isOk = groupStats.completed[letter]
-                    return (
-                      <div
-                        key={letter}
-                        className={cn(
-                          'h-7 rounded-lg flex items-center justify-center font-display text-xs border transition-colors',
-                          isOk
-                            ? 'bg-emerald-950/45 border-emerald-600/60 text-emerald-400'
-                            : 'bg-red-950/20 border-red-800/40 text-red-500'
-                        )}
-                        title={`Grupo ${letter}: ${isOk ? 'Completado' : 'Pendiente'}`}
-                      >
-                        {letter}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Knockout status */}
-              <div className="bg-zinc-800/50 rounded-xl p-3 space-y-2 border border-zinc-800">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-display text-zinc-300 flex items-center gap-1.5">
-                    <Layers size={13} className="text-red-500" /> Bracket Eliminatorias
-                  </span>
-                  <span className="font-mono font-bold text-red-500">{knockoutCount}/31</span>
-                </div>
-                <p className="text-[10px] text-zinc-400 leading-tight">
-                  Completa los 31 partidos de eliminación desde 32avos hasta la Gran Final.
-                </p>
-              </div>
-
-              {/* Agnostic selections status */}
-              <div className="space-y-2 pt-1 border-t border-zinc-800">
-                <span className="font-display text-xs text-zinc-300">Selecciones Especiales</span>
-                <div className="space-y-1.5">
-                  {/* Champion */}
-                  <div className="flex items-center justify-between text-xs bg-zinc-800/30 p-2 rounded-lg border border-zinc-800/50">
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <Trophy size={13} className={isChampionComplete ? 'text-amber-500' : 'text-zinc-500'} />
-                      <span>Campeón Agnóstico</span>
-                    </div>
-                    {isChampionComplete ? (
-                      <CheckCircle2 size={14} className="text-emerald-400" />
-                    ) : (
-                      <AlertCircle size={14} className="text-red-500 animate-pulse" />
-                    )}
-                  </div>
-
-                  {/* Goleador */}
-                  <div className="flex items-center justify-between text-xs bg-zinc-800/30 p-2 rounded-lg border border-zinc-800/50">
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <User size={13} className={isGoleadorComplete ? 'text-amber-500' : 'text-zinc-500'} />
-                      <span>Goleador Agnóstico</span>
-                    </div>
-                    {isGoleadorComplete ? (
-                      <CheckCircle2 size={14} className="text-emerald-400" />
-                    ) : (
-                      <AlertCircle size={14} className="text-red-500 animate-pulse" />
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

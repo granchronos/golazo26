@@ -362,6 +362,14 @@ export function GroupRoom({
         />
       )}
 
+      {/* Progress Tracker (inline) */}
+      <ProgressSidebar
+        groupPredictions={groupPredictions}
+        knockoutPredictions={knockoutPredictions}
+        predictedChampionId={initialChampionId}
+        predictedGoleador={initialGoleador}
+      />
+
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-gray-100 dark:bg-white/[0.04] rounded-xl">
         {TABS.map((tab) => {
@@ -560,10 +568,10 @@ export function GroupRoom({
                     </div>
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 dark:text-white mb-1">Predicciones Agnósticas (Sección Especial):</p>
+                    <p className="font-bold text-gray-900 dark:text-white mb-1">Predicciones Especiales (Sección Extra):</p>
                     <ul className="list-disc list-inside space-y-1 pl-1">
-                      <li><span className="font-bold text-[#C9A84C]">15 Puntos:</span> Acierto al Campeón del Mundo (agnóstico).</li>
-                      <li><span className="font-bold text-[#C9A84C]">10 Puntos:</span> Acierto al Goleador del torneo (agnóstico).</li>
+                      <li><span className="font-bold text-[#C9A84C]">15 Puntos:</span> Acierto al Campeón del Mundo.</li>
+                      <li><span className="font-bold text-[#C9A84C]">10 Puntos:</span> Acierto al Goleador del torneo.</li>
                     </ul>
                   </div>
                 </div>
@@ -582,13 +590,7 @@ export function GroupRoom({
         />
       </Modal>
 
-      {/* Collapsible Progress Sidebar */}
-      <ProgressSidebar
-        groupPredictions={groupPredictions}
-        knockoutPredictions={knockoutPredictions}
-        predictedChampionId={initialChampionId}
-        predictedGoleador={initialGoleador}
-      />
+
     </div>
   )
 }
