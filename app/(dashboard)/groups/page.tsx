@@ -8,7 +8,7 @@ import type { Room } from '@/types/database'
 
 export const metadata = { title: 'Mis Salas' }
 
-export default async function GroupsPage() {
+export default async function GroupsPage({ searchParams }: { searchParams?: { error?: string } }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -23,12 +23,32 @@ export default async function GroupsPage() {
 
   const rooms = memberships?.map((m) => m.rooms as unknown as Room) || []
 
+  const error = searchParams?.error
+  let friendlyErrorMessage = ''
+  if (error) {
+    if (error === 'room_full') {
+      friendlyErrorMessage = 'La sala a la que intentas unirte está llena.'
+    } else if (error === 'invalid_invite') {
+      friendlyErrorMessage = 'El enlace de invitación no es válido, ha expirado o ya no existe.'
+    } else if (error === 'join_failed') {
+      friendlyErrorMessage = 'Ocurrió un error al unirte a la sala. Inténtalo nuevamente.'
+    } else {
+      friendlyErrorMessage = error
+    }
+  }
+
   return (
     <PageTransition>
       <div className="mb-6">
         <p className="text-sm text-gray-400 font-body mb-1">Compite con amigos</p>
         <h1 className="font-display text-3xl md:text-4xl dark:text-white">Salas</h1>
       </div>
+
+      {friendlyErrorMessage && (
+        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-xs sm:text-sm font-body">
+          ⚠️ {friendlyErrorMessage}
+        </div>
+      )}
 
       {rooms.length === 0 ? (
         <>

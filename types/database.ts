@@ -66,6 +66,33 @@ export interface Database {
         }
         Relationships: []
       }
+      players: {
+        Row: {
+          id: string
+          team_id: string
+          name: string
+          position: 'GK' | 'DF' | 'MF' | 'FW'
+          is_star: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          team_id: string
+          name: string
+          position: 'GK' | 'DF' | 'MF' | 'FW'
+          is_star?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          team_id?: string
+          name?: string
+          position?: 'GK' | 'DF' | 'MF' | 'FW'
+          is_star?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       matches: {
         Row: {
           id: string
@@ -179,6 +206,7 @@ export interface Database {
           pool_buy_in: number
           pool_currency: string
           pool_split: Json
+          actual_goleador: string | null
           created_at: string
         }
         Insert: {
@@ -193,6 +221,7 @@ export interface Database {
           pool_buy_in?: number
           pool_currency?: string
           pool_split?: Json
+          actual_goleador?: string | null
           created_at?: string
         }
         Update: {
@@ -204,6 +233,7 @@ export interface Database {
           pool_buy_in?: number
           pool_currency?: string
           pool_split?: Json
+          actual_goleador?: string | null
         }
         Relationships: []
       }
@@ -216,6 +246,8 @@ export interface Database {
           payment_status: 'pending' | 'confirmed' | 'exempt'
           payment_confirmed_at: string | null
           payment_confirmed_by: string | null
+          predicted_champion_id: string | null
+          predicted_goleador: string | null
         }
         Insert: {
           id?: string
@@ -225,11 +257,15 @@ export interface Database {
           payment_status?: 'pending' | 'confirmed' | 'exempt'
           payment_confirmed_at?: string | null
           payment_confirmed_by?: string | null
+          predicted_champion_id?: string | null
+          predicted_goleador?: string | null
         }
         Update: {
           payment_status?: 'pending' | 'confirmed' | 'exempt'
           payment_confirmed_at?: string | null
           payment_confirmed_by?: string | null
+          predicted_champion_id?: string | null
+          predicted_goleador?: string | null
         }
         Relationships: []
       }

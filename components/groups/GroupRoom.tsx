@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Share2, Copy, Check, ArrowLeft, Trophy, BarChart2, CalendarDays, GitCompareArrows, Network, Users, ChevronDown, X, MessageCircle, Coins } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { PredictionMatrix } from '@/components/predictions/PredictionMatrix'
 import { ResultsTab } from '@/components/predictions/ResultsTab'
 import { BetSummary } from '@/components/predictions/BetSummary'
@@ -15,6 +16,7 @@ import { PoolConfigButton } from '@/components/pool/PoolConfigPanel'
 import { PoolBanner } from '@/components/pool/PoolBanner'
 import { PaymentManager } from '@/components/pool/PaymentManager'
 import { PrizeBreakdown } from '@/components/pool/PrizeBreakdown'
+import { ProgressSidebar } from '@/components/predictions/ProgressSidebar'
 import { Modal } from '@/components/ui/Modal'
 import { getWhatsAppShareUrl, getFacebookShareUrl, getTwitterShareUrl, getRoomShareUrl } from '@/lib/utils/rooms'
 import { cn } from '@/lib/utils/cn'
@@ -26,6 +28,8 @@ interface RoomMemberWithProfile {
   profile: Profile | null
   total_points: number
   payment_status: PaymentStatus
+  predicted_champion_id?: string | null
+  predicted_goleador?: string | null
 }
 
 interface MemberPredictions {
@@ -74,6 +78,10 @@ export function GroupRoom({
 
   const isAdmin = room.admin_id === currentUserId
 
+  const currentUserMember = members.find((m) => m.user_id === currentUserId)
+  const initialChampionId = currentUserMember?.predicted_champion_id || null
+  const initialGoleador = currentUserMember?.predicted_goleador || ''
+
   console.log('[DEBUG Pool]', { admin_id: room.admin_id, currentUserId, isAdmin: room.admin_id === currentUserId, pool_enabled: room.pool_enabled, roomKeys: Object.keys(room) })
 
   const TABS = useMemo(() => {
@@ -95,6 +103,16 @@ export function GroupRoom({
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showShareMenu])
+
+  const router = useRouter()
+
+  // Auto refresh room data every 30 seconds to fetch new members/scores
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh()
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [router])
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(getRoomShareUrl(room.invite_slug))
@@ -150,6 +168,17 @@ export function GroupRoom({
       }
     })
   }, [allMembersPredictions])
+
+  const groupSelections = useMemo(() => {
+    const init = {} as Record<GroupLetter, { first: string | null; second: string | null }>
+    for (const letter of GROUP_LETTERS) {
+      init[letter] = {
+        first: groupPredictions[letter]?.team_1st_id ?? null,
+        second: groupPredictions[letter]?.team_2nd_id ?? null,
+      }
+    }
+    return init
+  }, [groupPredictions])
 
   return (
     <div className="space-y-4">
@@ -319,6 +348,8 @@ export function GroupRoom({
       <BetSummary
         knockoutPredictions={knockoutPredictions}
         allMembersPredictions={allMembersChampions}
+        predictedChampionId={initialChampionId}
+        predictedGoleador={initialGoleador}
       />
 
       {/* Pool banner */}
@@ -363,6 +394,8 @@ export function GroupRoom({
           roomId={room.id}
           existingPredictions={groupPredictions}
           existingKnockoutPredictions={knockoutPredictions}
+          initialChampionId={initialChampionId}
+          initialGoleador={initialGoleador}
         />
       </div>
 
@@ -373,6 +406,8 @@ export function GroupRoom({
           groupPredictions={groupPredictions}
           knockoutPredictions={knockoutPredictions}
           scorePredictions={scorePredictions}
+          isAdmin={isAdmin}
+          actualGoleador={room.actual_goleador}
         />
       </div>
 
@@ -488,6 +523,52 @@ export function GroupRoom({
               }))}
               currentUserId={currentUserId}
             />
+
+            {/* Detailed Points Rules Card */}
+            <div className="glass-card p-5 border-l-4 border-l-[#2A398D] relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#2A398D]/5 rounded-full blur-xl pointer-events-none" />
+              <h3 className="font-display text-sm sm:text-base text-gray-900 dark:text-white flex items-center gap-2 mb-3">
+                📊 Sistema de Puntaje
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-body text-gray-600 dark:text-gray-300">
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white mb-1">Predicción de Marcador (Por Partido):</p>
+                    <ul className="list-disc list-inside space-y-1 pl-1">
+                      <li><span className="font-bold text-green-600 dark:text-green-400">3 Puntos:</span> Resultado exacto (ej. predices 2-1 y queda 2-1).</li>
+                      <li><span className="font-bold text-blue-600 dark:text-blue-400">2 Puntos:</span> Ganador correcto y misma diferencia de goles (ej. predices 1-0 y queda 2-1).</li>
+                      <li><span className="font-bold text-yellow-600 dark:text-yellow-500">1 Punto:</span> Solo ganador/empate correcto (ej. predices 3-0 y queda 1-0).</li>
+                      <li><span className="font-bold text-red-500">0 Puntos:</span> Predicción incorrecta.</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white mb-1">Clasificados de Grupos (Standings):</p>
+                    <ul className="list-disc list-inside space-y-1 pl-1">
+                      <li><span className="font-bold text-[#2A398D] dark:text-blue-400">5 Puntos:</span> Por cada equipo que clasifique en la posición exacta (1.° o 2.°) que predijiste en tu grupo.</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white mb-1">Rondas Eliminatorias (Clasificación en Llave):</p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-1">
+                      <div>• Ronda de 32: <span className="font-bold text-gray-900 dark:text-white">10 pts</span></div>
+                      <div>• Octavos de Final: <span className="font-bold text-gray-900 dark:text-white">15 pts</span></div>
+                      <div>• Cuartos de Final: <span className="font-bold text-gray-900 dark:text-white">20 pts</span></div>
+                      <div>• Semifinales: <span className="font-bold text-gray-900 dark:text-white">50 pts</span></div>
+                      <div className="col-span-2">• Campeón de Llave: <span className="font-bold text-gray-900 dark:text-white">100 pts</span></div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white mb-1">Predicciones Agnósticas (Sección Especial):</p>
+                    <ul className="list-disc list-inside space-y-1 pl-1">
+                      <li><span className="font-bold text-[#C9A84C]">15 Puntos:</span> Acierto al Campeón del Mundo (agnóstico).</li>
+                      <li><span className="font-bold text-[#C9A84C]">10 Puntos:</span> Acierto al Goleador del torneo (agnóstico).</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -495,10 +576,19 @@ export function GroupRoom({
       {/* Bracket Popup */}
       <Modal open={showBracket} onClose={() => setShowBracket(false)} title="Mi Bracket" size="xl">
         <BracketPopup
+          groupSelections={groupSelections}
           knockoutPredictions={knockoutPredictions}
           userName={members.find((m) => m.user_id === currentUserId)?.profile?.name}
         />
       </Modal>
+
+      {/* Collapsible Progress Sidebar */}
+      <ProgressSidebar
+        groupPredictions={groupPredictions}
+        knockoutPredictions={knockoutPredictions}
+        predictedChampionId={initialChampionId}
+        predictedGoleador={initialGoleador}
+      />
     </div>
   )
 }

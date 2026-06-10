@@ -11,9 +11,16 @@ const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) =
 interface BetSummaryProps {
   knockoutPredictions: Record<number, string>
   allMembersPredictions?: Record<string, { name: string; champion: string | null; runnerUp: string | null }>
+  predictedChampionId?: string | null
+  predictedGoleador?: string
 }
 
-export function BetSummary({ knockoutPredictions, allMembersPredictions }: BetSummaryProps) {
+export function BetSummary({ 
+  knockoutPredictions, 
+  allMembersPredictions,
+  predictedChampionId = null,
+  predictedGoleador = '',
+}: BetSummaryProps) {
   const champion = knockoutPredictions[103] ? TEAMS_BY_ID[knockoutPredictions[103]] : null
 
   // Runner up = loser of the final = the team in final that is NOT the champion
@@ -29,34 +36,61 @@ export function BetSummary({ knockoutPredictions, allMembersPredictions }: BetSu
     return null
   }, [champion, semifinal1Winner, semifinal2Winner])
 
-  if (!champion) return null
+  if (!champion && !predictedChampionId && !predictedGoleador) return null
 
   return (
     <div className="glass-card p-4 space-y-3">
       {/* My picks */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 flex-1">
-          <Trophy size={16} className="text-[#C9A84C] flex-shrink-0" />
-          <div className="flex items-center gap-1.5">
-            <span className="text-lg">{champion.flag_emoji}</span>
-            <span className="text-sm font-body font-semibold text-[#C9A84C]">{champion.name}</span>
-          </div>
-        </div>
-        {runnerUp && (
+      {champion && (
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 flex-1">
-            <Medal size={16} className="text-gray-400 flex-shrink-0" />
+            <Trophy size={16} className="text-[#C9A84C] flex-shrink-0" />
             <div className="flex items-center gap-1.5">
-              <span className="text-lg">{runnerUp.flag_emoji}</span>
-              <span className="text-sm font-body font-medium text-gray-500 dark:text-gray-400">{runnerUp.name}</span>
+              <span className="text-lg">{champion.flag_emoji}</span>
+              <span className="text-sm font-body font-semibold text-[#C9A84C]">{champion.name}</span>
             </div>
           </div>
-        )}
-      </div>
+          {runnerUp && (
+            <div className="flex items-center gap-2 flex-1">
+              <Medal size={16} className="text-gray-400 flex-shrink-0" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg">{runnerUp.flag_emoji}</span>
+                <span className="text-sm font-body font-medium text-gray-500 dark:text-gray-400">{runnerUp.name}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Agnostic selections */}
+      {(predictedChampionId || predictedGoleador) && (
+        <div className={cn(
+          "flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs font-body text-gray-500",
+          champion && "border-t border-gray-100 dark:border-white/[0.06] pt-3"
+        )}>
+          {predictedChampionId && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase font-mono text-gray-400 tracking-wider">Mi Campeón Agnóstico:</span>
+              <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-1">
+                {TEAMS_BY_ID[predictedChampionId]?.flag_emoji} {TEAMS_BY_ID[predictedChampionId]?.name}
+              </span>
+            </div>
+          )}
+          {predictedGoleador && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase font-mono text-gray-400 tracking-wider">Mi Goleador Agnóstico:</span>
+              <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-1">
+                ⚽ {predictedGoleador}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* All members champions */}
       {allMembersPredictions && Object.keys(allMembersPredictions).length > 0 && (
         <div className="border-t border-gray-100 dark:border-white/[0.06] pt-3">
-          <p className="text-[10px] font-mono text-gray-400 uppercase tracking-wider mb-2">Campeones de la sala</p>
+          <p className="text-[10px] font-mono text-gray-400 uppercase tracking-wider mb-2">Campeones de la sala (Bracket)</p>
           <div className="flex flex-wrap gap-2">
             {Object.entries(allMembersPredictions).map(([userId, { name, champion: champId }]) => {
               const team = champId ? TEAMS_BY_ID[champId] : null

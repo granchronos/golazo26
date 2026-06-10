@@ -5,16 +5,19 @@ export const POINTS_SYSTEM = {
     correct1st: 5,
     correct2nd: 5,
   },
-  // Knockout: base points for correct winner, bonus for exact score
+  // Knockout: base points for correct winner
   knockout: {
-    exactScore: 3,   // bonus for predicting exact score
-    correctWinner: 1, // base for picking the right winner
+    round_of_32: 10,
+    round_of_16: 15,
+    quarter_finals: 20,
+    semi_finals: 50,
+    final: 100,
   },
-  round_of_32: { winner: 10 },
-  round_of_16: { winner: 15 },
-  quarter_finals: { winner: 20 },
-  semi_finals: { winner: 50 },
-  final: { winner: 100 },
+  // Agnostic choices points
+  agnostic: {
+    champion: 15,
+    goleador: 10,
+  }
 } as const
 
 export const ROUND_POINTS: Record<MatchRound, number> = {
@@ -26,6 +29,15 @@ export const ROUND_POINTS: Record<MatchRound, number> = {
   final: 100,
 }
 
+// Points for score prediction results
+export const SCORE_POINTS = {
+  exactScore: 3,
+  correctDifference: 2,
+  correctWinner: 1,
+  incorrect: 0,
+} as const
+
+// Deprecated: keeping compatibility if imported elsewhere
 export const SCORE_BONUS = {
   exactScore: 3,
   correctWinner: 1,
@@ -52,7 +64,15 @@ export const MAX_POSSIBLE_POINTS =
   // Semi Finals: 2 matches × 50pts
   2 * 50 +
   // Final: 100pts
-  100
+  100 +
+  // Champion and Goleador agnostic choices: 15pts + 10pts
+  15 + 10
 
-// WC 2026 opening match: Jun 11 — México vs Sudáfrica at 15:00 ET (19:00 UTC)
-export const GROUP_STAGE_DEADLINE = new Date('2026-06-11T18:50:00Z') // 10 min before kickoff UTC
+// Deadlines:
+// Group Stage & overall winner/goleador closes: Jun 18 at 15:00 local (13:00 UTC)
+export const GROUP_STAGE_DEADLINE = new Date('2026-06-18T13:00:00Z')
+export const CHAMPION_GOLEADOR_DEADLINE = new Date('2026-06-18T13:00:00Z')
+
+// First Matchday (Jornada 1) score prediction closes: Jun 12 at 20:55 local (18:55 UTC)
+export const FIRST_JORNADA_DEADLINE = new Date('2026-06-12T18:55:00Z')
+

@@ -1,3 +1,5 @@
+import { FIRST_JORNADA_DEADLINE } from '@/lib/constants/points'
+
 export function formatMatchDate(dateStr: string): string {
   const date = new Date(dateStr)
   return date.toLocaleDateString('es-ES', {
@@ -6,7 +8,6 @@ export function formatMatchDate(dateStr: string): string {
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/Mexico_City',
   })
 }
 
@@ -50,3 +51,13 @@ export function getMatchDeadline(matchDate: string): Date {
   date.setMinutes(date.getMinutes() - 10) // 10 min before kickoff
   return date
 }
+
+export function getMatchPredictionDeadline(matchNumber: number, matchDate: string): Date {
+  // First matchday (Jornada 1): match numbers 1 to 24
+  if (matchNumber >= 1 && matchNumber <= 24) {
+    return FIRST_JORNADA_DEADLINE
+  }
+  // Otherwise, default deadline (10 minutes before kickoff)
+  return getMatchDeadline(matchDate)
+}
+

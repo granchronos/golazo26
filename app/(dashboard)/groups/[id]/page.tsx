@@ -29,7 +29,7 @@ export default async function GroupDetailPage({ params }: PageProps) {
 
   // Parallel fetch: members + all group predictions + all knockout predictions + all matches
   const [{ data: rawMembers, error: membersError }, { data: allGroupPreds }, { data: allKnockoutPreds }, { data: rawMatches }] = await Promise.all([
-    admin.from('room_members').select('user_id, joined_at, payment_status').eq('room_id', id),
+    admin.from('room_members').select('user_id, joined_at, payment_status, predicted_champion_id, predicted_goleador').eq('room_id', id),
     admin.from('group_predictions').select('*').eq('room_id', id),
     admin.from('predictions').select('user_id, match_id, predicted_winner_id, predicted_home_score, predicted_away_score, matches!inner(match_number)').eq('room_id', id),
     admin.from('matches').select('*').order('match_number', { ascending: true }),
@@ -58,6 +58,8 @@ export default async function GroupDetailPage({ params }: PageProps) {
     profile: profilesMap.get(m.user_id) ?? { id: '', user_id: m.user_id, name: 'Anónimo', avatar_url: null, created_at: '', updated_at: '' } as Profile,
     total_points: scoresMap.get(m.user_id) ?? 0,
     payment_status: (m.payment_status as 'pending' | 'confirmed' | 'exempt') ?? 'pending',
+    predicted_champion_id: m.predicted_champion_id as string | null,
+    predicted_goleador: m.predicted_goleador as string | null,
   }))
 
   // Current user's group predictions

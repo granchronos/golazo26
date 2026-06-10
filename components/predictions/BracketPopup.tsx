@@ -61,19 +61,80 @@ const BEST_LABELS: Record<string, string> = {
 }
 
 interface BracketPopupProps {
+  groupSelections: Record<GroupLetter, { first: string | null; second: string | null }>
   knockoutPredictions: Record<number, string>
   userName?: string
+}
+
+import type { GroupLetter } from '@/types/database'
+import { TEAMS_BY_GROUP } from '@/lib/constants/teams'
+import { ALL_BRACKET_MATCHES, type SlotSource } from '@/lib/constants/bracket'
+
+function getPoolTeams(
+  groups: [GroupLetter, GroupLetter],
+  groupSelections: Record<GroupLetter, { first: string | null; second: string | null }>
+): TeamData[] {
+  return groups.flatMap((g) => {
+    const first = groupSelections[g]?.first
+    const second = groupSelections[g]?.second
+    return (TEAMS_BY_GROUP[g] || []).filter((t) => t.id !== first && t.id !== second)
+  })
+}
+
+function getMatchTeams(
+  matchNumber: number,
+  groupSelections: Record<GroupLetter, { first: string | null; second: string | null }>,
+  predictions: Record<number, string>
+): { home: TeamData | null; away: TeamData | null } {
+  const matchDef = ALL_BRACKET_MATCHES.find((m) => m.matchNumber === matchNumber)
+  if (!matchDef) return { home: null, away: null }
+
+  const resolveSource = (source: SlotSource): TeamData | null => {
+    if (source.kind === '1st') return TEAMS_BY_ID[groupSelections[source.group]?.first ?? ''] ?? null
+    if (source.kind === '2nd') return TEAMS_BY_ID[groupSelections[source.group]?.second ?? ''] ?? null
+    if (source.kind === 'winner') {
+      const parentTeams = getMatchTeams(source.matchNumber, groupSelections, predictions)
+      const pickId = predictions[source.matchNumber]
+      if (pickId && (pickId === parentTeams.home?.id || pickId === parentTeams.away?.id)) {
+        return TEAMS_BY_ID[pickId] ?? null
+      }
+      return null
+    }
+    if (source.kind === '3rd_pool') {
+      const pickId = predictions[matchNumber]
+      if (pickId) {
+        const poolTeams = getPoolTeams(source.groups, groupSelections)
+        if (poolTeams.some((t) => t.id === pickId)) {
+          return TEAMS_BY_ID[pickId] ?? null
+        }
+      }
+      return null
+    }
+    return null
+  }
+
+  return {
+    home: resolveSource(matchDef.home.source),
+    away: resolveSource(matchDef.away.source),
+  }
 }
 
 function resolveTeam(
   match: BracketMatchDef,
   side: 'home' | 'away',
+  groupSelections: Record<GroupLetter, { first: string | null; second: string | null }>,
   predictions: Record<number, string>
 ): TeamData | null {
   const { source } = match[side]
+  if (source.kind === '1st') return TEAMS_BY_ID[groupSelections[source.group]?.first ?? ''] ?? null
+  if (source.kind === '2nd') return TEAMS_BY_ID[groupSelections[source.group]?.second ?? ''] ?? null
   if (source.kind === 'winner') {
-    const winnerId = predictions[source.matchNumber]
-    return winnerId ? TEAMS_BY_ID[winnerId] ?? null : null
+    const parentTeams = getMatchTeams(source.matchNumber, groupSelections, predictions)
+    const pickId = predictions[source.matchNumber]
+    if (pickId && (pickId === parentTeams.home?.id || pickId === parentTeams.away?.id)) {
+      return TEAMS_BY_ID[pickId] ?? null
+    }
+    return null
   }
   return null
 }
@@ -82,19 +143,21 @@ function resolveTeam(
 
 function MatchCard({
   match,
+  groupSelections,
   predictions,
   highlight = false,
   showDate = true,
 }: {
   match: BracketMatchDef
+  groupSelections: Record<GroupLetter, { first: string | null; second: string | null }>
   predictions: Record<number, string>
   highlight?: boolean
   showDate?: boolean
 }) {
   const winner = predictions[match.matchNumber]
   const winnerTeam = winner ? TEAMS_BY_ID[winner] : null
-  const homeTeam = resolveTeam(match, 'home', predictions)
-  const awayTeam = resolveTeam(match, 'away', predictions)
+  const homeTeam = resolveTeam(match, 'home', groupSelections, predictions)
+  const awayTeam = resolveTeam(match, 'away', groupSelections, predictions)
 
   return (
     <div>
@@ -261,6 +324,7 @@ function RoundColumn({
   label,
   matches,
   tops,
+  groupSelections,
   predictions,
   labelColor,
   highlight = false,
@@ -269,6 +333,7 @@ function RoundColumn({
   label: string
   matches: BracketMatchDef[]
   tops: number[]
+  groupSelections: Record<GroupLetter, { first: string | null; second: string | null }>
   predictions: Record<number, string>
   labelColor?: string
   highlight?: boolean
@@ -290,6 +355,7 @@ function RoundColumn({
           <div key={m.matchNumber} className="absolute left-0" style={{ top: tops[i] }}>
             <MatchCard
               match={m}
+              groupSelections={groupSelections}
               predictions={predictions}
               highlight={highlight}
               showDate={showDates}
@@ -303,7 +369,7 @@ function RoundColumn({
 
 // ─── Main Export ────────────────────────────────────────────────────
 
-export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProps) {
+export function BracketPopup({ groupSelections, knockoutPredictions, userName }: BracketPopupProps) {
   const bracketRef = useRef<HTMLDivElement>(null)
   const [exporting, setExporting] = useState(false)
 
@@ -464,6 +530,7 @@ export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProp
               label="Octavos"
               matches={leftR16}
               tops={R16_TOPS}
+              groupSelections={groupSelections}
               predictions={knockoutPredictions}
               labelColor="text-[#2A398D]"
             />
@@ -475,6 +542,7 @@ export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProp
               label="Cuartos"
               matches={leftQF}
               tops={QF_TOPS}
+              groupSelections={groupSelections}
               predictions={knockoutPredictions}
             />
             <div style={{ paddingTop: LABEL_H }}>
@@ -485,6 +553,7 @@ export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProp
               label="Semi"
               matches={leftSF}
               tops={SF_TOPS}
+              groupSelections={groupSelections}
               predictions={knockoutPredictions}
             />
             <div style={{ paddingTop: LABEL_H }}>
@@ -506,6 +575,7 @@ export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProp
                 >
                   <MatchCard
                     match={finalMatch}
+                    groupSelections={groupSelections}
                     predictions={knockoutPredictions}
                     highlight
                   />
@@ -521,6 +591,7 @@ export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProp
               label="Semi"
               matches={rightSF}
               tops={SF_TOPS}
+              groupSelections={groupSelections}
               predictions={knockoutPredictions}
             />
 
@@ -531,6 +602,7 @@ export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProp
               label="Cuartos"
               matches={rightQF}
               tops={QF_TOPS}
+              groupSelections={groupSelections}
               predictions={knockoutPredictions}
             />
 
@@ -541,6 +613,7 @@ export function BracketPopup({ knockoutPredictions, userName }: BracketPopupProp
               label="Octavos"
               matches={rightR16}
               tops={R16_TOPS}
+              groupSelections={groupSelections}
               predictions={knockoutPredictions}
               labelColor="text-[#E61D25]"
             />

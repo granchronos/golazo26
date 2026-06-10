@@ -32,16 +32,6 @@ export function KnockoutPredictions({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const [, startTransition] = useTransition()
 
-  const resolveTeam = useCallback(
-    (source: SlotSource): TeamData | null => {
-      if (source.kind === '1st') return TEAMS_BY_ID[groupSelections[source.group]?.first ?? ''] ?? null
-      if (source.kind === '2nd') return TEAMS_BY_ID[groupSelections[source.group]?.second ?? ''] ?? null
-      if (source.kind === 'winner') return TEAMS_BY_ID[picks[source.matchNumber] ?? ''] ?? null
-      return null
-    },
-    [groupSelections, picks]
-  )
-
   const getPoolTeams = useCallback(
     (groups: [GroupLetter, GroupLetter]): TeamData[] => {
       return groups.flatMap((g) => {
@@ -52,6 +42,61 @@ export function KnockoutPredictions({
     },
     [groupSelections]
   )
+
+  const getMatchTeams = useCallback(
+    (matchNumber: number): { home: TeamData | null; away: TeamData | null } => {
+      const matchDef = ALL_BRACKET_MATCHES.find((m) => m.matchNumber === matchNumber)
+      if (!matchDef) return { home: null, away: null }
+
+      const resolveSource = (source: SlotSource): TeamData | null => {
+        if (source.kind === '1st') return TEAMS_BY_ID[groupSelections[source.group]?.first ?? ''] ?? null
+        if (source.kind === '2nd') return TEAMS_BY_ID[groupSelections[source.group]?.second ?? ''] ?? null
+        if (source.kind === 'winner') {
+          const parentTeams = getMatchTeams(source.matchNumber)
+          const pickId = picks[source.matchNumber]
+          if (pickId && (pickId === parentTeams.home?.id || pickId === parentTeams.away?.id)) {
+            return TEAMS_BY_ID[pickId] ?? null
+          }
+          return null
+        }
+        if (source.kind === '3rd_pool') {
+          const pickId = picks[matchNumber]
+          if (pickId) {
+            const poolTeams = getPoolTeams(source.groups)
+            if (poolTeams.some((t) => t.id === pickId)) {
+              return TEAMS_BY_ID[pickId] ?? null
+            }
+          }
+          return null
+        }
+        return null
+      }
+
+      return {
+        home: resolveSource(matchDef.home.source),
+        away: resolveSource(matchDef.away.source),
+      }
+    },
+    [groupSelections, picks, getPoolTeams]
+  )
+
+  const resolveTeam = useCallback(
+    (source: SlotSource): TeamData | null => {
+      if (source.kind === '1st') return TEAMS_BY_ID[groupSelections[source.group]?.first ?? ''] ?? null
+      if (source.kind === '2nd') return TEAMS_BY_ID[groupSelections[source.group]?.second ?? ''] ?? null
+      if (source.kind === 'winner') {
+        const parentTeams = getMatchTeams(source.matchNumber)
+        const pickId = picks[source.matchNumber]
+        if (pickId && (pickId === parentTeams.home?.id || pickId === parentTeams.away?.id)) {
+          return TEAMS_BY_ID[pickId] ?? null
+        }
+        return null
+      }
+      return null
+    },
+    [groupSelections, picks, getMatchTeams]
+  )
+
 
   const handlePick = useCallback(
     (matchNumber: number, teamId: string) => {

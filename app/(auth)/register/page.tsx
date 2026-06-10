@@ -86,11 +86,26 @@ export default function RegisterPage() {
           <p className="text-sm font-body text-gray-400 mb-8">Regístrate gratis en segundos</p>
 
           {/* Error */}
-          {state?.error && (
-            <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm font-body">
-              {state.error}
-            </div>
-          )}
+          {(() => {
+            const errorParam = searchParams.get('error')
+            let friendlyError = ''
+            if (errorParam) {
+              if (errorParam === 'OAuthCallbackError') {
+                friendlyError = 'Hubo un problema al registrarse con Google. Por favor, inténtalo de nuevo.'
+              } else if (errorParam === 'profile_creation_failed') {
+                friendlyError = 'No se pudo crear el perfil de usuario. Por favor, vuelve a intentar el registro.'
+              } else {
+                friendlyError = errorParam
+              }
+            }
+            const displayError = state?.error || friendlyError
+            if (!displayError) return null
+            return (
+              <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm font-body">
+                {displayError}
+              </div>
+            )
+          })()}
 
           {/* Google button */}
           <form action={loginWithGoogle} className="mb-4">
