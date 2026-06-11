@@ -253,12 +253,10 @@ function MatchCard({
   const dateLabel = matchDate.toLocaleDateString('es-ES', {
     day: 'numeric',
     month: 'short',
-    timeZone: 'America/Mexico_City',
   })
   const timeLabel = matchDate.toLocaleTimeString('es-ES', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/Mexico_City',
   })
 
   if (isPool) {

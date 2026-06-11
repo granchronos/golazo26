@@ -30,22 +30,20 @@ const BEST_LABELS: Record<string, string> = {
 
 function formatDate(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleDateString('es-MX', {
+  return d.toLocaleDateString('es-ES', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-    timeZone: 'America/Mexico_City',
   })
 }
 
 function formatTime(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleTimeString('es-MX', {
+  return d.toLocaleTimeString('es-ES', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-    timeZone: 'America/Mexico_City',
   })
 }
 

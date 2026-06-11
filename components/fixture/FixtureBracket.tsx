@@ -16,7 +16,7 @@ import {
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 function fmtDate(iso: string): string {
   const d = new Date(iso)
-  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`
 }
 
 // ─── Match slot card ───────────────────────────────────────────────

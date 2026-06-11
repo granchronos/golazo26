@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { PageTransition, StaggerContainer, StaggerItem } from '@/components/animations/PageTransition'
 import { GROUP_LETTERS, TEAMS_BY_GROUP, TEAMS_BY_ID } from '@/lib/constants/teams'
@@ -23,30 +23,152 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'calendar', label: 'Calendario' },
 ]
 
-function formatMatchDate(iso: string) {
+// ─── Client-only date/time formatting (uses browser local timezone) ───
+
+function useIsMounted() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  return mounted
+}
+
+function formatMatchDateLabel(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' })
+  return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
 function formatMatchTime(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false })
+  return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+function formatGroupDateLabel(iso: string) {
+  const d = new Date(iso)
+  return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function groupMatchesByDate(matches: typeof GROUP_STAGE_MATCHES) {
   const groups: Record<string, typeof GROUP_STAGE_MATCHES> = {}
   for (const m of matches) {
-    const key = new Date(m.match_date).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    const key = formatGroupDateLabel(m.match_date)
     if (!groups[key]) groups[key] = []
     groups[key].push(m)
   }
   return groups
 }
 
+// ─── Group standings computation from DB matches ─────────────────────
+
+interface GroupStanding {
+  team: TeamData
+  played: number
+  won: number
+  drawn: number
+  lost: number
+  gf: number
+  ga: number
+  gd: number
+  points: number
+}
+
+interface DBMatch {
+  match_number: number
+  home_team_id: string
+  away_team_id: string
+  home_score: number | null
+  away_score: number | null
+  status: string
+}
+
+function computeGroupStandings(
+  groupLetter: GroupLetter,
+  teams: TeamData[],
+  dbMatches: DBMatch[]
+): GroupStanding[] {
+  const stats: Record<string, GroupStanding> = {}
+  const teamIds = new Set(teams.map((t) => t.id))
+  for (const t of teams) {
+    stats[t.id] = { team: t, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, gd: 0, points: 0 }
+  }
+
+  // Filter to group matches: both teams must belong to this group + finished with scores
+  const groupMatches = dbMatches.filter(
+    (m) => teamIds.has(m.home_team_id) && teamIds.has(m.away_team_id) &&
+           m.status === 'finished' && m.home_score != null && m.away_score != null
+  )
+
+  for (const m of groupMatches) {
+    const home = stats[m.home_team_id]
+    const away = stats[m.away_team_id]
+    if (!home || !away) continue
+
+    const hs = m.home_score!
+    const as_ = m.away_score!
+
+    home.played++
+    away.played++
+    home.gf += hs
+    home.ga += as_
+    away.gf += as_
+    away.ga += hs
+
+    if (hs > as_) {
+      home.won++
+      home.points += 3
+      away.lost++
+    } else if (as_ > hs) {
+      away.won++
+      away.points += 3
+      home.lost++
+    } else {
+      home.drawn++
+      away.drawn++
+      home.points += 1
+      away.points += 1
+    }
+  }
+
+  // Calculate GD and sort
+  const standings = Object.values(stats).map((s) => ({ ...s, gd: s.gf - s.ga }))
+  standings.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points
+    if (b.gd !== a.gd) return b.gd - a.gd
+    return b.gf - a.gf
+  })
+  return standings
+}
+
 export default function FixturePage() {
   const [activeTab, setActiveTab] = useState<Tab>('groups')
   const [groupFilter, setGroupFilter] = useState<GroupLetter | 'all'>('all')
   const [selectedMatch, setSelectedMatch] = useState<FixtureMatch | null>(null)
+  const [dbMatches, setDbMatches] = useState<DBMatch[]>([])
+  const mounted = useIsMounted()
+
+  // Fetch real match data from DB
+  useEffect(() => {
+    async function fetchMatches() {
+      try {
+        const res = await fetch('/api/matches')
+        const data = await res.json()
+        if (data.matches) setDbMatches(data.matches)
+      } catch (err) {
+        console.error('Error fetching live scores:', err)
+      }
+    }
+    fetchMatches()
+    // Refresh every 60 seconds
+    const interval = setInterval(fetchMatches, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Create a map of dbMatches by match_number for quick lookup
+  const dbMatchMap = useMemo(() => {
+    const map: Record<number, DBMatch> = {}
+    for (const m of dbMatches) {
+      map[m.match_number] = m
+    }
+    return map
+  }, [dbMatches])
 
   const filteredMatches = useMemo(() => {
     const matches = groupFilter === 'all'
@@ -55,7 +177,10 @@ export default function FixturePage() {
     return [...matches].sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
   }, [groupFilter])
 
-  const matchesByDate = useMemo(() => groupMatchesByDate(filteredMatches), [filteredMatches])
+  const matchesByDate = useMemo(() => {
+    if (!mounted) return {}
+    return groupMatchesByDate(filteredMatches)
+  }, [filteredMatches, mounted])
 
   return (
     <PageTransition>
@@ -96,27 +221,56 @@ export default function FixturePage() {
             <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-3">
           {GROUP_LETTERS.map((letter) => {
             const teams = TEAMS_BY_GROUP[letter] || []
+            const standings = computeGroupStandings(letter, teams, dbMatches)
+            const hasPlayed = standings.some((s) => s.played > 0)
+
             return (
               <StaggerItem key={letter}>
                 <div className="glass-card overflow-hidden">
-                  <div className="px-4 py-2.5 border-b border-gray-100 dark:border-white/[0.06]">
+                  <div className="px-4 py-2.5 border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
                     <span className="font-display text-sm text-gray-900 dark:text-white">Grupo {letter}</span>
+                    {hasPlayed && (
+                      <div className="flex items-center gap-3 text-[9px] font-mono text-gray-400">
+                        <span className="w-6 text-center">Pts</span>
+                        <span className="w-6 text-center">DG</span>
+                        <span className="w-4 text-center">J</span>
+                      </div>
+                    )}
                   </div>
                   <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
-                    {teams.map((team, idx) => (
-                      <div key={team.id} className={cn(
+                    {standings.map((row, idx) => (
+                      <div key={row.team.id} className={cn(
                         'flex items-center gap-3 px-4 py-2.5',
                         idx < 2 && 'bg-[#3CAC3B]/[0.04]'
                       )}>
                         <span className={cn(
-                          'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold',
+                          'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0',
                           idx < 2 ? 'bg-[#3CAC3B] text-white' : 'text-gray-300 dark:text-gray-600'
                         )}>
                           {idx + 1}
                         </span>
-                        <span className="text-lg leading-none">{team.flag_emoji}</span>
-                        <span className="text-sm font-body text-gray-800 dark:text-gray-200">{team.name}</span>
-                        <WCBadge teamId={team.id} size="xs" />
+                        <span className="text-lg leading-none flex-shrink-0">{row.team.flag_emoji}</span>
+                        <span className="text-sm font-body text-gray-800 dark:text-gray-200 flex-1 min-w-0 truncate">{row.team.name}</span>
+                        <WCBadge teamId={row.team.id} size="xs" />
+                        {hasPlayed ? (
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <span className={cn(
+                              'w-6 text-center font-mono text-xs font-bold',
+                              idx < 2 ? 'text-[#2A398D] dark:text-blue-400' : 'text-gray-500'
+                            )}>
+                              {row.points}
+                            </span>
+                            <span className={cn(
+                              'w-6 text-center font-mono text-[10px]',
+                              row.gd > 0 ? 'text-emerald-500' : row.gd < 0 ? 'text-red-400' : 'text-gray-400'
+                            )}>
+                              {row.gd > 0 ? '+' : ''}{row.gd}
+                            </span>
+                            <span className="w-4 text-center font-mono text-[10px] text-gray-400">
+                              {row.played}
+                            </span>
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>
@@ -173,7 +327,7 @@ export default function FixturePage() {
 
           {/* Matches grouped by date */}
           <div className="space-y-6">
-            {Object.entries(matchesByDate).map(([dateLabel, matches]) => (
+            {mounted && Object.entries(matchesByDate).map(([dateLabel, matches]) => (
               <div key={dateLabel}>
                 <p className="text-xs font-body font-medium text-gray-400 uppercase tracking-wider mb-2 sticky top-0 bg-[var(--bg-primary)] py-1 z-10">
                   {dateLabel}
@@ -182,31 +336,81 @@ export default function FixturePage() {
                   {matches.map((m) => {
                     const home = m.home_team_id ? TEAMS_BY_ID[m.home_team_id] : null
                     const away = m.away_team_id ? TEAMS_BY_ID[m.away_team_id] : null
+                    const dbMatch = dbMatchMap[m.match_number]
+                    const isLive = dbMatch?.status === 'live'
+                    const isFinished = dbMatch?.status === 'finished'
+                    const hasScore = dbMatch && dbMatch.home_score != null && dbMatch.away_score != null
+                    
                     return (
                       <button
                         key={m.match_number}
                         onClick={() => home && away ? setSelectedMatch(m) : undefined}
                         className={cn(
                           'glass-card flex items-center gap-3 px-4 py-3 w-full text-left transition-colors',
-                          home && away && 'hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer'
+                          home && away && 'hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer',
+                          isLive && 'ring-1 ring-red-500/30 bg-red-50/30 dark:bg-red-950/10'
                         )}
                       >
-                        {/* Time */}
-                        <span className="font-mono text-xs text-gray-400 w-10 flex-shrink-0">
-                          {formatMatchTime(m.match_date)}
+                        {/* Time or Status */}
+                        <span className={cn(
+                          'font-mono text-xs w-10 flex-shrink-0 text-center',
+                          isLive ? 'text-red-500 font-bold' : isFinished ? 'text-gray-400' : 'text-gray-400'
+                        )}>
+                          {isLive ? (
+                            <span className="flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                              <span className="text-[10px]">LIVE</span>
+                            </span>
+                          ) : isFinished ? (
+                            <span className="text-[10px] text-gray-400">FIN</span>
+                          ) : (
+                            formatMatchTime(m.match_date)
+                          )}
                         </span>
                         {/* Group badge */}
                         <span className="text-[10px] font-body font-semibold text-[#2A398D] dark:text-blue-400 bg-[#2A398D]/[0.08] dark:bg-[#2A398D]/20 px-1.5 py-0.5 rounded flex-shrink-0">
                           {m.group_letter}
                         </span>
-                        {/* Teams */}
+                        {/* Teams + Score */}
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <span className="text-sm leading-none">{home?.flag_emoji}</span>
-                          <span className="text-sm font-body font-medium text-gray-800 dark:text-gray-200">{home?.code}</span>
-                          <span className="text-xs text-gray-300 dark:text-gray-600 mx-1">vs</span>
+                          <span className={cn(
+                            'text-sm font-body font-medium',
+                            isFinished && dbMatch?.home_score != null && dbMatch?.away_score != null && dbMatch.home_score > dbMatch.away_score
+                              ? 'text-[#2A398D] dark:text-blue-400 font-bold'
+                              : 'text-gray-800 dark:text-gray-200'
+                          )}>
+                            {home?.code}
+                          </span>
+                          
+                          {/* Score or VS */}
+                          {hasScore ? (
+                            <span className={cn(
+                              'font-mono text-sm font-bold px-1.5',
+                              isLive ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'
+                            )}>
+                              {dbMatch.home_score} - {dbMatch.away_score}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-300 dark:text-gray-600 mx-1">vs</span>
+                          )}
+
+                          <span className={cn(
+                            'text-sm font-body font-medium',
+                            isFinished && dbMatch?.home_score != null && dbMatch?.away_score != null && dbMatch.away_score > dbMatch.home_score
+                              ? 'text-[#2A398D] dark:text-blue-400 font-bold'
+                              : 'text-gray-800 dark:text-gray-200'
+                          )}>
+                            {away?.code}
+                          </span>
                           <span className="text-sm leading-none">{away?.flag_emoji}</span>
-                          <span className="text-sm font-body font-medium text-gray-800 dark:text-gray-200">{away?.code}</span>
                         </div>
+                        {/* Time (show when finished/live) */}
+                        {(isLive || isFinished) && (
+                          <span className="hidden sm:block text-[10px] font-mono text-gray-400 flex-shrink-0">
+                            {formatMatchTime(m.match_date)}
+                          </span>
+                        )}
                         {/* Venue */}
                         <div className="hidden sm:flex items-center gap-1 text-xs text-gray-400 font-body flex-shrink-0">
                           <MapPin size={10} />
