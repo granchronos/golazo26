@@ -283,14 +283,24 @@ function MatchRow({ roomId, match, knockoutPrediction, savedScore, isAdmin = fal
         {/* Score / Time / Prediction */}
         <div className="flex flex-col items-center w-28 flex-shrink-0 gap-0.5">
           {isFinished ? (
-            <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
-              {match.home_score} - {match.away_score}
-            </span>
+            <>
+              <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
+                {match.home_score} - {match.away_score}
+              </span>
+              <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                FINALIZADO
+              </span>
+            </>
           ) : isLive ? (
-            <div className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-[#E61D25] rounded-full animate-pulse" />
-              <span className="font-mono text-xs font-bold text-[#E61D25]">EN VIVO</span>
-            </div>
+            <>
+              <span className="font-mono text-sm font-bold text-[#E61D25] dark:text-red-500">
+                {match.home_score ?? 0} - {match.away_score ?? 0}
+              </span>
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-[#E61D25] rounded-full animate-pulse" />
+                <span className="font-mono text-[9px] font-bold text-[#E61D25]">EN VIVO</span>
+              </div>
+            </>
           ) : (
             <LocalTime dateStr={match.match_date} mode="full" className="font-mono text-xs text-gray-400" />
           )}
