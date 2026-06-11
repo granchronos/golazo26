@@ -221,7 +221,7 @@ export default function FixturePage() {
       {activeTab === 'groups' && (
         <div className="flex flex-col gap-6">
           {/* Groups grid */}
-          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {GROUP_LETTERS.map((letter) => {
               const teams = TEAMS_BY_GROUP[letter] || []
               const standings = computeGroupStandings(letter, teams, dbMatches)

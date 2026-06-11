@@ -99,10 +99,10 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
                     {idx + 1}
                   </span>
                 </td>
-                <td className="px-1.5 py-1.5">
-                  <div className="flex items-center gap-1.5">
+                <td className="px-1.5 py-1.5 min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <TeamFlag flagCode={row.team.flag_code} name={row.team.name} size={16} />
-                    <span className="font-medium dark:text-white truncate max-w-[95px]" title={row.team.name}>
+                    <span className="font-medium dark:text-white truncate" title={row.team.name}>
                       {compact ? row.team.code : row.team.name}
                     </span>
                     <WCBadge teamId={row.team.id} size="xs" />
