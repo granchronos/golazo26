@@ -100,10 +100,6 @@ export async function GET(request: Request) {
     for (const apiMatch of apiMatches) {
       const apiStatus = mapApiStatus(apiMatch.statusShort)
       
-      // We only update if the match is finished (or live, if we want real-time scores)
-      // Let's support both live and finished matches!
-      if (apiStatus === 'scheduled') continue
-
       // Map home/away team names from API to our DB IDs
       const homeDbId = TEAM_NAME_MAP[apiMatch.homeTeam] || apiMatch.homeTeam.toLowerCase().substring(0, 3)
       const awayDbId = TEAM_NAME_MAP[apiMatch.awayTeam] || apiMatch.awayTeam.toLowerCase().substring(0, 3)
@@ -115,17 +111,27 @@ export async function GET(request: Request) {
         (dbm.home_team_id === awayDbId && dbm.away_team_id === homeDbId)
       )
 
+      if (!matchedDb) continue
+
+      // Only skip if the API says scheduled AND the database also says scheduled (or postponed).
+      // If the database has a status like 'live' or 'finished', but the API says 'scheduled', we should reset the match back to scheduled!
+      if (apiStatus === 'scheduled' && (matchedDb.status === 'scheduled' || matchedDb.status === 'postponed')) {
+        continue
+      }
+
       if (matchedDb) {
-        const homeScore = apiMatch.homeGoals ?? 0
-        const awayScore = apiMatch.awayGoals ?? 0
+        const homeScore = apiMatch.homeGoals ?? null
+        const awayScore = apiMatch.awayGoals ?? null
         
         // Let's determine the winner ID
         let winnerId: string | null = null
         if (apiStatus === 'finished') {
-          if (homeScore > awayScore) {
-            winnerId = matchedDb.home_team_id === homeDbId ? homeDbId : awayDbId
-          } else if (awayScore > homeScore) {
-            winnerId = matchedDb.away_team_id === awayDbId ? awayDbId : homeDbId
+          if (homeScore !== null && awayScore !== null) {
+            if (homeScore > awayScore) {
+              winnerId = matchedDb.home_team_id === homeDbId ? homeDbId : awayDbId
+            } else if (awayScore > homeScore) {
+              winnerId = matchedDb.away_team_id === awayDbId ? awayDbId : homeDbId
+            }
           }
         }
 
@@ -134,7 +140,9 @@ export async function GET(request: Request) {
         let eventsPayload = matchedDb.events
         let fetchedEvents = false
 
-        if (apiStatus === 'live' || (apiStatus === 'finished' && !hasDbEvents)) {
+        if (apiStatus === 'scheduled') {
+          eventsPayload = null
+        } else if (apiStatus === 'live' || (apiStatus === 'finished' && !hasDbEvents)) {
           if (apiMatch.apiFixtureId) {
             try {
               const apiEvents = await getMatchEvents(apiMatch.apiFixtureId)
@@ -158,12 +166,13 @@ export async function GET(request: Request) {
           }
         }
 
-        // Only update if there is a change in status, scores, or if new events were fetched
+        // Only update if there is a change in status, scores, or if new events were fetched/cleared
         const hasChanges = 
           matchedDb.status !== apiStatus ||
           matchedDb.home_score !== homeScore ||
           matchedDb.away_score !== awayScore ||
-          fetchedEvents
+          fetchedEvents ||
+          (apiStatus === 'scheduled' && matchedDb.events !== null)
 
         if (hasChanges) {
           const { error: updateError } = await admin
@@ -181,7 +190,7 @@ export async function GET(request: Request) {
             console.error(`Error updating match #${matchedDb.match_number}:`, updateError)
           } else {
             updatedCount++
-            updatedMatchesLog.push(`Match #${matchedDb.match_number} (${homeDbId} vs ${awayDbId}) updated to ${homeScore}-${awayScore} [${apiStatus}] (events: ${fetchedEvents ? 'updated' : 'unchanged'})`)
+            updatedMatchesLog.push(`Match #${matchedDb.match_number} (${homeDbId} vs ${awayDbId}) updated to ${homeScore ?? 'null'}-${awayScore ?? 'null'} [${apiStatus}] (events: ${apiStatus === 'scheduled' ? 'reset to null' : (fetchedEvents ? 'updated' : 'unchanged')})`)
           }
         }
       }
