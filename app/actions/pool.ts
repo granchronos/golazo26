@@ -76,7 +76,7 @@ export async function updatePoolConfig(
   if (error) return { error }
 
   if (new Date() > GROUP_STAGE_DEADLINE) {
-    return { error: 'No se puede modificar la polla después del cierre de grupos' }
+    return { error: 'No se puede modificar la porra después del cierre de grupos' }
   }
 
   if (!Number.isInteger(buyIn) || buyIn < 0 || buyIn > 1000000) {

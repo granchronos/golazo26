@@ -87,7 +87,7 @@ export function GroupRoom({
   const TABS = useMemo(() => {
     const tabs = [...BASE_TABS]
     if (room.pool_enabled) {
-      tabs.push({ id: 'pool', label: 'Polla', icon: Coins })
+      tabs.push({ id: 'pool', label: 'Porra', icon: Coins })
     }
     return tabs
   }, [room.pool_enabled])

@@ -55,7 +55,7 @@ export function PoolConfigPanel({ room, onClose, open }: PoolConfigPanelProps) {
         return
       }
       setEnabled(newVal)
-      toast.success(newVal ? 'Polla activada' : 'Polla desactivada')
+      toast.success(newVal ? 'Porra activada' : 'Porra desactivada')
     })
   }
 
@@ -94,12 +94,12 @@ export function PoolConfigPanel({ room, onClose, open }: PoolConfigPanelProps) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Configurar Polla" size="md">
+    <Modal open={open} onClose={onClose} title="Configurar Porra" size="md">
       <div className="space-y-6">
         {/* Toggle */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-body font-medium text-sm dark:text-white">Activar Polla</p>
+            <p className="font-body font-medium text-sm dark:text-white">Activar Porra</p>
             <p className="text-xs text-gray-400 font-body mt-0.5">
               Habilita el sistema de apuestas con dinero
             </p>
@@ -274,7 +274,7 @@ export function PoolConfigButton({ room }: { room: Room }) {
       <button
         onClick={() => setOpen(true)}
         className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#C9A84C]/10 hover:bg-[#C9A84C]/20 transition-colors"
-        title="Configurar Polla"
+        title="Configurar Porra"
       >
         <Settings size={16} className="text-[#C9A84C]" />
       </button>

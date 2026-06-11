@@ -31,7 +31,7 @@ export function PoolBanner({ room, paidCount, totalMembers, myPaymentStatus }: P
         <div className="flex items-center gap-2">
           <Coins size={14} className="text-[#C9A84C] flex-shrink-0" />
           <div className="text-xs font-body">
-            <span className="font-medium dark:text-white">Polla activa</span>
+            <span className="font-medium dark:text-white">Porra activa</span>
             <span className="text-gray-400 mx-1.5">·</span>
             <span className="text-gray-500 dark:text-gray-400">
               Entrada: <span className="font-mono">{symbol}{room.pool_buy_in.toLocaleString()}</span>

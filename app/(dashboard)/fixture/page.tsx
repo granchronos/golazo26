@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils/cn'
 import { MapPin, ChevronRight } from 'lucide-react'
 import { WCBadge } from '@/components/ui/WCBadge'
 import { TeamFlag } from '@/components/ui/TeamFlag'
+import { GroupTable } from '@/components/fixture/GroupTable'
 import { WCHistory } from '@/components/fixture/WCHistory'
 import { FixtureBracket } from '@/components/fixture/FixtureBracket'
 import { MatchDetailModal } from '@/components/fixture/MatchDetailModal'
@@ -220,66 +221,21 @@ export default function FixturePage() {
           {/* Groups grid */}
           <div className="flex-1">
             <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-3">
-          {GROUP_LETTERS.map((letter) => {
-            const teams = TEAMS_BY_GROUP[letter] || []
-            const standings = computeGroupStandings(letter, teams, dbMatches)
-            const hasPlayed = standings.some((s) => s.played > 0)
+              {GROUP_LETTERS.map((letter) => {
+                const teams = TEAMS_BY_GROUP[letter] || []
+                const standings = computeGroupStandings(letter, teams, dbMatches)
 
-            return (
-              <StaggerItem key={letter}>
-                <div className="glass-card overflow-hidden">
-                  <div className="px-4 py-2.5 border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
-                    <span className="font-display text-sm text-gray-900 dark:text-white">Grupo {letter}</span>
-                    {hasPlayed && (
-                      <div className="flex items-center gap-3 text-[9px] font-mono text-gray-400">
-                        <span className="w-6 text-center">Pts</span>
-                        <span className="w-6 text-center">DG</span>
-                        <span className="w-4 text-center">J</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
-                    {standings.map((row, idx) => (
-                      <div key={row.team.id} className={cn(
-                        'flex items-center gap-3 px-4 py-2.5',
-                        idx < 2 && 'bg-[#3CAC3B]/[0.04]'
-                      )}>
-                        <span className={cn(
-                          'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0',
-                          idx < 2 ? 'bg-[#3CAC3B] text-white' : 'text-gray-300 dark:text-gray-600'
-                        )}>
-                          {idx + 1}
-                        </span>
-                        <TeamFlag flagCode={row.team.flag_code} name={row.team.name} size={24} />
-                        <span className="text-sm font-body text-gray-800 dark:text-gray-200 flex-1 min-w-0 truncate">{row.team.name}</span>
-                        <span className="text-[9px] font-mono text-gray-400 flex-shrink-0">#{row.team.fifa_ranking}</span>
-                        <WCBadge teamId={row.team.id} size="xs" />
-                        {hasPlayed ? (
-                          <div className="flex items-center gap-3 flex-shrink-0">
-                            <span className={cn(
-                              'w-6 text-center font-mono text-xs font-bold',
-                              idx < 2 ? 'text-[#2A398D] dark:text-blue-400' : 'text-gray-500'
-                            )}>
-                              {row.points}
-                            </span>
-                            <span className={cn(
-                              'w-6 text-center font-mono text-[10px]',
-                              row.gd > 0 ? 'text-emerald-500' : row.gd < 0 ? 'text-red-400' : 'text-gray-400'
-                            )}>
-                              {row.gd > 0 ? '+' : ''}{row.gd}
-                            </span>
-                            <span className="w-4 text-center font-mono text-[10px] text-gray-400">
-                              {row.played}
-                            </span>
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </StaggerItem>
-            )
-          })}
+                return (
+                  <StaggerItem key={letter}>
+                    <GroupTable
+                      groupLetter={letter}
+                      teams={teams}
+                      standings={standings}
+                      compact={false}
+                    />
+                  </StaggerItem>
+                )
+              })}
             </StaggerContainer>
           </div>
 
