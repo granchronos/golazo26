@@ -77,6 +77,76 @@ async function apiFetch<T>(endpoint: string, params: Record<string, string>): Pr
 /**
  * Fetch all World Cup 2026 fixtures (any status).
  */
+const SIMULATED_MATCHES = [
+  { apiFixtureId: 100015, date: '2026-06-11T19:00:00Z', round: 'Group Stage - Group A', homeTeam: 'Mexico', awayTeam: 'South Africa', homeGoals: 2, awayGoals: 0 },
+  { apiFixtureId: 100016, date: '2026-06-12T02:00:00Z', round: 'Group Stage - Group A', homeTeam: 'Korea Republic', awayTeam: 'Czech Republic', homeGoals: 1, awayGoals: 1 },
+  { apiFixtureId: 100017, date: '2026-06-12T19:00:00Z', round: 'Group Stage - Group B', homeTeam: 'Canada', awayTeam: 'Bosnia and Herzegovina', homeGoals: 1, awayGoals: 0 },
+  { apiFixtureId: 100018, date: '2026-06-13T19:00:00Z', round: 'Group Stage - Group B', homeTeam: 'Qatar', awayTeam: 'Switzerland', homeGoals: 0, awayGoals: 2 },
+  { apiFixtureId: 100019, date: '2026-06-13T22:00:00Z', round: 'Group Stage - Group C', homeTeam: 'Brazil', awayTeam: 'Morocco', homeGoals: 3, awayGoals: 1 },
+  { apiFixtureId: 100020, date: '2026-06-14T01:00:00Z', round: 'Group Stage - Group C', homeTeam: 'Haiti', awayTeam: 'Scotland', homeGoals: 1, awayGoals: 2 },
+  { apiFixtureId: 100021, date: '2026-06-13T01:00:00Z', round: 'Group Stage - Group D', homeTeam: 'USA', awayTeam: 'Paraguay', homeGoals: 2, awayGoals: 1 },
+  { apiFixtureId: 100022, date: '2026-06-13T04:00:00Z', round: 'Group Stage - Group D', homeTeam: 'Australia', awayTeam: 'Turkey', homeGoals: 0, awayGoals: 0 },
+  { apiFixtureId: 100023, date: '2026-06-14T17:00:00Z', round: 'Group Stage - Group E', homeTeam: 'Germany', awayTeam: 'Curacao', homeGoals: 4, awayGoals: 0 },
+  { apiFixtureId: 100024, date: '2026-06-14T23:00:00Z', round: 'Group Stage - Group E', homeTeam: 'Ivory Coast', awayTeam: 'Ecuador', homeGoals: 1, awayGoals: 2 },
+  { apiFixtureId: 100025, date: '2026-06-14T20:00:00Z', round: 'Group Stage - Group F', homeTeam: 'Netherlands', awayTeam: 'Japan', homeGoals: 2, awayGoals: 1 },
+  { apiFixtureId: 100026, date: '2026-06-15T02:00:00Z', round: 'Group Stage - Group F', homeTeam: 'Sweden', awayTeam: 'Tunisia', homeGoals: 3, awayGoals: 0 },
+  { apiFixtureId: 100027, date: '2026-06-15T19:00:00Z', round: 'Group Stage - Group G', homeTeam: 'Belgium', awayTeam: 'Egypt', homeGoals: 2, awayGoals: 0 },
+  { apiFixtureId: 100028, date: '2026-06-16T01:00:00Z', round: 'Group Stage - Group G', homeTeam: 'Iran', awayTeam: 'New Zealand', homeGoals: 1, awayGoals: 1 },
+  { apiFixtureId: 100029, date: '2026-06-15T16:00:00Z', round: 'Group Stage - Group H', homeTeam: 'Spain', awayTeam: 'Cape Verde', homeGoals: 3, awayGoals: 0 },
+  { apiFixtureId: 100030, date: '2026-06-15T22:00:00Z', round: 'Group Stage - Group H', homeTeam: 'Saudi Arabia', awayTeam: 'Uruguay', homeGoals: 0, awayGoals: 2 },
+  { apiFixtureId: 100031, date: '2026-06-16T19:00:00Z', round: 'Group Stage - Group I', homeTeam: 'France', awayTeam: 'Senegal', homeGoals: 3, awayGoals: 1 },
+  { apiFixtureId: 100032, date: '2026-06-16T22:00:00Z', round: 'Group Stage - Group I', homeTeam: 'Iraq', awayTeam: 'Norway', homeGoals: 0, awayGoals: 2 },
+  { apiFixtureId: 100033, date: '2026-06-17T01:00:00Z', round: 'Group Stage - Group J', homeTeam: 'Argentina', awayTeam: 'Algeria', homeGoals: 4, awayGoals: 0 },
+  { apiFixtureId: 100034, date: '2026-06-17T04:00:00Z', round: 'Group Stage - Group J', homeTeam: 'Austria', awayTeam: 'Jordan', homeGoals: 2, awayGoals: 0 },
+  { apiFixtureId: 100035, date: '2026-06-17T17:00:00Z', round: 'Group Stage - Group K', homeTeam: 'Portugal', awayTeam: 'DR Congo', homeGoals: 3, awayGoals: 0 },
+  { apiFixtureId: 100036, date: '2026-06-18T02:00:00Z', round: 'Group Stage - Group K', homeTeam: 'Uzbekistan', awayTeam: 'Colombia', homeGoals: 0, awayGoals: 2 },
+  { apiFixtureId: 100037, date: '2026-06-17T20:00:00Z', round: 'Group Stage - Group L', homeTeam: 'England', awayTeam: 'Croatia', homeGoals: 2, awayGoals: 1 },
+  { apiFixtureId: 100038, date: '2026-06-17T23:00:00Z', round: 'Group Stage - Group L', homeTeam: 'Ghana', awayTeam: 'Panama', homeGoals: 1, awayGoals: 1 }
+]
+
+function getSimulatedMatches(): LiveMatch[] {
+  const now = new Date()
+  return SIMULATED_MATCHES.map(m => {
+    const matchDate = new Date(m.date)
+    const elapsedMs = now.getTime() - matchDate.getTime()
+    
+    let statusShort = 'NS'
+    let homeGoals = null
+    let awayGoals = null
+    let homeWinner = null
+    let awayWinner = null
+    let elapsed = null
+
+    if (elapsedMs >= 120 * 60 * 1000) {
+      statusShort = 'FT'
+      elapsed = 90
+      homeGoals = m.homeGoals
+      awayGoals = m.awayGoals
+      if (homeGoals > awayGoals) homeWinner = true
+      else if (awayGoals > homeGoals) awayWinner = true
+    } else if (elapsedMs >= 0) {
+      statusShort = '1H' // Live
+      elapsed = Math.floor(elapsedMs / 60000)
+      homeGoals = m.homeGoals
+      awayGoals = m.awayGoals
+    }
+
+    return {
+      apiFixtureId: m.apiFixtureId,
+      date: m.date,
+      statusShort,
+      elapsed,
+      round: m.round,
+      homeTeam: m.homeTeam,
+      awayTeam: m.awayTeam,
+      homeGoals,
+      awayGoals,
+      homeWinner,
+      awayWinner,
+    }
+  })
+}
+
 export async function getWorldCupFixtures(): Promise<LiveMatch[]> {
   const data = await apiFetch<ApiFixture>('/fixtures', {
     league: String(WORLD_CUP_LEAGUE_ID),
@@ -85,34 +155,7 @@ export async function getWorldCupFixtures(): Promise<LiveMatch[]> {
 
   if (data.length === 0) {
     console.log('[football-api] Returning simulated 2026 World Cup fixtures (Free Plan limit fallback)');
-    return [
-      {
-        apiFixtureId: 100015,
-        date: '2026-06-11T19:00:00Z',
-        statusShort: 'FT',
-        elapsed: 90,
-        round: 'Group Stage - Group A',
-        homeTeam: 'Mexico',
-        awayTeam: 'South Africa',
-        homeGoals: 2,
-        awayGoals: 0,
-        homeWinner: true,
-        awayWinner: false,
-      },
-      {
-        apiFixtureId: 100016,
-        date: '2026-06-12T02:00:00Z',
-        statusShort: '1H',
-        elapsed: 35,
-        round: 'Group Stage - Group A',
-        homeTeam: 'Korea Republic',
-        awayTeam: 'Czech Republic',
-        homeGoals: 1,
-        awayGoals: 1,
-        homeWinner: null,
-        awayWinner: null,
-      }
-    ]
+    return getSimulatedMatches()
   }
 
   return data.map(mapFixture)
