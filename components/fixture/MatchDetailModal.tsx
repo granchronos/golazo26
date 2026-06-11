@@ -18,6 +18,7 @@ interface MatchDetailModalProps {
   venue: string
   city: string
   groupLetter: string
+  events?: any[] | null
 }
 
 const BEST_LABELS: Record<string, string> = {
@@ -86,6 +87,7 @@ export function MatchDetailModal({
   venue,
   city,
   groupLetter,
+  events,
 }: MatchDetailModalProps) {
   const matchup = getMatchupData(home.id, away.id) ?? getFallbackFacts(home.id, away.id)
 
@@ -152,6 +154,71 @@ export function MatchDetailModal({
                 </span>
               </div>
             </div>
+
+            {/* Live Events Timeline (Goals & Cards) */}
+            {events && events.length > 0 && (
+              <div className="mx-4 mt-3 px-3 py-2.5 rounded-lg border border-gray-100 dark:border-white/[0.06] bg-gray-50/50 dark:bg-white/[0.01]">
+                <div className="flex items-center gap-1.5 mb-2 pb-1 border-b border-gray-100 dark:border-white/5">
+                  <Info size={11} className="text-[#2A398D]" />
+                  <span className="text-[10px] font-display font-bold text-gray-500 uppercase tracking-wider">
+                    Sucesos del Partido
+                  </span>
+                </div>
+                
+                <div className="space-y-1 relative py-1">
+                  {/* Vertical middle divider line */}
+                  <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-gray-200/60 dark:bg-white/5 -translate-x-1/2 hidden sm:block" />
+
+                  {events
+                    .sort((a: any, b: any) => a.time - b.time)
+                    .map((ev: any, i: number) => {
+                      const isHome = ev.team_id === home.id;
+                      const isGoal = ev.type === 'Goal';
+                      const isRedCard = ev.type === 'Card' && (ev.detail?.toLowerCase().includes('red') || ev.detail === 'Yellow-Red Card');
+                      const isYellowCard = ev.type === 'Card' && ev.detail?.toLowerCase().includes('yellow') && !isRedCard;
+
+                      const eventIcon = isGoal ? (
+                        <span className="text-[10px]" title={ev.detail}>⚽</span>
+                      ) : isRedCard ? (
+                        <span className="inline-block w-2 h-3 bg-red-500 rounded-[1px] shadow-sm shrink-0" title={ev.detail} />
+                      ) : isYellowCard ? (
+                        <span className="inline-block w-2 h-3 bg-yellow-400 rounded-[1px] shadow-sm shrink-0" title={ev.detail} />
+                      ) : null;
+
+                      if (!eventIcon) return null;
+
+                      return (
+                        <div key={i} className={cn(
+                          "flex items-center gap-2 text-[11px] font-body py-0.5",
+                          isHome ? "justify-start text-left sm:pr-[52%] sm:justify-end sm:text-right" : "justify-end text-right sm:pl-[52%] sm:justify-start sm:text-left"
+                        )}>
+                          {isHome ? (
+                            <>
+                              <span className="text-gray-700 dark:text-gray-300">
+                                <span className="font-semibold">{ev.player}</span>{' '}
+                                <span className="text-gray-400 font-mono text-[9px]">{ev.time}{ev.extra ? `+${ev.extra}` : ''}{"'"}</span>
+                                {ev.detail === 'Own Goal' && <span className="text-[9px] text-red-500 ml-1">(AG)</span>}
+                                {ev.detail === 'Penalty' && <span className="text-[9px] text-green-500 ml-1">(P)</span>}
+                              </span>
+                              <span className="flex-shrink-0">{eventIcon}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="flex-shrink-0">{eventIcon}</span>
+                              <span className="text-gray-700 dark:text-gray-300">
+                                <span className="font-mono text-[9px] text-gray-400">{ev.time}{ev.extra ? `+${ev.extra}` : ''}{"'"}</span>{' '}
+                                <span className="font-semibold">{ev.player}</span>
+                                {ev.detail === 'Own Goal' && <span className="text-[9px] text-red-500 ml-1">(AG)</span>}
+                                {ev.detail === 'Penalty' && <span className="text-[9px] text-green-500 ml-1">(P)</span>}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
 
             {/* Head-to-head */}
             <div className="px-4 pt-4 pb-2">

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { getWorldCupFixtures, mapApiStatus } from '@/lib/api/football'
+import { getWorldCupFixtures, mapApiStatus, getMatchEvents } from '@/lib/api/football'
 import { recalculateAllScores } from '@/app/actions/predictions'
 
 // Comprehensive English to DB ID team name mapping
@@ -69,7 +69,12 @@ export async function GET(request: Request) {
   const expectedSecret = process.env.CRON_SECRET || 'super_secret_cron_pass_2026'
 
   if (secret !== expectedSecret) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    console.error(`Sync unauthorized. Received: "${secret}", Expected: "${expectedSecret}"`)
+    return NextResponse.json({ 
+      error: 'No autorizado', 
+      received: secret || 'empty', 
+      expected: expectedSecret 
+    }, { status: 401 })
   }
 
   try {
@@ -83,7 +88,7 @@ export async function GET(request: Request) {
     // Fetch all current matches from DB
     const { data: dbMatches, error: dbError } = await admin
       .from('matches')
-      .select('id, match_number, home_team_id, away_team_id, status, home_score, away_score')
+      .select('id, match_number, home_team_id, away_team_id, status, home_score, away_score, events')
 
     if (dbError || !dbMatches) {
       return NextResponse.json({ error: 'Error al consultar partidos en la BD', details: dbError }, { status: 500 })
@@ -124,11 +129,41 @@ export async function GET(request: Request) {
           }
         }
 
-        // Only update if there is a change in status or scores
+        // Fetch events if the match is live, OR if it is finished and has no events in DB yet
+        const hasDbEvents = matchedDb.events && Array.isArray(matchedDb.events) && matchedDb.events.length > 0
+        let eventsPayload = matchedDb.events
+        let fetchedEvents = false
+
+        if (apiStatus === 'live' || (apiStatus === 'finished' && !hasDbEvents)) {
+          if (apiMatch.apiFixtureId) {
+            try {
+              const apiEvents = await getMatchEvents(apiMatch.apiFixtureId)
+              if (apiEvents && apiEvents.length > 0) {
+                eventsPayload = apiEvents
+                  .filter(ev => ev.type === 'Goal' || ev.type === 'Card')
+                  .map(ev => ({
+                    time: ev.time.elapsed,
+                    extra: ev.time.extra,
+                    team_id: ev.team.name === apiMatch.homeTeam ? homeDbId : awayDbId,
+                    player: ev.player.name,
+                    type: ev.type,
+                    detail: ev.detail,
+                    comments: ev.comments
+                  }))
+                fetchedEvents = true
+              }
+            } catch (eventErr) {
+              console.error(`Error fetching events for apiFixtureId ${apiMatch.apiFixtureId}:`, eventErr)
+            }
+          }
+        }
+
+        // Only update if there is a change in status, scores, or if new events were fetched
         const hasChanges = 
           matchedDb.status !== apiStatus ||
           matchedDb.home_score !== homeScore ||
-          matchedDb.away_score !== awayScore
+          matchedDb.away_score !== awayScore ||
+          fetchedEvents
 
         if (hasChanges) {
           const { error: updateError } = await admin
@@ -138,13 +173,15 @@ export async function GET(request: Request) {
               away_score: awayScore,
               status: apiStatus,
               winner_id: winnerId,
-              updated_at: new Date().toISOString()
+              events: eventsPayload
             })
             .eq('id', matchedDb.id)
 
-          if (!updateError) {
+          if (updateError) {
+            console.error(`Error updating match #${matchedDb.match_number}:`, updateError)
+          } else {
             updatedCount++
-            updatedMatchesLog.push(`Match #${matchedDb.match_number} (${homeDbId} vs ${awayDbId}) updated to ${homeScore}-${awayScore} [${apiStatus}]`)
+            updatedMatchesLog.push(`Match #${matchedDb.match_number} (${homeDbId} vs ${awayDbId}) updated to ${homeScore}-${awayScore} [${apiStatus}] (events: ${fetchedEvents ? 'updated' : 'unchanged'})`)
           }
         }
       }

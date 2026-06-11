@@ -51,32 +51,32 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
   })
 
   return (
-    <div className="glass-card overflow-hidden">
+    <div className="glass-card overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="px-4 py-3 bg-gradient-to-r from-[#2A398D] to-[#2A398D]/80">
+      <div className="px-3 py-1.5 bg-gradient-to-r from-[#2A398D] to-[#2A398D]/80">
         <div className="flex items-center gap-2">
-          <span className="font-display text-2xl text-white tracking-wider">Grupo {groupLetter}</span>
+          <span className="font-display text-lg text-white tracking-wider">Grupo {groupLetter}</span>
         </div>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm font-body">
+        <table className="w-full text-xs font-body">
           <thead>
             <tr className="border-b border-gray-100 dark:border-white/10">
-              <th className="text-left px-4 py-2 text-gray-500 font-medium w-8">#</th>
-              <th className="text-left px-2 py-2 text-gray-500 font-medium">Equipo</th>
+              <th className="text-left px-3 py-1 text-gray-500 font-medium w-8">#</th>
+              <th className="text-left px-1.5 py-1 text-gray-500 font-medium">Equipo</th>
               {!compact && (
                 <>
-                  <th className="text-center px-2 py-2 text-gray-500 font-medium w-12">FIFA</th>
-                  <th className="text-center px-2 py-2 text-gray-500 font-medium w-8">J</th>
-                  <th className="text-center px-2 py-2 text-gray-500 font-medium w-8">G</th>
-                  <th className="text-center px-2 py-2 text-gray-500 font-medium w-8">E</th>
-                  <th className="text-center px-2 py-2 text-gray-500 font-medium w-8">P</th>
-                  <th className="text-center px-2 py-2 text-gray-500 font-medium w-12">DG</th>
+                  <th className="text-center px-1 py-1 text-gray-500 font-medium w-10">FIFA</th>
+                  <th className="text-center px-1 py-1 text-gray-500 font-medium w-6">J</th>
+                  <th className="text-center px-1 py-1 text-gray-500 font-medium w-6">G</th>
+                  <th className="text-center px-1 py-1 text-gray-500 font-medium w-6">E</th>
+                  <th className="text-center px-1 py-1 text-gray-500 font-medium w-6">P</th>
+                  <th className="text-center px-1 py-1 text-gray-500 font-medium w-10">DG</th>
                 </>
               )}
-              <th className="text-center px-4 py-2 text-gray-500 font-medium w-10">Pts</th>
+              <th className="text-center px-3 py-1 text-gray-500 font-medium w-8">Pts</th>
             </tr>
           </thead>
           <tbody>
@@ -91,18 +91,18 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
                   idx < 2 && 'bg-[#3CAC3B]/5'
                 )}
               >
-                <td className="px-4 py-3">
+                <td className="px-3 py-1.5">
                   <span className={cn(
-                    'w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-bold',
+                    'w-4 h-4 rounded-full inline-flex items-center justify-center text-[10px] font-bold',
                     idx < 2 ? 'bg-[#3CAC3B] text-white' : 'text-gray-400'
                   )}>
                     {idx + 1}
                   </span>
                 </td>
-                <td className="px-2 py-3">
-                  <div className="flex items-center gap-2">
-                    <TeamFlag flagCode={row.team.flag_code} name={row.team.name} size={20} />
-                    <span className="font-medium dark:text-white truncate max-w-[120px]">
+                <td className="px-1.5 py-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <TeamFlag flagCode={row.team.flag_code} name={row.team.name} size={16} />
+                    <span className="font-medium dark:text-white truncate max-w-[95px]" title={row.team.name}>
                       {compact ? row.team.code : row.team.name}
                     </span>
                     <WCBadge teamId={row.team.id} size="xs" />
@@ -110,19 +110,19 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
                 </td>
                 {!compact && (
                   <>
-                    <td className="text-center px-2 py-3 text-gray-400 font-mono text-xs">#{row.team.fifa_ranking}</td>
-                    <td className="text-center px-2 py-3 text-gray-600 dark:text-gray-400">{row.played}</td>
-                    <td className="text-center px-2 py-3 text-gray-600 dark:text-gray-400">{row.won}</td>
-                    <td className="text-center px-2 py-3 text-gray-600 dark:text-gray-400">{row.drawn}</td>
-                    <td className="text-center px-2 py-3 text-gray-600 dark:text-gray-400">{row.lost}</td>
-                    <td className="text-center px-2 py-3 text-gray-600 dark:text-gray-400">
+                    <td className="text-center px-1 py-1.5 text-gray-400 font-mono text-[10px]">#{row.team.fifa_ranking}</td>
+                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">{row.played}</td>
+                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">{row.won}</td>
+                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">{row.drawn}</td>
+                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">{row.lost}</td>
+                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">
                       {row.gf - row.ga > 0 ? '+' : ''}{row.gf - row.ga}
                     </td>
                   </>
                 )}
-                <td className="text-center px-4 py-3">
+                <td className="text-center px-3 py-1.5">
                   <span className={cn(
-                    'font-mono font-bold text-base',
+                    'font-mono font-bold text-sm',
                     idx < 2 ? 'text-[#2A398D] dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'
                   )}>
                     {row.points}
@@ -135,10 +135,10 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
       </div>
 
       {/* Legend */}
-      <div className="px-4 py-2 border-t border-gray-50 dark:border-white/5 flex items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-[#3CAC3B]" />
-          <span className="text-xs text-gray-500 font-body">Clasifica</span>
+      <div className="px-3 py-1 border-t border-gray-50 dark:border-white/5 flex items-center gap-3">
+        <div className="flex items-center gap-1">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#3CAC3B]" />
+          <span className="text-[10px] text-gray-400 font-body">Clasifica</span>
         </div>
       </div>
     </div>

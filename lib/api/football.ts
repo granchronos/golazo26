@@ -133,3 +133,14 @@ export function mapApiStatus(short: string): 'scheduled' | 'live' | 'finished' {
   if (finishedStatuses.has(short)) return 'finished'
   return 'scheduled'
 }
+
+/**
+ * Fetch events (goals, cards, substitutions) for a specific match.
+ */
+export async function getMatchEvents(apiFixtureId: number): Promise<any[]> {
+  const data = await apiFetch<any>('/fixtures/events', {
+    fixture: String(apiFixtureId),
+  })
+  return data
+}
+

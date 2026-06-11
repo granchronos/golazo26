@@ -108,6 +108,7 @@ export interface Database {
           winner_id: string | null
           status: MatchStatus
           created_at: string
+          events: any | null
         }
         Insert: {
           id?: string
@@ -123,6 +124,7 @@ export interface Database {
           winner_id?: string | null
           status?: MatchStatus
           created_at?: string
+          events?: any | null
         }
         Update: {
           home_team_id?: string | null
@@ -131,6 +133,7 @@ export interface Database {
           away_score?: number | null
           winner_id?: string | null
           status?: MatchStatus
+          events?: any | null
         }
         Relationships: []
       }

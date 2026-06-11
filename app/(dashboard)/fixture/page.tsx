@@ -79,6 +79,7 @@ interface DBMatch {
   home_score: number | null
   away_score: number | null
   status: string
+  events?: any | null
 }
 
 function computeGroupStandings(
@@ -217,30 +218,28 @@ export default function FixturePage() {
 
       {/* Groups tab */}
       {activeTab === 'groups' && (
-        <div className="flex flex-col xl:flex-row gap-4">
+        <div className="flex flex-col gap-6">
           {/* Groups grid */}
-          <div className="flex-1">
-            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-3">
-              {GROUP_LETTERS.map((letter) => {
-                const teams = TEAMS_BY_GROUP[letter] || []
-                const standings = computeGroupStandings(letter, teams, dbMatches)
+          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {GROUP_LETTERS.map((letter) => {
+              const teams = TEAMS_BY_GROUP[letter] || []
+              const standings = computeGroupStandings(letter, teams, dbMatches)
 
-                return (
-                  <StaggerItem key={letter}>
-                    <GroupTable
-                      groupLetter={letter}
-                      teams={teams}
-                      standings={standings}
-                      compact={false}
-                    />
-                  </StaggerItem>
-                )
-              })}
-            </StaggerContainer>
-          </div>
+              return (
+                <StaggerItem key={letter}>
+                  <GroupTable
+                    groupLetter={letter}
+                    teams={teams}
+                    standings={standings}
+                    compact={false}
+                  />
+                </StaggerItem>
+              )
+            })}
+          </StaggerContainer>
 
-          {/* WC History sidebar */}
-          <div className="xl:w-80 flex-shrink-0">
+          {/* WC History sidebar moved to bottom */}
+          <div className="border-t border-gray-100 dark:border-white/[0.06] pt-6">
             <WCHistory />
           </div>
         </div>
@@ -330,39 +329,64 @@ export default function FixturePage() {
                           {m.group_letter}
                         </span>
                         {/* Teams + Score */}
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          {home && <TeamFlag flagCode={home.flag_code} name={home.name} size={18} />}
-                          <span className={cn(
-                            'text-sm font-body font-medium',
-                            isFinished && dbMatch?.home_score != null && dbMatch?.away_score != null && dbMatch.home_score > dbMatch.away_score
-                              ? 'text-[#2A398D] dark:text-blue-400 font-bold'
-                              : 'text-gray-800 dark:text-gray-200'
-                          )}>
-                            {home?.code}
-                          </span>
-                          
-                          {/* Score or VS */}
-                          {hasScore ? (
-                            <span className={cn(
-                              'font-mono text-sm font-bold px-1.5',
-                              isLive ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'
-                            )}>
-                              {dbMatch.home_score} - {dbMatch.away_score}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-gray-300 dark:text-gray-600 mx-1">vs</span>
-                          )}
+                        {(() => {
+                          const redCards = dbMatch?.events && Array.isArray(dbMatch.events)
+                            ? dbMatch.events.reduce((acc: { home: number; away: number }, ev: any) => {
+                                const isRed = ev.type === 'Card' && (ev.detail?.toLowerCase().includes('red') || ev.detail === 'Yellow-Red Card')
+                                if (isRed) {
+                                  if (ev.team_id === m.home_team_id) acc.home++
+                                  else if (ev.team_id === m.away_team_id) acc.away++
+                                }
+                                return acc
+                              }, { home: 0, away: 0 })
+                            : { home: 0, away: 0 }
 
-                          <span className={cn(
-                            'text-sm font-body font-medium',
-                            isFinished && dbMatch?.home_score != null && dbMatch?.away_score != null && dbMatch.away_score > dbMatch.home_score
-                              ? 'text-[#2A398D] dark:text-blue-400 font-bold'
-                              : 'text-gray-800 dark:text-gray-200'
-                          )}>
-                            {away?.code}
-                          </span>
-                          {away && <TeamFlag flagCode={away.flag_code} name={away.name} size={18} />}
-                        </div>
+                          return (
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {home && <TeamFlag flagCode={home.flag_code} name={home.name} size={18} />}
+                              <div className="flex items-center gap-1">
+                                <span className={cn(
+                                  'text-sm font-body font-medium',
+                                  isFinished && dbMatch?.home_score != null && dbMatch?.away_score != null && dbMatch.home_score > dbMatch.away_score
+                                    ? 'text-[#2A398D] dark:text-blue-400 font-bold'
+                                    : 'text-gray-800 dark:text-gray-200'
+                                )}>
+                                  {home?.code}
+                                </span>
+                                {redCards.home > 0 && (
+                                  <span className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse" />
+                                )}
+                              </div>
+                              
+                              {/* Score or VS */}
+                              {hasScore ? (
+                                <span className={cn(
+                                  'font-mono text-sm font-bold px-1.5',
+                                  isLive ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'
+                                )}>
+                                  {dbMatch.home_score} - {dbMatch.away_score}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-gray-300 dark:text-gray-600 mx-1">vs</span>
+                              )}
+
+                              <div className="flex items-center gap-1 flex-row-reverse">
+                                <span className={cn(
+                                  'text-sm font-body font-medium',
+                                  isFinished && dbMatch?.home_score != null && dbMatch?.away_score != null && dbMatch.away_score > dbMatch.home_score
+                                    ? 'text-[#2A398D] dark:text-blue-400 font-bold'
+                                    : 'text-gray-800 dark:text-gray-200'
+                                )}>
+                                  {away?.code}
+                                </span>
+                                {redCards.away > 0 && (
+                                  <span className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse" />
+                                )}
+                              </div>
+                              {away && <TeamFlag flagCode={away.flag_code} name={away.name} size={18} />}
+                            </div>
+                          )
+                        })()}
                         {/* Time (show when finished/live) */}
                         {(isLive || isFinished) && (
                           <span className="hidden sm:block text-[10px] font-mono text-gray-400 flex-shrink-0">
@@ -397,6 +421,7 @@ export default function FixturePage() {
               venue={selectedMatch.venue}
               city={selectedMatch.city}
               groupLetter={selectedMatch.group_letter ?? ''}
+              events={dbMatchMap[selectedMatch.match_number]?.events}
             />
           )}
         </div>

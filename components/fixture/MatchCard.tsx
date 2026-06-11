@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { MapPin, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
@@ -28,6 +29,18 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
   const status = statusConfig[match.status]
   const isFinished = match.status === 'finished'
   const isLive = match.status === 'live'
+
+  const redCards = useMemo(() => {
+    if (!match.events || !Array.isArray(match.events)) return { home: 0, away: 0 }
+    return match.events.reduce((acc, ev) => {
+      const isRed = ev.type === 'Card' && (ev.detail?.toLowerCase().includes('red') || ev.detail === 'Yellow-Red Card')
+      if (isRed) {
+        if (ev.team_id === match.home_team_id) acc.home++
+        else if (ev.team_id === match.away_team_id) acc.away++
+      }
+      return acc
+    }, { home: 0, away: 0 })
+  }, [match.events, match.home_team_id, match.away_team_id])
 
   return (
     <motion.div
@@ -62,13 +75,18 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
             <span className="text-xl leading-none">🏳️</span>
           )}
           <div className="flex flex-col">
-            <span className={cn(
-              'font-body font-semibold dark:text-white',
-              compact ? 'text-sm' : 'text-sm sm:text-base',
-              isFinished && match.winner_id === match.home_team_id && 'text-[#2A398D]'
-            )}>
-              {compact ? (homeTeam?.code || '???') : (homeTeam?.name || 'Por definir')}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className={cn(
+                'font-body font-semibold dark:text-white',
+                compact ? 'text-sm' : 'text-sm sm:text-base',
+                isFinished && match.winner_id === match.home_team_id && 'text-[#2A398D]'
+              )}>
+                {compact ? (homeTeam?.code || '???') : (homeTeam?.name || 'Por definir')}
+              </span>
+              {redCards.home > 0 && (
+                <span className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse" title={`${redCards.home} expulsado(s)`} />
+              )}
+            </div>
             {homeTeam && !compact && (
               <span className="text-[10px] text-gray-400 font-mono">FIFA #{homeTeam.fifa_ranking}</span>
             )}
@@ -106,13 +124,18 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
             <span className="text-xl leading-none">🏳️</span>
           )}
           <div className="flex flex-col items-end">
-            <span className={cn(
-              'font-body font-semibold dark:text-white text-right',
-              compact ? 'text-sm' : 'text-sm sm:text-base',
-              isFinished && match.winner_id === match.away_team_id && 'text-[#2A398D]'
-            )}>
-              {compact ? (awayTeam?.code || '???') : (awayTeam?.name || 'Por definir')}
-            </span>
+            <div className="flex items-center gap-1 flex-row-reverse">
+              <span className={cn(
+                'font-body font-semibold dark:text-white text-right',
+                compact ? 'text-sm' : 'text-sm sm:text-base',
+                isFinished && match.winner_id === match.away_team_id && 'text-[#2A398D]'
+              )}>
+                {compact ? (awayTeam?.code || '???') : (awayTeam?.name || 'Por definir')}
+              </span>
+              {redCards.away > 0 && (
+                <span className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse" title={`${redCards.away} expulsado(s)`} />
+              )}
+            </div>
             {awayTeam && !compact && (
               <span className="text-[10px] text-gray-400 font-mono text-right">FIFA #{awayTeam.fifa_ranking}</span>
             )}
