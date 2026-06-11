@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { getWorldCupFixtures, mapApiStatus, getMatchEvents } from '@/lib/api/football'
+import { getWorldCupFixtures, mapApiStatus, getMatchEvents, getMatchesTrends } from '@/lib/api/football'
 import { recalculateAllScores } from '@/app/actions/predictions'
 import { getOddsForTeams } from '@/lib/constants/teams'
 
@@ -62,9 +62,22 @@ const TEAM_NAME_MAP: Record<string, string> = {
   'Croatia': 'cro',
   'Ghana': 'gha',
   'Panama': 'pan',
-  // Lowercase TLAs for mapping football-data.org team IDs
+  // Lowercase TLAs for mapping football-data.org team IDs & simulation codes
   'par': 'pry',
   'ury': 'uru',
+  'cur': 'cuw',
+  'sou': 'rsa',
+  'bos': 'bih',
+  'swi': 'sui',
+  'mor': 'mar',
+  'ivo': 'civ',
+  'net': 'ned',
+  'jap': 'jpn',
+  'new': 'nzl',
+  'cap': 'cpv',
+  'sau': 'ksa',
+  'ira': 'irn',
+  'spa': 'esp'
 }
 
 export async function GET(request: Request) {
@@ -87,6 +100,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'No se recibieron datos de la API de fútbol' })
     }
 
+    // Fetch match trends from the API for the World Cup period (to query pre-match odds)
+    const trendsMap = await getMatchesTrends('2026-06-11', '2026-07-20')
+
     const admin = await createAdminClient()
 
     // Fetch all current matches from DB
@@ -105,12 +121,14 @@ export async function GET(request: Request) {
       const apiStatus = mapApiStatus(apiMatch.statusShort)
       
       // Map home/away team names or TLAs from API to our DB IDs
-      const homeDbId = apiMatch.homeTla
-        ? (TEAM_NAME_MAP[apiMatch.homeTla] || apiMatch.homeTla)
-        : (TEAM_NAME_MAP[apiMatch.homeTeam] || apiMatch.homeTeam.toLowerCase().substring(0, 3))
-      const awayDbId = apiMatch.awayTla
-        ? (TEAM_NAME_MAP[apiMatch.awayTla] || apiMatch.awayTla)
-        : (TEAM_NAME_MAP[apiMatch.awayTeam] || apiMatch.awayTeam.toLowerCase().substring(0, 3))
+      const homeDbId = TEAM_NAME_MAP[apiMatch.homeTeam] || 
+        (apiMatch.homeTla
+          ? (TEAM_NAME_MAP[apiMatch.homeTla.toLowerCase()] || apiMatch.homeTla.toLowerCase())
+          : (TEAM_NAME_MAP[apiMatch.homeTeam.toLowerCase().substring(0, 3)] || apiMatch.homeTeam.toLowerCase().substring(0, 3)))
+      const awayDbId = TEAM_NAME_MAP[apiMatch.awayTeam] || 
+        (apiMatch.awayTla
+          ? (TEAM_NAME_MAP[apiMatch.awayTla.toLowerCase()] || apiMatch.awayTla.toLowerCase())
+          : (TEAM_NAME_MAP[apiMatch.awayTeam.toLowerCase().substring(0, 3)] || apiMatch.awayTeam.toLowerCase().substring(0, 3)))
 
       // Find the match in our DB by team IDs
       const matchedDb = dbMatches.find(dbm => 
@@ -121,11 +139,22 @@ export async function GET(request: Request) {
 
       if (!matchedDb) continue
 
-      // Only skip if the API says scheduled AND the database also says scheduled (or postponed).
+      // Determine match odds (prefer trend odds from API first, then standard API odds, fallback to dynamic FIFA rankings calculation)
+      let matchOdds = null
+      const apiOddsObj = trendsMap[apiMatch.apiFixtureId]
+      if (apiOddsObj) {
+        matchOdds = `${apiOddsObj.home} / ${apiOddsObj.draw} / ${apiOddsObj.away}`
+      } else if (apiMatch.odds) {
+        matchOdds = apiMatch.odds
+      } else if (matchedDb.home_team_id && matchedDb.away_team_id) {
+        matchOdds = getOddsForTeams(matchedDb.home_team_id, matchedDb.away_team_id)
+      }
+
+      // Only skip if the API says scheduled AND the database also says scheduled (or postponed) AND odds match.
       // If the database has a status like 'live' or 'finished', but the API says 'scheduled':
       // We should only reset the match back to scheduled if the match is scheduled in the future (to correct stuck future matches).
       // If the match is in the past, we should NOT reset it to scheduled as the API might be lagging.
-      if (apiStatus === 'scheduled') {
+      if (apiStatus === 'scheduled' && matchedDb.odds === matchOdds) {
         const isFutureMatch = new Date(matchedDb.match_date).getTime() > Date.now()
         if (matchedDb.status === 'scheduled' || matchedDb.status === 'postponed' || !isFutureMatch) {
           continue
@@ -177,12 +206,6 @@ export async function GET(request: Request) {
               console.error(`Error fetching events for apiFixtureId ${apiMatch.apiFixtureId}:`, eventErr)
             }
           }
-        }
-
-        // Determine match odds (prefer API odds, fallback to dynamic FIFA rankings calculation)
-        let matchOdds = apiMatch.odds || null
-        if (!matchOdds && matchedDb.home_team_id && matchedDb.away_team_id) {
-          matchOdds = getOddsForTeams(matchedDb.home_team_id, matchedDb.away_team_id)
         }
 
         // Only update if there is a change in status, scores, odds, or if new events were fetched/cleared

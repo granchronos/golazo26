@@ -233,6 +233,27 @@ export async function getWorldCupFixturesByDate(date: string): Promise<LiveMatch
 }
 
 /**
+ * Fetch trends for a date range to extract pre-match 1x2 odds.
+ */
+export async function getMatchesTrends(dateFrom: string, dateTo: string): Promise<Record<number, { home: number; draw: number; away: number }>> {
+  const data = await apiFetch<{ trends: any[] }>(`/trends/?dateFrom=${dateFrom}&dateTo=${dateTo}`)
+  const oddsMap: Record<number, { home: number; draw: number; away: number }> = {}
+
+  if (data && data.trends) {
+    data.trends.forEach((t: any) => {
+      if (t.id && t.odds && t.odds.odds_1x2 && t.odds.odds_1x2.home !== undefined) {
+        oddsMap[t.id] = {
+          home: t.odds.odds_1x2.home,
+          draw: t.odds.odds_1x2.draw,
+          away: t.odds.odds_1x2.away
+        }
+      }
+    })
+  }
+  return oddsMap
+}
+
+/**
  * Maps API statuses to our DB status values.
  */
 export function mapApiStatus(status: string): 'scheduled' | 'live' | 'finished' {
