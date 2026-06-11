@@ -1,0 +1,790 @@
+const fs = require('fs');
+const path = require('path');
+
+// 48 teams seed data
+const squads = {
+  arg: {
+    name: 'Argentina',
+    players: [
+      { name: 'Lionel Messi', pos: 'FW', star: true },
+      { name: 'Lautaro Martínez', pos: 'FW', star: true },
+      { name: 'Julián Álvarez', pos: 'FW', star: false },
+      { name: 'Ángel Di María', pos: 'FW', star: false },
+      { name: 'Enzo Fernández', pos: 'MF', star: false },
+      { name: 'Alexis Mac Allister', pos: 'MF', star: false },
+      { name: 'Rodrigo De Paul', pos: 'MF', star: false },
+      { name: 'Leandro Paredes', pos: 'MF', star: false },
+      { name: 'Giovani Lo Celso', pos: 'MF', star: false },
+      { name: 'Cristian Romero', pos: 'DF', star: false },
+      { name: 'Nicolás Otamendi', pos: 'DF', star: false },
+      { name: 'Lisandro Martínez', pos: 'DF', star: false },
+      { name: 'Nahuel Molina', pos: 'DF', star: false },
+      { name: 'Nicolás Tagliafico', pos: 'DF', star: false },
+      { name: 'Emiliano Martínez', pos: 'GK', star: false }
+    ]
+  },
+  bra: {
+    name: 'Brasil',
+    players: [
+      { name: 'Vinícius Júnior', pos: 'FW', star: true },
+      { name: 'Rodrygo Goes', pos: 'FW', star: true },
+      { name: 'Neymar Jr', pos: 'FW', star: true },
+      { name: 'Endrick Felipe', pos: 'FW', star: false },
+      { name: 'Raphinha Dias', pos: 'FW', star: false },
+      { name: 'Gabriel Martinelli', pos: 'FW', star: false },
+      { name: 'Bruno Guimarães', pos: 'MF', star: false },
+      { name: 'Lucas Paquetá', pos: 'MF', star: false },
+      { name: 'Casemiro', pos: 'MF', star: false },
+      { name: 'Douglas Luiz', pos: 'MF', star: false },
+      { name: 'Marquinhos Correa', pos: 'DF', star: false },
+      { name: 'Éder Militão', pos: 'DF', star: false },
+      { name: 'Gabriel Magalhães', pos: 'DF', star: false },
+      { name: 'Danilo Luiz', pos: 'DF', star: false },
+      { name: 'Alisson Becker', pos: 'GK', star: false }
+    ]
+  },
+  fra: {
+    name: 'Francia',
+    players: [
+      { name: 'Kylian Mbappé', pos: 'FW', star: true },
+      { name: 'Antoine Griezmann', pos: 'FW', star: true },
+      { name: 'Ousmane Dembélé', pos: 'FW', star: false },
+      { name: 'Olivier Giroud', pos: 'FW', star: false },
+      { name: 'Marcus Thuram', pos: 'FW', star: false },
+      { name: 'Kingsley Coman', pos: 'FW', star: false },
+      { name: 'Aurélien Tchouaméni', pos: 'MF', star: false },
+      { name: 'Eduardo Camavinga', pos: 'MF', star: false },
+      { name: 'Adrien Rabiot', pos: 'MF', star: false },
+      { name: 'Warren Zaïre-Emery', pos: 'MF', star: false },
+      { name: 'William Saliba', pos: 'DF', star: false },
+      { name: 'Dayot Upamecano', pos: 'DF', star: false },
+      { name: 'Ibrahima Konaté', pos: 'DF', star: false },
+      { name: 'Theo Hernández', pos: 'DF', star: false },
+      { name: 'Mike Maignan', pos: 'GK', star: false }
+    ]
+  },
+  por: {
+    name: 'Portugal',
+    players: [
+      { name: 'Cristiano Ronaldo', pos: 'FW', star: true },
+      { name: 'Rafael Leão', pos: 'FW', star: true },
+      { name: 'João Félix', pos: 'FW', star: false },
+      { name: 'Diogo Jota', pos: 'FW', star: false },
+      { name: 'Gonçalo Ramos', pos: 'FW', star: false },
+      { name: 'Bruno Fernandes', pos: 'MF', star: true },
+      { name: 'Bernardo Silva', pos: 'MF', star: false },
+      { name: 'Vitinha Ferreira', pos: 'MF', star: false },
+      { name: 'João Neves', pos: 'MF', star: false },
+      { name: 'Rúben Dias', pos: 'DF', star: false },
+      { name: 'João Cancelo', pos: 'DF', star: false },
+      { name: 'Nuno Mendes', pos: 'DF', star: false },
+      { name: 'Pepe Ferreira', pos: 'DF', star: false },
+      { name: 'António Silva', pos: 'DF', star: false },
+      { name: 'Diogo Costa', pos: 'GK', star: false }
+    ]
+  },
+  eng: {
+    name: 'Inglaterra',
+    players: [
+      { name: 'Harry Kane', pos: 'FW', star: true },
+      { name: 'Jude Bellingham', pos: 'MF', star: true },
+      { name: 'Phil Foden', pos: 'FW', star: true },
+      { name: 'Bukayo Saka', pos: 'FW', star: false },
+      { name: 'Cole Palmer', pos: 'FW', star: false },
+      { name: 'Marcus Rashford', pos: 'FW', star: false },
+      { name: 'Declan Rice', pos: 'MF', star: false },
+      { name: 'Conor Gallagher', pos: 'MF', star: false },
+      { name: 'James Maddison', pos: 'MF', star: false },
+      { name: 'John Stones', pos: 'DF', star: false },
+      { name: 'Kyle Walker', pos: 'DF', star: false },
+      { name: 'Kieran Trippier', pos: 'DF', star: false },
+      { name: 'Harry Maguire', pos: 'DF', star: false },
+      { name: 'Luke Shaw', pos: 'DF', star: false },
+      { name: 'Jordan Pickford', pos: 'GK', star: false }
+    ]
+  },
+  esp: {
+    name: 'España',
+    players: [
+      { name: 'Álvaro Morata', pos: 'FW', star: false },
+      { name: 'Lamine Yamal', pos: 'FW', star: true },
+      { name: 'Nico Williams', pos: 'FW', star: true },
+      { name: 'Dani Olmo', pos: 'MF', star: false },
+      { name: 'Pedri González', pos: 'MF', star: false },
+      { name: 'Gavi Páez', pos: 'MF', star: false },
+      { name: 'Rodri Hernández', pos: 'MF', star: true },
+      { name: 'Fabián Ruiz', pos: 'MF', star: false },
+      { name: 'Mikel Merino', pos: 'MF', star: false },
+      { name: 'Dani Carvajal', pos: 'DF', star: false },
+      { name: 'Aymeric Laporte', pos: 'DF', star: false },
+      { name: 'Robin Le Normand', pos: 'DF', star: false },
+      { name: 'Alejandro Grimaldo', pos: 'DF', star: false },
+      { name: 'Pau Cubarsí', pos: 'DF', star: false },
+      { name: 'Unai Simón', pos: 'GK', star: false }
+    ]
+  },
+  ger: {
+    name: 'Alemania',
+    players: [
+      { name: 'Kai Havertz', pos: 'FW', star: false },
+      { name: 'Niclas Füllkrug', pos: 'FW', star: false },
+      { name: 'Jamal Musiala', pos: 'MF', star: true },
+      { name: 'Florian Wirtz', pos: 'MF', star: true },
+      { name: 'Leroy Sané', pos: 'FW', star: false },
+      { name: 'Serge Gnabry', pos: 'FW', star: false },
+      { name: 'Thomas Müller', pos: 'FW', star: false },
+      { name: 'Toni Kroos', pos: 'MF', star: false },
+      { name: 'Ilkay Gündogan', pos: 'MF', star: false },
+      { name: 'Joshua Kimmich', pos: 'DF', star: false },
+      { name: 'Antonio Rüdiger', pos: 'DF', star: false },
+      { name: 'Jonathan Tah', pos: 'DF', star: false },
+      { name: 'Nico Schlotterbeck', pos: 'DF', star: false },
+      { name: 'Manuel Neuer', pos: 'GK', star: false },
+      { name: 'Marc-André ter Stegen', pos: 'GK', star: false }
+    ]
+  },
+  col: {
+    name: 'Colombia',
+    players: [
+      { name: 'Luis Díaz', pos: 'FW', star: true },
+      { name: 'James Rodríguez', pos: 'MF', star: true },
+      { name: 'Jhon Durán', pos: 'FW', star: false },
+      { name: 'Rafael Santos Borré', pos: 'FW', star: false },
+      { name: 'Luis Sinisterra', pos: 'FW', star: false },
+      { name: 'Jhon Arias', pos: 'MF', star: false },
+      { name: 'Jefferson Lerma', pos: 'MF', star: false },
+      { name: 'Richard Ríos', pos: 'MF', star: false },
+      { name: 'Juan Fernando Quintero', pos: 'MF', star: false },
+      { name: 'Daniel Muñoz', pos: 'DF', star: false },
+      { name: 'Davinson Sánchez', pos: 'DF', star: false },
+      { name: 'Carlos Cuesta', pos: 'DF', star: false },
+      { name: 'Yerry Mina', pos: 'DF', star: false },
+      { name: 'Johan Mojica', pos: 'DF', star: false },
+      { name: 'Camilo Vargas', pos: 'GK', star: false }
+    ]
+  },
+  uru: {
+    name: 'Uruguay',
+    players: [
+      { name: 'Darwin Núñez', pos: 'FW', star: true },
+      { name: 'Luis Suárez', pos: 'FW', star: false },
+      { name: 'Federico Valverde', pos: 'MF', star: true },
+      { name: 'Rodrigo Bentancur', pos: 'MF', star: false },
+      { name: 'Nicolás de la Cruz', pos: 'MF', star: false },
+      { name: 'Manuel Ugarte', pos: 'MF', star: false },
+      { name: 'Giorgian de Arrascaeta', pos: 'MF', star: false },
+      { name: 'Facundo Pellistri', pos: 'FW', star: false },
+      { name: 'Ronald Araújo', pos: 'DF', star: false },
+      { name: 'José María Giménez', pos: 'DF', star: false },
+      { name: 'Mathías Olivera', pos: 'DF', star: false },
+      { name: 'Guillermo Varela', pos: 'DF', star: false },
+      { name: 'Matías Viña', pos: 'DF', star: false },
+      { name: 'Sergio Rochet', pos: 'GK', star: false }
+    ]
+  },
+  mex: {
+    name: 'México',
+    players: [
+      { name: 'Santiago Giménez', pos: 'FW', star: true },
+      { name: 'Hirving Lozano', pos: 'FW', star: false },
+      { name: 'Henry Martín', pos: 'FW', star: false },
+      { name: 'Uriel Antuna', pos: 'FW', star: false },
+      { name: 'Luis Chávez', pos: 'MF', star: false },
+      { name: 'Edson Álvarez', pos: 'MF', star: true },
+      { name: 'Orbelín Pineda', pos: 'MF', star: false },
+      { name: 'Erick Sánchez', pos: 'MF', star: false },
+      { name: 'Luis Romo', pos: 'MF', star: false },
+      { name: 'César Montes', pos: 'DF', star: false },
+      { name: 'Johan Vásquez', pos: 'DF', star: false },
+      { name: 'Jorge Sánchez', pos: 'DF', star: false },
+      { name: 'Gerardo Arteaga', pos: 'DF', star: false },
+      { name: 'Luis Malagón', pos: 'GK', star: false },
+      { name: 'Guillermo Ochoa', pos: 'GK', star: false }
+    ]
+  },
+  ned: {
+    name: 'Países Bajos',
+    players: [
+      { name: 'Memphis Depay', pos: 'FW', star: false },
+      { name: 'Cody Gakpo', pos: 'FW', star: true },
+      { name: 'Wout Weghorst', pos: 'FW', star: false },
+      { name: 'Donyell Malen', pos: 'FW', star: false },
+      { name: 'Xavi Simons', pos: 'MF', star: false },
+      { name: 'Frenkie de Jong', pos: 'MF', star: false },
+      { name: 'Teun Koopmeiners', pos: 'MF', star: false },
+      { name: 'Tijjani Reijnders', pos: 'MF', star: false },
+      { name: 'Georginio Wijnaldum', pos: 'MF', star: false },
+      { name: 'Virgil van Dijk', pos: 'DF', star: true },
+      { name: 'Matthijs de Ligt', pos: 'DF', star: false },
+      { name: 'Nathan Aké', pos: 'DF', star: false },
+      { name: 'Denzel Dumfries', pos: 'DF', star: false },
+      { name: 'Jeremie Frimpong', pos: 'DF', star: false },
+      { name: 'Bart Verbruggen', pos: 'GK', star: false }
+    ]
+  },
+  usa: {
+    name: 'Estados Unidos',
+    players: [
+      { name: 'Christian Pulisic', pos: 'FW', star: true },
+      { name: 'Folarin Balogun', pos: 'FW', star: false },
+      { name: 'Timothy Weah', pos: 'FW', star: false },
+      { name: 'Ricardo Pepi', pos: 'FW', star: false },
+      { name: 'Brenden Aaronson', pos: 'FW', star: false },
+      { name: 'Weston McKennie', pos: 'MF', star: false },
+      { name: 'Yunus Musah', pos: 'MF', star: false },
+      { name: 'Gio Reyna', pos: 'MF', star: false },
+      { name: 'Tyler Adams', pos: 'MF', star: false },
+      { name: 'Johnny Cardoso', pos: 'MF', star: false },
+      { name: 'Antonee Robinson', pos: 'DF', star: false },
+      { name: 'Chris Richards', pos: 'DF', star: false },
+      { name: 'Cameron Carter-Vickers', pos: 'DF', star: false },
+      { name: 'Joe Scally', pos: 'DF', star: false },
+      { name: 'Matt Turner', pos: 'GK', star: false }
+    ]
+  },
+  can: {
+    name: 'Canadá',
+    players: [
+      { name: 'Jonathan David', pos: 'FW', star: true },
+      { name: 'Cyle Larin', pos: 'FW', star: false },
+      { name: 'Tajon Buchanan', pos: 'FW', star: false },
+      { name: 'Alphonso Davies', pos: 'DF', star: true },
+      { name: 'Stephen Eustáquio', pos: 'MF', star: false },
+      { name: 'Ismaël Koné', pos: 'MF', star: false },
+      { name: 'Liam Millar', pos: 'MF', star: false },
+      { name: 'Jacob Shaffelburg', pos: 'MF', star: false },
+      { name: 'Alistair Johnston', pos: 'DF', star: false },
+      { name: 'Kamal Miller', pos: 'DF', star: false },
+      { name: 'Derek Cornelius', pos: 'DF', star: false },
+      { name: 'Moïse Bombito', pos: 'DF', star: false },
+      { name: 'Maxime Crépeau', pos: 'GK', star: false }
+    ]
+  },
+  mar: {
+    name: 'Marruecos',
+    players: [
+      { name: 'Youssef En-Nesyri', pos: 'FW', star: false },
+      { name: 'Ayoub El Kaabi', pos: 'FW', star: false },
+      { name: 'Hakim Ziyech', pos: 'FW', star: false },
+      { name: 'Brahim Díaz', pos: 'MF', star: true },
+      { name: 'Sofyan Amrabat', pos: 'MF', star: false },
+      { name: 'Azzedine Ounahi', pos: 'MF', star: false },
+      { name: 'Amine Harit', pos: 'MF', star: false },
+      { name: 'Bilal El Khannouss', pos: 'MF', star: false },
+      { name: 'Achraf Hakimi', pos: 'DF', star: true },
+      { name: 'Nayef Aguerd', pos: 'DF', star: false },
+      { name: 'Romain Saïss', pos: 'DF', star: false },
+      { name: 'Noussair Mazraoui', pos: 'DF', star: false },
+      { name: 'Chadi Riad', pos: 'DF', star: false },
+      { name: 'Yassine Bounou', pos: 'GK', star: false }
+    ]
+  },
+  bel: {
+    name: 'Bélgica',
+    players: [
+      { name: 'Romelu Lukaku', pos: 'FW', star: false },
+      { name: 'Lois Openda', pos: 'FW', star: false },
+      { name: 'Jérémy Doku', pos: 'FW', star: false },
+      { name: 'Leandro Trossard', pos: 'FW', star: false },
+      { name: 'Kevin De Bruyne', pos: 'MF', star: true },
+      { name: 'Amadou Onana', pos: 'MF', star: false },
+      { name: 'Youri Tielemans', pos: 'MF', star: false },
+      { name: 'Orel Mangala', pos: 'MF', star: false },
+      { name: 'Charles De Ketelaere', pos: 'MF', star: false },
+      { name: 'Wout Faes', pos: 'DF', star: false },
+      { name: 'Timothy Castagne', pos: 'DF', star: false },
+      { name: 'Arthur Theate', pos: 'DF', star: false },
+      { name: 'Zeno Debast', pos: 'DF', star: false },
+      { name: 'Koen Casteels', pos: 'GK', star: false }
+    ]
+  },
+  cro: {
+    name: 'Croacia',
+    players: [
+      { name: 'Andrej Kramarić', pos: 'FW', star: false },
+      { name: 'Bruno Petković', pos: 'FW', star: false },
+      { name: 'Ante Budimir', pos: 'FW', star: false },
+      { name: 'Luka Modrić', pos: 'MF', star: true },
+      { name: 'Mateo Kovačić', pos: 'MF', star: false },
+      { name: 'Marcelo Brozović', pos: 'MF', star: false },
+      { name: 'Mario Pašalić', pos: 'MF', star: false },
+      { name: 'Lovro Majer', pos: 'MF', star: false },
+      { name: 'Luka Sučić', pos: 'MF', star: false },
+      { name: 'Joško Gvardiol', pos: 'DF', star: true },
+      { name: 'Josip Šutalo', pos: 'DF', star: false },
+      { name: 'Borna Sosa', pos: 'DF', star: false },
+      { name: 'Josip Stanišić', pos: 'DF', star: false },
+      { name: 'Dominik Livaković', pos: 'GK', star: false }
+    ]
+  },
+  nor: {
+    name: 'Noruega',
+    players: [
+      { name: 'Erling Haaland', pos: 'FW', star: true },
+      { name: 'Alexander Sørloth', pos: 'FW', star: false },
+      { name: 'Jörgen Strand Larsen', pos: 'FW', star: false },
+      { name: 'Martin Ødegaard', pos: 'MF', star: true },
+      { name: 'Oscar Bobb', pos: 'FW', star: false },
+      { name: 'Antonio Nusa', pos: 'FW', star: false },
+      { name: 'Sander Berge', pos: 'MF', star: false },
+      { name: 'Kristian Thorstvedt', pos: 'MF', star: false },
+      { name: 'Patrick Berg', pos: 'MF', star: false },
+      { name: 'Leo Østigård', pos: 'DF', star: false },
+      { name: 'Julian Ryerson', pos: 'DF', star: false },
+      { name: 'Kristoffer Ajer', pos: 'DF', star: false },
+      { name: 'David Møller Wolfe', pos: 'DF', star: false },
+      { name: 'Örjan Nyland', pos: 'GK', star: false }
+    ]
+  },
+  egy: {
+    name: 'Egipto',
+    players: [
+      { name: 'Mohamed Salah', pos: 'FW', star: true },
+      { name: 'Mostafa Mohamed', pos: 'FW', star: false },
+      { name: 'Omar Marmoush', pos: 'FW', star: false },
+      { name: 'Trezeguet Hassan', pos: 'FW', star: false },
+      { name: 'Mohamed Elneny', pos: 'MF', star: false },
+      { name: 'Hamdi Fathi', pos: 'MF', star: false },
+      { name: 'Marwan Attia', pos: 'MF', star: false },
+      { name: 'Emam Ashour', pos: 'MF', star: false },
+      { name: 'Ahmed Hegazi', pos: 'DF', star: false },
+      { name: 'Mohamed Abdelmonem', pos: 'DF', star: false },
+      { name: 'Mohamed Hany', pos: 'DF', star: false },
+      { name: 'Rami Rabia', pos: 'DF', star: false },
+      { name: 'Mohamed El Shenawy', pos: 'GK', star: false }
+    ]
+  },
+  kor: {
+    name: 'Corea del Sur',
+    players: [
+      { name: 'Son Heung-min', pos: 'FW', star: true },
+      { name: 'Hwang Hee-chan', pos: 'FW', star: false },
+      { name: 'Cho Gue-sung', pos: 'FW', star: false },
+      { name: 'Lee Kang-in', pos: 'MF', star: true },
+      { name: 'Hwang In-beom', pos: 'MF', star: false },
+      { name: 'Lee Jae-sung', pos: 'MF', star: false },
+      { name: 'Hong Hyun-seok', pos: 'MF', star: false },
+      { name: 'Kim Min-jae', pos: 'DF', star: true },
+      { name: 'Kim Young-gwon', pos: 'DF', star: false },
+      { name: 'Jung Seung-hyun', pos: 'DF', star: false },
+      { name: 'Kim Jin-su', pos: 'DF', star: false },
+      { name: 'Seol Young-woo', pos: 'DF', star: false },
+      { name: 'Jo Hyeon-woo', pos: 'GK', star: false }
+    ]
+  },
+  jpn: {
+    name: 'Japón',
+    players: [
+      { name: 'Kaoru Mitoma', pos: 'FW', star: true },
+      { name: 'Takefusa Kubo', pos: 'MF', star: true },
+      { name: 'Ayase Ueda', pos: 'FW', star: false },
+      { name: 'Takuma Asano', pos: 'FW', star: false },
+      { name: 'Ritsu Doan', pos: 'MF', star: false },
+      { name: 'Wataru Endo', pos: 'MF', star: false },
+      { name: 'Hidemasa Morita', pos: 'MF', star: false },
+      { name: 'Daichi Kamada', pos: 'MF', star: false },
+      { name: 'Ko Itakura', pos: 'DF', star: false },
+      { name: 'Hiroki Ito', pos: 'DF', star: false },
+      { name: 'Takehiro Tomiyasu', pos: 'DF', star: false },
+      { name: 'Yukinari Sugawara', pos: 'DF', star: false },
+      { name: 'Zion Suzuki', pos: 'GK', star: false }
+    ]
+  },
+  swe: {
+    name: 'Suecia',
+    players: [
+      { name: 'Alexander Isak', pos: 'FW', star: true },
+      { name: 'Viktor Gyökeres', pos: 'FW', star: true },
+      { name: 'Dejan Kulusevski', pos: 'FW', star: false },
+      { name: 'Anthony Elanga', pos: 'FW', star: false },
+      { name: 'Emil Forsberg', pos: 'MF', star: false },
+      { name: 'Jens Cajuste', pos: 'MF', star: false },
+      { name: 'Hugo Larsson', pos: 'MF', star: false },
+      { name: 'Mattias Svanberg', pos: 'MF', star: false },
+      { name: 'Victor Lindelöf', pos: 'DF', star: false },
+      { name: 'Isak Hien', pos: 'DF', star: false },
+      { name: 'Ludwig Augustinsson', pos: 'DF', star: false },
+      { name: 'Emil Krafth', pos: 'DF', star: false },
+      { name: 'Robin Olsen', pos: 'GK', star: false }
+    ]
+  },
+  sen: {
+    name: 'Senegal',
+    players: [
+      { name: 'Sadio Mané', pos: 'FW', star: true },
+      { name: 'Nicolas Jackson', pos: 'FW', star: true },
+      { name: 'Boulaye Dia', pos: 'FW', star: false },
+      { name: 'Iliman Ndiaye', pos: 'FW', star: false },
+      { name: 'Pape Matar Sarr', pos: 'MF', star: false },
+      { name: 'Idrissa Gueye', pos: 'MF', star: false },
+      { name: 'Lamine Camara', pos: 'MF', star: false },
+      { name: 'Kalidou Koulibaly', pos: 'DF', star: false },
+      { name: 'Moussa Niakhaté', pos: 'DF', star: false },
+      { name: 'Abdou Diallo', pos: 'DF', star: false },
+      { name: 'Ismail Jakobs', pos: 'DF', star: false },
+      { name: 'Édouard Mendy', pos: 'GK', star: false }
+    ]
+  },
+  civ: {
+    name: 'Costa de Marfil',
+    players: [
+      { name: 'Sébastien Haller', pos: 'FW', star: true },
+      { name: 'Karim Konaté', pos: 'FW', star: false },
+      { name: 'Simon Adingra', pos: 'FW', star: false },
+      { name: 'Franck Kessié', pos: 'MF', star: false },
+      { name: 'Seko Fofana', pos: 'MF', star: false },
+      { name: 'Ibrahim Sangaré', pos: 'MF', star: false },
+      { name: 'Evan Ndicka', pos: 'DF', star: false },
+      { name: 'Odilon Kossounou', pos: 'DF', star: false },
+      { name: 'Ousmane Diomande', pos: 'DF', star: false },
+      { name: 'Wilfried Singo', pos: 'DF', star: false },
+      { name: 'Yahia Fofana', pos: 'GK', star: false }
+    ]
+  },
+  ecu: {
+    name: 'Ecuador',
+    players: [
+      { name: 'Enner Valencia', pos: 'FW', star: false },
+      { name: 'Kendry Páez', pos: 'MF', star: true },
+      { name: 'Moisés Caicedo', pos: 'MF', star: true },
+      { name: 'Piero Hincapié', pos: 'DF', star: true },
+      { name: 'Willian Pacho', pos: 'DF', star: false },
+      { name: 'Félix Torres', pos: 'DF', star: false },
+      { name: 'Angelo Preciado', pos: 'DF', star: false },
+      { name: 'Pervis Estupiñán', pos: 'DF', star: false },
+      { name: 'Carlos Gruezo', pos: 'MF', star: false },
+      { name: 'Alan Franco', pos: 'MF', star: false },
+      { name: 'Alexander Domínguez', pos: 'GK', star: false }
+    ]
+  },
+  tur: {
+    name: 'Turquía',
+    players: [
+      { name: 'Arda Güler', pos: 'MF', star: true },
+      { name: 'Kenan Yildiz', pos: 'FW', star: false },
+      { name: 'Baris Alper Yilmaz', pos: 'FW', star: false },
+      { name: 'Cenk Tosun', pos: 'FW', star: false },
+      { name: 'Hakan Calhanoglu', pos: 'MF', star: true },
+      { name: 'Orkun Kökcü', pos: 'MF', star: false },
+      { name: 'Salih Özcan', pos: 'MF', star: false },
+      { name: 'Ferdi Kadioglu', pos: 'DF', star: false },
+      { name: 'Merih Demiral', pos: 'DF', star: false },
+      { name: 'Abdülkerim Bardakci', pos: 'DF', star: false },
+      { name: 'Zeki Celik', pos: 'DF', star: false },
+      { name: 'Mert Günok', pos: 'GK', star: false }
+    ]
+  },
+  sui: {
+    name: 'Suiza',
+    players: [
+      { name: 'Breel Embolo', pos: 'FW', star: false },
+      { name: 'Zeki Amdouni', pos: 'FW', star: false },
+      { name: 'Xherdan Shaqiri', pos: 'FW', star: false },
+      { name: 'Granit Xhaka', pos: 'MF', star: true },
+      { name: 'Denis Zakaria', pos: 'MF', star: false },
+      { name: 'Remo Freuler', pos: 'MF', star: false },
+      { name: 'Michel Aebischer', pos: 'MF', star: false },
+      { name: 'Manuel Akanji', pos: 'DF', star: true },
+      { name: 'Fabian Schär', pos: 'DF', star: false },
+      { name: 'Nico Elvedi', pos: 'DF', star: false },
+      { name: 'Ricardo Rodríguez', pos: 'DF', star: false },
+      { name: 'Yann Sommer', pos: 'GK', star: false },
+      { name: 'Gregor Kobel', pos: 'GK', star: false }
+    ]
+  },
+  sco: {
+    name: 'Escocia',
+    players: [
+      { name: 'Che Adams', pos: 'FW', star: false },
+      { name: 'Lawrence Shankland', pos: 'FW', star: false },
+      { name: 'Scott McTominay', pos: 'MF', star: true },
+      { name: 'John McGinn', pos: 'MF', star: false },
+      { name: 'Billy Gilmour', pos: 'MF', star: false },
+      { name: 'Callum McGregor', pos: 'MF', star: false },
+      { name: 'Andrew Robertson', pos: 'DF', star: true },
+      { name: 'Kieran Tierney', pos: 'DF', star: false },
+      { name: 'Jack Hendry', pos: 'DF', star: false },
+      { name: 'Angus Gunn', pos: 'GK', star: false }
+    ]
+  },
+  aut: {
+    name: 'Austria',
+    players: [
+      { name: 'Michael Gregoritsch', pos: 'FW', star: false },
+      { name: 'Marko Arnautović', pos: 'FW', star: false },
+      { name: 'Marcel Sabitzer', pos: 'MF', star: true },
+      { name: 'Konrad Laimer', pos: 'MF', star: false },
+      { name: 'Christoph Baumgartner', pos: 'MF', star: false },
+      { name: 'Nicolas Seiwald', pos: 'MF', star: false },
+      { name: 'David Alaba', pos: 'DF', star: true },
+      { name: 'Kevin Danso', pos: 'DF', star: false },
+      { name: 'Stefan Posch', pos: 'DF', star: false },
+      { name: 'Patrick Pentz', pos: 'GK', star: false }
+    ]
+  },
+  cro: {
+    name: 'Croacia',
+    players: [
+      { name: 'Andrej Kramarić', pos: 'FW', star: false },
+      { name: 'Luka Modrić', pos: 'MF', star: true },
+      { name: 'Mateo Kovačić', pos: 'MF', star: false },
+      { name: 'Joško Gvardiol', pos: 'DF', star: true },
+      { name: 'Dominik Livaković', pos: 'GK', star: false }
+    ]
+  },
+  gha: {
+    name: 'Ghana',
+    players: [
+      { name: 'Mohammed Kudus', pos: 'MF', star: true },
+      { name: 'Inaki Williams', pos: 'FW', star: false },
+      { name: 'Jordan Ayew', pos: 'FW', star: false },
+      { name: 'Antoine Semenyo', pos: 'FW', star: false },
+      { name: 'Thomas Partey', pos: 'MF', star: false },
+      { name: 'Salis Abdul Samed', pos: 'MF', star: false },
+      { name: 'Mohammed Salisu', pos: 'DF', star: false },
+      { name: 'Tariq Lamptey', pos: 'DF', star: false },
+      { name: 'Lawrence Ati-Zigi', pos: 'GK', star: false }
+    ]
+  },
+  pan: {
+    name: 'Panamá',
+    players: [
+      { name: 'José Fajardo', pos: 'FW', star: false },
+      { name: 'Cecilio Waterman', pos: 'FW', star: false },
+      { name: 'Adalberto Carrasquilla', pos: 'MF', star: true },
+      { name: 'Aníbal Godoy', pos: 'MF', star: false },
+      { name: 'Michael Amir Murillo', pos: 'DF', star: false },
+      { name: 'José Córdoba', pos: 'DF', star: false },
+      { name: 'Fidel Escobar', pos: 'DF', star: false },
+      { name: 'Orlando Mosquera', pos: 'GK', star: false }
+    ]
+  },
+  irn: {
+    name: 'Irán',
+    players: [
+      { name: 'Mehdi Taremi', pos: 'FW', star: true },
+      { name: 'Sardar Azmoun', pos: 'FW', star: false },
+      { name: 'Alireza Jahanbakhsh', pos: 'FW', star: false },
+      { name: 'Saman Ghoddos', pos: 'MF', star: false },
+      { name: 'Milad Mohammadi', pos: 'DF', star: false },
+      { name: 'Shojae Khalilzadeh', pos: 'DF', star: false },
+      { name: 'Alireza Beiranvand', pos: 'GK', star: false }
+    ]
+  },
+  nzl: {
+    name: 'Nueva Zelanda',
+    players: [
+      { name: 'Chris Wood', pos: 'FW', star: true },
+      { name: 'Kosta Barbarouses', pos: 'FW', star: false },
+      { name: 'Sarpreet Singh', pos: 'MF', star: false },
+      { name: 'Joe Bell', pos: 'MF', star: false },
+      { name: 'Liberato Cacace', pos: 'DF', star: false },
+      { name: 'Michael Boxall', pos: 'DF', star: false },
+      { name: 'Oliver Sail', pos: 'GK', star: false }
+    ]
+  },
+  ksa: {
+    name: 'Arabia Saudí',
+    players: [
+      { name: 'Salem Al-Dawsari', pos: 'MF', star: true },
+      { name: 'Firas Al-Buraikan', pos: 'FW', star: false },
+      { name: 'Saleh Al-Shehri', pos: 'FW', star: false },
+      { name: 'Mohamed Kanno', pos: 'MF', star: false },
+      { name: 'Saud Abdulhamid', pos: 'DF', star: false },
+      { name: 'Ali Al-Bulaihi', pos: 'DF', star: false },
+      { name: 'Mohammed Al-Owais', pos: 'GK', star: false }
+    ]
+  },
+  alg: {
+    name: 'Argelia',
+    players: [
+      { name: 'Riyad Mahrez', pos: 'FW', star: true },
+      { name: 'Baghdad Bounedjah', pos: 'FW', star: false },
+      { name: 'Amine Gouiri', pos: 'FW', star: false },
+      { name: 'Ismaël Bennacer', pos: 'MF', star: false },
+      { name: 'Houssem Aouar', pos: 'MF', star: false },
+      { name: 'Rayan Aït-Nouri', pos: 'DF', star: false },
+      { name: 'Aïssa Mandi', pos: 'DF', star: false },
+      { name: 'Anthony Mandrea', pos: 'GK', star: false }
+    ]
+  },
+  cod: {
+    name: 'RD del Congo',
+    players: [
+      { name: 'Yoane Wissa', pos: 'FW', star: true },
+      { name: 'Cédric Bakambu', pos: 'FW', star: false },
+      { name: 'Meschack Elia', pos: 'FW', star: false },
+      { name: 'Samuel Moutoussamy', pos: 'MF', star: false },
+      { name: 'Chancel Mbemba', pos: 'DF', star: false },
+      { name: 'Arthur Masuaku', pos: 'DF', star: false },
+      { name: 'Lionel Mpasi', pos: 'GK', star: false }
+    ]
+  },
+  uzb: {
+    name: 'Uzbekistán',
+    players: [
+      { name: 'Eldor Shomurodov', pos: 'FW', star: true },
+      { name: 'Igor Sergeev', pos: 'FW', star: false },
+      { name: 'Otabek Shukurov', pos: 'MF', star: false },
+      { name: 'Jaloliddin Masharipov', pos: 'MF', star: false },
+      { name: 'Rustam Ashurmatov', pos: 'DF', star: false },
+      { name: 'Utkir Yusupov', pos: 'GK', star: false }
+    ]
+  },
+  cze: {
+    name: 'República Checa',
+    players: [
+      { name: 'Patrik Schick', pos: 'FW', star: true },
+      { name: 'Adam Hložek', pos: 'FW', star: false },
+      { name: 'Tomáš Souček', pos: 'MF', star: true },
+      { name: 'Antonín Barák', pos: 'MF', star: false },
+      { name: 'Vladimír Coufal', pos: 'DF', star: false },
+      { name: 'Ladislav Krejčí', pos: 'DF', star: false },
+      { name: 'Jindřich Staněk', pos: 'GK', star: false }
+    ]
+  },
+  rsa: {
+    name: 'Sudáfrica',
+    players: [
+      { name: 'Percy Tau', pos: 'FW', star: true },
+      { name: 'Themba Zwane', pos: 'MF', star: false },
+      { name: 'Teboho Mokoena', pos: 'MF', star: false },
+      { name: 'Sphephelo Sithole', pos: 'MF', star: false },
+      { name: 'Aubrey Modiba', pos: 'DF', star: false },
+      { name: 'Mothobi Mvala', pos: 'DF', star: false },
+      { name: 'Ronwen Williams', pos: 'GK', star: false }
+    ]
+  },
+  bih: {
+    name: 'Bosnia y Herzegovina',
+    players: [
+      { name: 'Edin Džeko', pos: 'FW', star: true },
+      { name: 'Ermedin Demirović', pos: 'FW', star: false },
+      { name: 'Miralem Pjanić', pos: 'MF', star: false },
+      { name: 'Rade Krunić', pos: 'MF', star: false },
+      { name: 'Sead Kolašinac', pos: 'DF', star: false },
+      { name: 'Dennis Hadžikadunić', pos: 'DF', star: false },
+      { name: 'Ibrahim Šehić', pos: 'GK', star: false }
+    ]
+  },
+  qat: {
+    name: 'Catar',
+    players: [
+      { name: 'Akram Afif', pos: 'FW', star: true },
+      { name: 'Almoez Ali', pos: 'FW', star: false },
+      { name: 'Hassan Al-Haydos', pos: 'MF', star: false },
+      { name: 'Abdulaziz Hatem', pos: 'MF', star: false },
+      { name: 'Boualem Khoukhi', pos: 'DF', star: false },
+      { name: 'Ró-Ró Pedro', pos: 'DF', star: false },
+      { name: 'Meshaal Barsham', pos: 'GK', star: false }
+    ]
+  },
+  hai: {
+    name: 'Haití',
+    players: [
+      { name: 'Frantzdy Pierrot', pos: 'FW', star: false },
+      { name: 'Duckens Nazon', pos: 'FW', star: false },
+      { name: 'Derrick Etienne', pos: 'MF', star: false },
+      { name: 'Carlens Arcus', pos: 'DF', star: false },
+      { name: 'Alex Christian', pos: 'DF', star: false },
+      { name: 'Johny Placide', pos: 'GK', star: false }
+    ]
+  },
+  pry: {
+    name: 'Paraguay',
+    players: [
+      { name: 'Miguel Almirón', pos: 'MF', star: true },
+      { name: 'Julio Enciso', pos: 'FW', star: true },
+      { name: 'Adam Bareiro', pos: 'FW', star: false },
+      { name: 'Mathías Villasanti', pos: 'MF', star: false },
+      { name: 'Gustavo Gómez', pos: 'DF', star: false },
+      { name: 'Omar Alderete', pos: 'DF', star: false },
+      { name: 'Carlos Coronel', pos: 'GK', star: false }
+    ]
+  },
+  aus: {
+    name: 'Australia',
+    players: [
+      { name: 'Mitchell Duke', pos: 'FW', star: false },
+      { name: 'Jackson Irvine', pos: 'MF', star: false },
+      { name: 'Riley McGree', pos: 'MF', star: false },
+      { name: 'Harry Souttar', pos: 'DF', star: false },
+      { name: 'Kye Rowles', pos: 'DF', star: false },
+      { name: 'Mathew Ryan', pos: 'GK', star: false }
+    ]
+  },
+  cuw: {
+    name: 'Curazao',
+    players: [
+      { name: 'Rangelo Janga', pos: 'FW', star: false },
+      { name: 'Juninho Bacuna', pos: 'MF', star: false },
+      { name: 'Leandro Bacuna', pos: 'MF', star: false },
+      { name: 'Cuco Martina', pos: 'DF', star: false },
+      { name: 'Eloy Room', pos: 'GK', star: false }
+    ]
+  },
+  tun: {
+    name: 'Túnez',
+    players: [
+      { name: 'Youssef Msakni', pos: 'FW', star: false },
+      { name: 'Elias Achouri', pos: 'FW', star: false },
+      { name: 'Ellyes Skhiri', pos: 'MF', star: false },
+      { name: 'Aissa Laïdouni', pos: 'MF', star: false },
+      { name: 'Montassar Talbi', pos: 'DF', star: false },
+      { name: 'Bechir Ben Said', pos: 'GK', star: false }
+    ]
+  },
+  cpv: {
+    name: 'Cabo Verde',
+    players: [
+      { name: 'Ryan Mendes', pos: 'FW', star: false },
+      { name: 'Garry Rodrigues', pos: 'FW', star: false },
+      { name: 'Jamiro Monteiro', pos: 'MF', star: false },
+      { name: 'Kenny Rocha', pos: 'MF', star: false },
+      { name: 'Logan Costa', pos: 'DF', star: false },
+      { name: 'Vozinha Dias', pos: 'GK', star: false }
+    ]
+  },
+  irq: {
+    name: 'Irak',
+    players: [
+      { name: 'Aymen Hussein', pos: 'FW', star: true },
+      { name: 'Ali Al-Hamadi', pos: 'FW', star: false },
+      { name: 'Ibrahim Bayesh', pos: 'MF', star: false },
+      { name: 'Bashar Resan', pos: 'MF', star: false },
+      { name: 'Rebin Sulaka', pos: 'DF', star: false },
+      { name: 'Jalal Hassan', pos: 'GK', star: false }
+    ]
+  },
+  jor: {
+    name: 'Jordania',
+    players: [
+      { name: 'Musa Al-Tamari', pos: 'FW', star: true },
+      { name: 'Yazan Al-Naimat', pos: 'FW', star: false },
+      { name: 'Nizar Al-Rashdan', pos: 'MF', star: false },
+      { name: 'Yazan Al-Arab', pos: 'DF', star: false },
+      { name: 'Yazeed Abulaila', pos: 'GK', star: false }
+    ]
+  }
+};
+
+// Generate SQL file contents
+let sql = `-- =============================================
+-- Migration 011: Seed players list for 48 teams
+-- =============================================
+
+INSERT INTO players (team_id, name, position, is_star) VALUES
+`;
+
+const insertRows = [];
+for (const [teamId, squad] of Object.entries(squads)) {
+  for (const player of squad.players) {
+    const escapedName = player.name.replace(/'/g, "''");
+    insertRows.push(`('${teamId}', '${escapedName}', '${player.pos}', ${player.star})`);
+  }
+}
+
+sql += insertRows.join(',\n') + '\nON CONFLICT DO NOTHING;\n';
+
+fs.writeFileSync(path.join(__dirname, '../supabase/migrations/011_seed_players.sql'), sql);
+console.log('Successfully generated 011_seed_players.sql migration');

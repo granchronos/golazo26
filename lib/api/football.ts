@@ -21,6 +21,7 @@ export interface LiveMatch {
   awayWinner: boolean | null
   homeTla?: string
   awayTla?: string
+  odds?: string
 }
 
 async function apiFetch<T>(endpoint: string): Promise<T | null> {
@@ -170,6 +171,12 @@ function mapFootballDataMatch(m: any): LiveMatch {
     friendlyRound = `Group Stage - Group ${groupName}`
   }
 
+  // Parse odds if available from API
+  let apiOdds = null
+  if (m.odds && m.odds.homeWin !== undefined && m.odds.homeWin !== null) {
+    apiOdds = `${m.odds.homeWin} / ${m.odds.draw} / ${m.odds.awayWin}`
+  }
+
   return {
     apiFixtureId: m.id,
     date: m.utcDate,
@@ -184,6 +191,7 @@ function mapFootballDataMatch(m: any): LiveMatch {
     awayWinner,
     homeTla: m.homeTeam?.tla?.toLowerCase() ?? undefined,
     awayTla: m.awayTeam?.tla?.toLowerCase() ?? undefined,
+    odds: apiOdds ?? undefined,
   }
 }
 

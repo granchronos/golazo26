@@ -183,3 +183,63 @@ export const WC_HISTORY: Record<string, WCHistoryEntry> = {
   uzb: { titles: 0, best: 'Debut' },
   jor: { titles: 0, best: 'Debut' },
 }
+
+// ── Odds calculator based on FIFA rankings with exact overrides ──
+
+const ODDS_OVERRIDES: Record<string, string> = {
+  'mex-rsa': '1.47 / 4.11 / 6.79',
+  'kor-cze': '2.63 / 3.17 / 2.68',
+  'can-bih': '1.78 / 3.64 / 4.33',
+  'usa-pry': '1.96 / 3.44 / 3.69',
+  'qat-sui': '10.42 / 5.33 / 1.28',
+  'bra-mar': '1.59 / 3.89 / 5.43',
+  'hai-sco': '7.12 / 4.52 / 1.41',
+  'aus-tur': '4.27 / 3.54 / 1.82',
+  'ger-cuw': '1.03 / 15.0 / 43.67',
+  'ned-jpn': '1.98 / 3.54 / 3.54',
+  'civ-ecu': '3.23 / 3.02 / 2.33',
+}
+
+export function getOddsForTeams(homeId: string, awayId: string): string {
+  const key1 = `${homeId}-${awayId}`
+  if (ODDS_OVERRIDES[key1]) return ODDS_OVERRIDES[key1]
+  
+  const key2 = `${awayId}-${homeId}`
+  if (ODDS_OVERRIDES[key2]) {
+    const parts = ODDS_OVERRIDES[key2].split(' / ')
+    return `${parts[2]} / ${parts[1]} / ${parts[0]}`
+  }
+
+  const homeTeam = TEAMS_BY_ID[homeId]
+  const awayTeam = TEAMS_BY_ID[awayId]
+
+  if (!homeTeam || !awayTeam) {
+    return '2.50 / 3.10 / 2.70'
+  }
+
+  const homeRank = homeTeam.fifa_ranking
+  const awayRank = awayTeam.fifa_ranking
+
+  const rankDiff = awayRank - homeRank // Positive means home is better
+  
+  let pHome = 0.38 + (rankDiff / 150)
+  let pDraw = 0.28 - (Math.abs(rankDiff) / 400)
+  let pAway = 0.34 - (rankDiff / 150)
+  
+  // Bound probabilities
+  pHome = Math.max(0.02, Math.min(0.95, pHome))
+  pDraw = Math.max(0.05, Math.min(0.35, pDraw))
+  pAway = Math.max(0.02, Math.min(0.95, pAway))
+  
+  // Normalize
+  const sum = pHome + pDraw + pAway
+  pHome /= sum
+  pDraw /= sum
+  pAway /= sum
+  
+  const oHome = 1 / pHome
+  const oDraw = 1 / pDraw
+  const oAway = 1 / pAway
+  
+  return `${oHome.toFixed(2)} / ${oDraw.toFixed(2)} / ${oAway.toFixed(2)}`
+}

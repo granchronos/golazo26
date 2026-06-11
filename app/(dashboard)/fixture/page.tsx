@@ -80,6 +80,7 @@ interface DBMatch {
   away_score: number | null
   status: string
   events?: any | null
+  odds?: string | null
 }
 
 function computeGroupStandings(
@@ -387,6 +388,12 @@ export default function FixturePage() {
                             </div>
                           )
                         })()}
+                        {/* Odds */}
+                        {dbMatch?.odds && (
+                          <span className="hidden sm:inline-block font-mono text-[10px] text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.04] px-1.5 py-0.5 rounded flex-shrink-0">
+                            {dbMatch.odds}
+                          </span>
+                        )}
                         {/* Time (show when finished/live) */}
                         {(isLive || isFinished) && (
                           <span className="hidden sm:block text-[10px] font-mono text-gray-400 flex-shrink-0">

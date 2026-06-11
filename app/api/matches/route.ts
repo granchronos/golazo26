@@ -13,7 +13,7 @@ export async function GET() {
 
     const { data: matches, error } = await admin
       .from('matches')
-      .select('match_number, home_team_id, away_team_id, home_score, away_score, status, match_date, winner_id, events')
+      .select('match_number, home_team_id, away_team_id, home_score, away_score, status, match_date, winner_id, events, odds')
       .order('match_number', { ascending: true })
 
     if (error) {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getWorldCupFixtures, mapApiStatus, getMatchEvents } from '@/lib/api/football'
 import { recalculateAllScores } from '@/app/actions/predictions'
+import { getOddsForTeams } from '@/lib/constants/teams'
 
 // Comprehensive English to DB ID team name mapping
 const TEAM_NAME_MAP: Record<string, string> = {
@@ -91,7 +92,7 @@ export async function GET(request: Request) {
     // Fetch all current matches from DB
     const { data: dbMatches, error: dbError } = await admin
       .from('matches')
-      .select('id, match_number, home_team_id, away_team_id, status, home_score, away_score, events, match_date')
+      .select('id, match_number, home_team_id, away_team_id, status, home_score, away_score, events, match_date, odds')
 
     if (dbError || !dbMatches) {
       return NextResponse.json({ error: 'Error al consultar partidos en la BD', details: dbError }, { status: 500 })
@@ -178,13 +179,20 @@ export async function GET(request: Request) {
           }
         }
 
-        // Only update if there is a change in status, scores, or if new events were fetched/cleared
+        // Determine match odds (prefer API odds, fallback to dynamic FIFA rankings calculation)
+        let matchOdds = apiMatch.odds || null
+        if (!matchOdds && matchedDb.home_team_id && matchedDb.away_team_id) {
+          matchOdds = getOddsForTeams(matchedDb.home_team_id, matchedDb.away_team_id)
+        }
+
+        // Only update if there is a change in status, scores, odds, or if new events were fetched/cleared
         const hasChanges = 
           matchedDb.status !== apiStatus ||
           matchedDb.home_score !== homeScore ||
           matchedDb.away_score !== awayScore ||
           fetchedEvents ||
-          (apiStatus === 'scheduled' && matchedDb.events !== null)
+          (apiStatus === 'scheduled' && matchedDb.events !== null) ||
+          matchedDb.odds !== matchOdds
 
         if (hasChanges) {
           const { error: updateError } = await admin
@@ -194,7 +202,8 @@ export async function GET(request: Request) {
               away_score: awayScore,
               status: apiStatus,
               winner_id: winnerId,
-              events: eventsPayload
+              events: eventsPayload,
+              odds: matchOdds
             })
             .eq('id', matchedDb.id)
 
