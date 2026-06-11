@@ -61,6 +61,9 @@ const TEAM_NAME_MAP: Record<string, string> = {
   'Croatia': 'cro',
   'Ghana': 'gha',
   'Panama': 'pan',
+  // Lowercase TLAs for mapping football-data.org team IDs
+  'par': 'pry',
+  'ury': 'uru',
 }
 
 export async function GET(request: Request) {
@@ -88,7 +91,7 @@ export async function GET(request: Request) {
     // Fetch all current matches from DB
     const { data: dbMatches, error: dbError } = await admin
       .from('matches')
-      .select('id, match_number, home_team_id, away_team_id, status, home_score, away_score, events')
+      .select('id, match_number, home_team_id, away_team_id, status, home_score, away_score, events, match_date')
 
     if (dbError || !dbMatches) {
       return NextResponse.json({ error: 'Error al consultar partidos en la BD', details: dbError }, { status: 500 })
@@ -100,9 +103,13 @@ export async function GET(request: Request) {
     for (const apiMatch of apiMatches) {
       const apiStatus = mapApiStatus(apiMatch.statusShort)
       
-      // Map home/away team names from API to our DB IDs
-      const homeDbId = TEAM_NAME_MAP[apiMatch.homeTeam] || apiMatch.homeTeam.toLowerCase().substring(0, 3)
-      const awayDbId = TEAM_NAME_MAP[apiMatch.awayTeam] || apiMatch.awayTeam.toLowerCase().substring(0, 3)
+      // Map home/away team names or TLAs from API to our DB IDs
+      const homeDbId = apiMatch.homeTla
+        ? (TEAM_NAME_MAP[apiMatch.homeTla] || apiMatch.homeTla)
+        : (TEAM_NAME_MAP[apiMatch.homeTeam] || apiMatch.homeTeam.toLowerCase().substring(0, 3))
+      const awayDbId = apiMatch.awayTla
+        ? (TEAM_NAME_MAP[apiMatch.awayTla] || apiMatch.awayTla)
+        : (TEAM_NAME_MAP[apiMatch.awayTeam] || apiMatch.awayTeam.toLowerCase().substring(0, 3))
 
       // Find the match in our DB by team IDs
       const matchedDb = dbMatches.find(dbm => 
@@ -114,9 +121,14 @@ export async function GET(request: Request) {
       if (!matchedDb) continue
 
       // Only skip if the API says scheduled AND the database also says scheduled (or postponed).
-      // If the database has a status like 'live' or 'finished', but the API says 'scheduled', we should reset the match back to scheduled!
-      if (apiStatus === 'scheduled' && (matchedDb.status === 'scheduled' || matchedDb.status === 'postponed')) {
-        continue
+      // If the database has a status like 'live' or 'finished', but the API says 'scheduled':
+      // We should only reset the match back to scheduled if the match is scheduled in the future (to correct stuck future matches).
+      // If the match is in the past, we should NOT reset it to scheduled as the API might be lagging.
+      if (apiStatus === 'scheduled') {
+        const isFutureMatch = new Date(matchedDb.match_date).getTime() > Date.now()
+        if (matchedDb.status === 'scheduled' || matchedDb.status === 'postponed' || !isFutureMatch) {
+          continue
+        }
       }
 
       if (matchedDb) {
