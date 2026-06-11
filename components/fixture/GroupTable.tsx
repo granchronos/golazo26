@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { Badge } from '@/components/ui/Badge'
 import { WCBadge } from '@/components/ui/WCBadge'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import type { GroupLetter } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
 
@@ -67,6 +68,7 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
               <th className="text-left px-2 py-2 text-gray-500 font-medium">Equipo</th>
               {!compact && (
                 <>
+                  <th className="text-center px-2 py-2 text-gray-500 font-medium w-12">FIFA</th>
                   <th className="text-center px-2 py-2 text-gray-500 font-medium w-8">J</th>
                   <th className="text-center px-2 py-2 text-gray-500 font-medium w-8">G</th>
                   <th className="text-center px-2 py-2 text-gray-500 font-medium w-8">E</th>
@@ -99,7 +101,7 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
                 </td>
                 <td className="px-2 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">{row.team.flag_emoji}</span>
+                    <TeamFlag flagCode={row.team.flag_code} name={row.team.name} size={20} />
                     <span className="font-medium dark:text-white truncate max-w-[120px]">
                       {compact ? row.team.code : row.team.name}
                     </span>
@@ -108,6 +110,7 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
                 </td>
                 {!compact && (
                   <>
+                    <td className="text-center px-2 py-3 text-gray-400 font-mono text-xs">#{row.team.fifa_ranking}</td>
                     <td className="text-center px-2 py-3 text-gray-600 dark:text-gray-400">{row.played}</td>
                     <td className="text-center px-2 py-3 text-gray-600 dark:text-gray-400">{row.won}</td>
                     <td className="text-center px-2 py-3 text-gray-600 dark:text-gray-400">{row.drawn}</td>

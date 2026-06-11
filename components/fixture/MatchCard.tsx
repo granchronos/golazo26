@@ -5,6 +5,7 @@ import { MapPin, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { Badge } from '@/components/ui/Badge'
 import { formatMatchDate } from '@/lib/utils/date'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import type { Match, MatchStatus } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
 
@@ -55,14 +56,23 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
       <div className="flex items-center gap-3">
         {/* Home Team */}
         <div className={cn('flex-1 flex items-center gap-2', compact ? 'flex-row' : 'flex-col sm:flex-row')}>
-          <span className="text-2xl">{homeTeam?.flag_emoji || '🏳️'}</span>
-          <span className={cn(
-            'font-body font-semibold dark:text-white',
-            compact ? 'text-sm' : 'text-sm sm:text-base',
-            isFinished && match.winner_id === match.home_team_id && 'text-[#2A398D]'
-          )}>
-            {compact ? (homeTeam?.code || '???') : (homeTeam?.name || 'Por definir')}
-          </span>
+          {homeTeam ? (
+            <TeamFlag flagCode={homeTeam.flag_code} name={homeTeam.name} size={compact ? 18 : 24} />
+          ) : (
+            <span className="text-xl leading-none">🏳️</span>
+          )}
+          <div className="flex flex-col">
+            <span className={cn(
+              'font-body font-semibold dark:text-white',
+              compact ? 'text-sm' : 'text-sm sm:text-base',
+              isFinished && match.winner_id === match.home_team_id && 'text-[#2A398D]'
+            )}>
+              {compact ? (homeTeam?.code || '???') : (homeTeam?.name || 'Por definir')}
+            </span>
+            {homeTeam && !compact && (
+              <span className="text-[10px] text-gray-400 font-mono">FIFA #{homeTeam.fifa_ranking}</span>
+            )}
+          </div>
         </div>
 
         {/* Score / VS */}
@@ -90,14 +100,23 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
 
         {/* Away Team */}
         <div className={cn('flex-1 flex items-center justify-end gap-2', compact ? 'flex-row-reverse' : 'flex-col-reverse sm:flex-row-reverse')}>
-          <span className="text-2xl">{awayTeam?.flag_emoji || '🏳️'}</span>
-          <span className={cn(
-            'font-body font-semibold dark:text-white text-right',
-            compact ? 'text-sm' : 'text-sm sm:text-base',
-            isFinished && match.winner_id === match.away_team_id && 'text-[#2A398D]'
-          )}>
-            {compact ? (awayTeam?.code || '???') : (awayTeam?.name || 'Por definir')}
-          </span>
+          {awayTeam ? (
+            <TeamFlag flagCode={awayTeam.flag_code} name={awayTeam.name} size={compact ? 18 : 24} />
+          ) : (
+            <span className="text-xl leading-none">🏳️</span>
+          )}
+          <div className="flex flex-col items-end">
+            <span className={cn(
+              'font-body font-semibold dark:text-white text-right',
+              compact ? 'text-sm' : 'text-sm sm:text-base',
+              isFinished && match.winner_id === match.away_team_id && 'text-[#2A398D]'
+            )}>
+              {compact ? (awayTeam?.code || '???') : (awayTeam?.name || 'Por definir')}
+            </span>
+            {awayTeam && !compact && (
+              <span className="text-[10px] text-gray-400 font-mono text-right">FIFA #{awayTeam.fifa_ranking}</span>
+            )}
+          </div>
         </div>
       </div>
 

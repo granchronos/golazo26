@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { Trophy, Medal, Award, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import { TEAMS } from '@/lib/constants/teams'
 import type { TeamData } from '@/lib/constants/teams'
 
@@ -55,8 +56,9 @@ export function BetSummary({
             {runnerUp ? (
               <div className="flex flex-col items-center gap-1 opacity-80">
                 <Medal size={14} className="text-gray-400 dark:text-gray-500" />
-                <span className="text-3xl sm:text-4xl leading-none">{runnerUp.flag_emoji}</span>
+                <TeamFlag flagCode={runnerUp.flag_code} name={runnerUp.name} size={36} />
                 <span className="text-xs font-body font-medium text-gray-500 dark:text-gray-400">{runnerUp.name}</span>
+                <span className="text-[9px] font-mono text-gray-400">FIFA #{runnerUp.fifa_ranking}</span>
                 <span className="text-[9px] font-mono text-gray-400 uppercase">Subcampeón</span>
               </div>
             ) : (
@@ -67,8 +69,11 @@ export function BetSummary({
             <div className="flex flex-col items-center gap-1.5 relative">
               <div className="absolute -top-2 -left-4 -right-4 -bottom-2 bg-[#C9A84C]/[0.08] rounded-2xl blur-md" />
               <Trophy size={20} className="text-[#C9A84C] relative z-10" />
-              <span className="text-5xl sm:text-6xl leading-none relative z-10">{champion.flag_emoji}</span>
+              <div className="relative z-10 my-1">
+                <TeamFlag flagCode={champion.flag_code} name={champion.name} size={54} />
+              </div>
               <span className="text-sm sm:text-base font-display font-bold text-[#C9A84C] relative z-10">{champion.name}</span>
+              <span className="text-[10px] font-mono text-[#C9A84C] relative z-10">FIFA #{champion.fifa_ranking}</span>
               <span className="text-[9px] font-mono text-[#C9A84C]/70 uppercase tracking-wider relative z-10">Mi Campeón del Bracket</span>
             </div>
 
@@ -76,8 +81,9 @@ export function BetSummary({
             {runnerUp ? (
               <div className="flex flex-col items-center gap-1 opacity-0 pointer-events-none">
                 <Medal size={14} />
-                <span className="text-3xl sm:text-4xl leading-none">{runnerUp.flag_emoji}</span>
+                <TeamFlag flagCode={runnerUp.flag_code} name={runnerUp.name} size={36} />
                 <span className="text-xs font-body">{runnerUp.name}</span>
+                <span className="text-[9px] font-mono">FIFA #{runnerUp.fifa_ranking}</span>
                 <span className="text-[9px]">Subcampeón</span>
               </div>
             ) : (
@@ -101,8 +107,9 @@ export function BetSummary({
               <div>
                 <p className="text-[9px] uppercase font-mono text-gray-400 tracking-wider leading-none mb-0.5">Mi Campeón</p>
                 <p className="text-sm font-body font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-                  <span className="text-base">{predictedChampionTeam.flag_emoji}</span>
+                  <TeamFlag flagCode={predictedChampionTeam.flag_code} name={predictedChampionTeam.name} size={18} />
                   {predictedChampionTeam.name}
+                  <span className="text-[10px] font-mono text-gray-400 font-normal">FIFA #{predictedChampionTeam.fifa_ranking}</span>
                 </p>
               </div>
             </div>
@@ -140,8 +147,15 @@ export function BetSummary({
                       : 'bg-gray-50 dark:bg-white/[0.02] border-gray-100 dark:border-white/[0.04] opacity-40'
                   )}
                 >
-                  <span className="text-sm leading-none">{team?.flag_emoji || '⚽'}</span>
+                  {team ? (
+                    <TeamFlag flagCode={team.flag_code} name={team.name} size={14} />
+                  ) : (
+                    <span className="text-sm leading-none">⚽</span>
+                  )}
                   <span className="text-gray-600 dark:text-gray-300 truncate max-w-[60px]">{name.split(' ')[0]}</span>
+                  {team && (
+                    <span className="text-[9px] font-mono text-gray-400">#{team.fifa_ranking}</span>
+                  )}
                 </div>
               )
             })}

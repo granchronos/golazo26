@@ -4,6 +4,7 @@ import { X, Swords, Clock, MapPin, Star, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { WCBadge } from '@/components/ui/WCBadge'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import { WC_HISTORY } from '@/lib/constants/teams'
 import { getMatchupData, getFallbackFacts } from '@/lib/constants/matchups'
 import type { TeamData } from '@/lib/constants/teams'
@@ -53,8 +54,9 @@ function TeamProfile({ team, side }: { team: TeamData; side: 'left' | 'right' })
 
   return (
     <div className={cn('flex flex-col gap-1', align)}>
-      <span className="text-3xl">{team.flag_emoji}</span>
+      <TeamFlag flagCode={team.flag_code} name={team.name} size={48} />
       <span className="font-display text-sm dark:text-white">{team.name}</span>
+      <span className="text-[10px] font-mono text-gray-400">FIFA #{team.fifa_ranking}</span>
       <WCBadge teamId={team.id} size="sm" />
       {h && (
         <div className="mt-1 space-y-0.5">

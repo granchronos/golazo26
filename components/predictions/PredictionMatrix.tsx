@@ -12,6 +12,7 @@ import { KnockoutPredictions } from './KnockoutPredictions'
 import { triggerWinConfetti } from '@/components/animations/ConfettiEffect'
 import { saveGroupPrediction, saveAllGroupPredictions, saveAgnosticPredictions } from '@/app/actions/predictions'
 import { GROUP_STAGE_DEADLINE, CHAMPION_GOLEADOR_DEADLINE } from '@/lib/constants/points'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import { GROUP_LETTERS, TEAMS } from '@/lib/constants/teams'
 import { isBeforeDeadline } from '@/lib/utils/date'
 import { cn } from '@/lib/utils/cn'
@@ -29,6 +30,7 @@ type Selections = Record<GroupLetter, { first: string | null; second: string | n
 
 // Helper to find team by ID
 const findTeam = (id: string) => TEAMS.find((t) => t.id === id)
+const TEAMS_BY_ID = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
 
 export function PredictionMatrix({
   roomId,
@@ -86,7 +88,7 @@ export function PredictionMatrix({
   const [showDropdown, setShowDropdown] = useState(false)
   const [loadingPlayers, setLoadingPlayers] = useState(false)
   const [stars, setStars] = useState<Array<{ id: string; name: string; position: string; teamId: string; teamName: string; flagEmoji: string }>>([])
-  const [selectedGoleadorFlag, setSelectedGoleadorFlag] = useState<string>('')
+  const [selectedGoleadorTeamId, setSelectedGoleadorTeamId] = useState<string>('')
   const goleadorComboboxRef = useRef<HTMLDivElement>(null)
 
   // Sync state with props
@@ -112,7 +114,7 @@ export function PredictionMatrix({
           // If we have an initial goleador, try to find their flag
           if (initialGoleador) {
             const match = data.players.find((p: any) => p.name === initialGoleador)
-            if (match) setSelectedGoleadorFlag(match.flagEmoji)
+            if (match) setSelectedGoleadorTeamId(match.teamId)
           }
         }
       } catch (err) {
@@ -127,7 +129,7 @@ export function PredictionMatrix({
   useEffect(() => {
     if (predictedGoleador && searchResults.length > 0) {
       const match = searchResults.find((p) => p.name === predictedGoleador)
-      if (match) setSelectedGoleadorFlag(match.flagEmoji)
+      if (match) setSelectedGoleadorTeamId(match.teamId)
     }
   }, [predictedGoleador, searchResults])
 
@@ -354,9 +356,10 @@ export function PredictionMatrix({
                   disabled={!isChampGoleadorOpen}
                   className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm hover:border-[#C9A84C]/50 disabled:opacity-75 transition-colors text-left"
                 >
-                  <span className="text-base">{selectedChampionTeam.flag_emoji}</span>
+                  <TeamFlag flagCode={selectedChampionTeam.flag_code} name={selectedChampionTeam.name} size={18} />
                   <span className="font-semibold">{selectedChampionTeam.name}</span>
                   <span className="text-[10px] text-gray-400 font-mono">({selectedChampionTeam.code})</span>
+                  <span className="text-[10px] text-gray-400 font-mono">FIFA #{selectedChampionTeam.fifa_ranking}</span>
                   {isChampGoleadorOpen && (
                     <ChevronDown size={12} className="ml-auto text-gray-400" />
                   )}
@@ -425,8 +428,9 @@ export function PredictionMatrix({
                                 : 'text-gray-900 dark:text-white'
                             )}
                           >
-                            <span className="text-base flex-shrink-0">{team.flag_emoji}</span>
+                            <TeamFlag flagCode={team.flag_code} name={team.name} size={18} className="flex-shrink-0" />
                             <span className="font-semibold">{team.name}</span>
+                            <span className="text-[10px] text-gray-400 font-mono">#{team.fifa_ranking}</span>
                             <span className="text-[10px] text-gray-400 font-mono ml-auto">{team.code} · {team.group_letter}</span>
                           </button>
                         ))
@@ -457,7 +461,10 @@ export function PredictionMatrix({
                   disabled={!isChampGoleadorOpen}
                   className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm hover:border-[#C9A84C]/50 disabled:opacity-75 transition-colors text-left"
                 >
-                  {selectedGoleadorFlag && <span className="text-base">{selectedGoleadorFlag}</span>}
+                  {(() => {
+                    const t = TEAMS_BY_ID[selectedGoleadorTeamId]
+                    return t ? <TeamFlag flagCode={t.flag_code} name={t.name} size={18} /> : <span className="text-base">⚽</span>
+                  })()}
                   <span className="font-semibold">{predictedGoleador}</span>
                   {isChampGoleadorOpen && (
                     <X
@@ -467,7 +474,7 @@ export function PredictionMatrix({
                         e.stopPropagation()
                         setPredictedGoleador('')
                         setGoleadorSearch('')
-                        setSelectedGoleadorFlag('')
+                        setSelectedGoleadorTeamId('')
                         setShowDropdown(true)
                       }}
                     />
@@ -483,7 +490,7 @@ export function PredictionMatrix({
                       if (!isChampGoleadorOpen) return
                       setGoleadorSearch(e.target.value)
                       setPredictedGoleador(e.target.value)
-                      setSelectedGoleadorFlag('')
+                      setSelectedGoleadorTeamId('')
                       setShowDropdown(true)
                     }}
                     onFocus={() => {
@@ -530,13 +537,16 @@ export function PredictionMatrix({
                             onClick={() => {
                               setGoleadorSearch(player.name)
                               setPredictedGoleador(player.name)
-                              setSelectedGoleadorFlag(player.flagEmoji)
+                              setSelectedGoleadorTeamId(player.teamId)
                               setShowDropdown(false)
                             }}
                             className="w-full text-left px-4 py-2 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors flex items-center justify-between text-xs sm:text-sm font-body text-gray-900 dark:text-white"
                           >
                             <div className="flex items-center gap-2">
-                              <span className="text-sm">{player.flagEmoji}</span>
+                              {(() => {
+                                const t = TEAMS_BY_ID[player.teamId]
+                                return t ? <TeamFlag flagCode={t.flag_code} name={t.name} size={16} /> : <span className="text-sm">⚽</span>
+                              })()}
                               <span className="font-semibold">{player.name}</span>
                               <span className="text-[10px] text-gray-400 font-mono">({player.teamId.toUpperCase()})</span>
                             </div>

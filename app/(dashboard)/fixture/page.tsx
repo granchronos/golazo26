@@ -8,6 +8,7 @@ import { GROUP_STAGE_MATCHES } from '@/lib/constants/fixture'
 import { cn } from '@/lib/utils/cn'
 import { MapPin, ChevronRight } from 'lucide-react'
 import { WCBadge } from '@/components/ui/WCBadge'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import { WCHistory } from '@/components/fixture/WCHistory'
 import { FixtureBracket } from '@/components/fixture/FixtureBracket'
 import { MatchDetailModal } from '@/components/fixture/MatchDetailModal'
@@ -249,8 +250,9 @@ export default function FixturePage() {
                         )}>
                           {idx + 1}
                         </span>
-                        <span className="text-lg leading-none flex-shrink-0">{row.team.flag_emoji}</span>
+                        <TeamFlag flagCode={row.team.flag_code} name={row.team.name} size={24} />
                         <span className="text-sm font-body text-gray-800 dark:text-gray-200 flex-1 min-w-0 truncate">{row.team.name}</span>
+                        <span className="text-[9px] font-mono text-gray-400 flex-shrink-0">#{row.team.fifa_ranking}</span>
                         <WCBadge teamId={row.team.id} size="xs" />
                         {hasPlayed ? (
                           <div className="flex items-center gap-3 flex-shrink-0">
@@ -373,7 +375,7 @@ export default function FixturePage() {
                         </span>
                         {/* Teams + Score */}
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <span className="text-sm leading-none">{home?.flag_emoji}</span>
+                          {home && <TeamFlag flagCode={home.flag_code} name={home.name} size={18} />}
                           <span className={cn(
                             'text-sm font-body font-medium',
                             isFinished && dbMatch?.home_score != null && dbMatch?.away_score != null && dbMatch.home_score > dbMatch.away_score
@@ -403,7 +405,7 @@ export default function FixturePage() {
                           )}>
                             {away?.code}
                           </span>
-                          <span className="text-sm leading-none">{away?.flag_emoji}</span>
+                          {away && <TeamFlag flagCode={away.flag_code} name={away.name} size={18} />}
                         </div>
                         {/* Time (show when finished/live) */}
                         {(isLive || isFinished) && (

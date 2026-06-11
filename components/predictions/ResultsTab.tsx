@@ -4,6 +4,7 @@ import { useState, useMemo, useTransition, useEffect } from 'react'
 import { Check, X, Clock, Loader2, Award, Edit } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils/cn'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import { TEAMS } from '@/lib/constants/teams'
 import { ROUND_LABELS, SCORE_BONUS } from '@/lib/constants/points'
 import { ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
@@ -268,10 +269,11 @@ function MatchRow({ roomId, match, knockoutPrediction, savedScore, isAdmin = fal
         <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
           {homeTeam ? (
             <>
+              <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">#{homeTeam.fifa_ranking}</span>
               <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
                 {homeTeam.name}
               </span>
-              <span className="text-base leading-none flex-shrink-0">{homeTeam.flag_emoji}</span>
+              <TeamFlag flagCode={homeTeam.flag_code} name={homeTeam.name} size={16} />
             </>
           ) : (
             <span className="text-xs text-gray-400 font-body">TBD</span>
@@ -352,10 +354,11 @@ function MatchRow({ roomId, match, knockoutPrediction, savedScore, isAdmin = fal
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {awayTeam ? (
             <>
-              <span className="text-base leading-none flex-shrink-0">{awayTeam.flag_emoji}</span>
+              <TeamFlag flagCode={awayTeam.flag_code} name={awayTeam.name} size={16} />
               <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
                 {awayTeam.name}
               </span>
+              <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">#{awayTeam.fifa_ranking}</span>
             </>
           ) : (
             <span className="text-xs text-gray-400 font-body">TBD</span>

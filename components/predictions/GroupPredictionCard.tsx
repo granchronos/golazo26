@@ -1,5 +1,6 @@
 'use client'
 
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import { Check, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { WCBadge } from '@/components/ui/WCBadge'
@@ -83,7 +84,7 @@ export function GroupPredictionCard({
               onClick={() => handleSelect(team.id)}
               disabled={!isOpen}
               className={cn(
-                'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors min-h-[48px]',
+                'w-full flex items-center gap-3 px-4 py-2 text-left transition-colors min-h-[48px]',
                 isSelected && 'bg-[#2A398D]/[0.04] dark:bg-[#2A398D]/10',
                 isFirst && 'border-l-[3px] border-l-[#C9A84C]',
                 isSecond && 'border-l-[3px] border-l-[#2A398D]',
@@ -92,10 +93,13 @@ export function GroupPredictionCard({
                 !isOpen && 'cursor-default'
               )}
             >
-              <span className="text-lg leading-none">{team.flag_emoji}</span>
-              <span className="flex-1 text-sm font-body text-gray-800 dark:text-gray-200">
-                {team.name}
-              </span>
+              <TeamFlag flagCode={team.flag_code} name={team.name} size={22} />
+              <div className="flex-1 flex flex-col min-w-0">
+                <span className="text-sm font-body text-gray-800 dark:text-gray-200 truncate">
+                  {team.name}
+                </span>
+                <span className="text-[9px] font-mono text-gray-400">FIFA #{team.fifa_ranking}</span>
+              </div>
               <WCBadge teamId={team.id} size="xs" />
               {isFirst && (
                 <span className="text-[10px] font-body font-semibold text-[#C9A84C] bg-[#C9A84C]/10 px-2 py-0.5 rounded-full">

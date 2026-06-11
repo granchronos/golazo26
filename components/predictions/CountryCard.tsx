@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Check, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { WCBadge } from '@/components/ui/WCBadge'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import type { TeamData } from '@/lib/constants/teams'
 
 interface CountryCardProps {
@@ -56,17 +57,20 @@ export function CountryCard({ team, state, points, rank, onClick }: CountryCardP
       )}
 
       {/* Flag */}
-      <span className={cn('text-3xl transition-all', isSelected && 'drop-shadow-lg')}>
-        {team.flag_emoji}
-      </span>
+      <div className={cn('transition-all', isSelected && 'drop-shadow-lg')}>
+        <TeamFlag flagCode={team.flag_code} name={team.name} size={32} />
+      </div>
 
       {/* Name */}
-      <span className={cn(
-        'text-xs font-body font-medium text-center leading-tight',
-        isSelected ? 'text-[#2A398D] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
-      )}>
-        {team.code}
-      </span>
+      <div className="flex flex-col items-center gap-0.5">
+        <span className={cn(
+          'text-xs font-body font-medium text-center leading-tight',
+          isSelected ? 'text-[#2A398D] dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-300'
+        )}>
+          {team.code}
+        </span>
+        <span className="text-[8px] font-mono text-gray-400">FIFA #{team.fifa_ranking}</span>
+      </div>
 
       {/* WC history */}
       <WCBadge teamId={team.id} size="xs" />

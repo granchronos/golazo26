@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { GitCompareArrows } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import { TEAMS, GROUP_LETTERS } from '@/lib/constants/teams'
 import { BRACKET_ROUNDS, ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
 import type { SlotSource } from '@/lib/constants/bracket'
@@ -132,15 +133,47 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                   <div key={letter} className="flex items-center px-2 sm:px-4 py-2.5 gap-1.5 sm:gap-2">
                     <span className="text-[10px] font-mono font-bold text-gray-400 w-4">{letter}</span>
                     <div className="flex-1 flex items-center gap-1.5">
-                      {my1st ? <span className={cn('text-xs font-body', same1st ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{my1st.flag_emoji} {my1st.code}</span> : <span className="text-xs text-gray-300">—</span>}
+                      {my1st ? (
+                        <span className={cn('text-xs font-body flex items-center gap-1', same1st ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>
+                          <TeamFlag flagCode={my1st.flag_code} name={my1st.name} size={14} />
+                          {my1st.code}
+                          <span className="text-[9px] text-gray-400 font-mono">#{my1st.fifa_ranking}</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
                       <span className="text-gray-200 dark:text-gray-700">/</span>
-                      {my2nd ? <span className={cn('text-xs font-body', same2nd ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{my2nd.flag_emoji} {my2nd.code}</span> : <span className="text-xs text-gray-300">—</span>}
+                      {my2nd ? (
+                        <span className={cn('text-xs font-body flex items-center gap-1', same2nd ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>
+                          <TeamFlag flagCode={my2nd.flag_code} name={my2nd.name} size={14} />
+                          {my2nd.code}
+                          <span className="text-[9px] text-gray-400 font-mono">#{my2nd.fifa_ranking}</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
                     </div>
                     <span className={cn('text-[10px] w-6 text-center', same1st && same2nd ? 'text-[#3CAC3B]' : 'text-gray-300 dark:text-gray-600')}>{same1st && same2nd ? '✓' : 'vs'}</span>
                     <div className="flex-1 flex items-center gap-1.5 justify-end">
-                      {their1st ? <span className={cn('text-xs font-body', same1st ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{their1st.flag_emoji} {their1st.code}</span> : <span className="text-xs text-gray-300">—</span>}
+                      {their1st ? (
+                        <span className={cn('text-xs font-body flex items-center gap-1 justify-end', same1st ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>
+                          <span className="text-[9px] text-gray-400 font-mono">#{their1st.fifa_ranking}</span>
+                          {their1st.code}
+                          <TeamFlag flagCode={their1st.flag_code} name={their1st.name} size={14} />
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
                       <span className="text-gray-200 dark:text-gray-700">/</span>
-                      {their2nd ? <span className={cn('text-xs font-body', same2nd ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>{their2nd.flag_emoji} {their2nd.code}</span> : <span className="text-xs text-gray-300">—</span>}
+                      {their2nd ? (
+                        <span className={cn('text-xs font-body flex items-center gap-1 justify-end', same2nd ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>
+                          <span className="text-[9px] text-gray-400 font-mono">#{their2nd.fifa_ranking}</span>
+                          {their2nd.code}
+                          <TeamFlag flagCode={their2nd.flag_code} name={their2nd.name} size={14} />
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
                     </div>
                   </div>
                 )
@@ -184,14 +217,32 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                           <div className="flex-1 min-w-0">
                             {(myHome || myAway) && (
                               <div className="flex items-center gap-1 mb-0.5">
-                                <span className="text-[10px] font-body text-gray-400 truncate">
-                                  {myHome ? `${myHome.flag_emoji} ${myHome.code}` : '?'} vs {myAway ? `${myAway.flag_emoji} ${myAway.code}` : '?'}
+                                <span className="text-[10px] font-body text-gray-400 flex items-center gap-1 truncate">
+                                  {myHome ? (
+                                    <>
+                                      <TeamFlag flagCode={myHome.flag_code} name={myHome.name} size={12} />
+                                      <span>{myHome.code}</span>
+                                    </>
+                                  ) : (
+                                    '?'
+                                  )}
+                                  <span className="mx-0.5 text-gray-300">vs</span>
+                                  {myAway ? (
+                                    <>
+                                      <TeamFlag flagCode={myAway.flag_code} name={myAway.name} size={12} />
+                                      <span>{myAway.code}</span>
+                                    </>
+                                  ) : (
+                                    '?'
+                                  )}
                                 </span>
                               </div>
                             )}
                             {myWinner ? (
-                              <span className={cn('text-xs font-body font-semibold', sameWinner ? 'text-[#3CAC3B]' : 'text-gray-700 dark:text-gray-300')}>
-                                🏆 {myWinner.flag_emoji} {myWinner.code}
+                              <span className={cn('text-xs font-body font-semibold flex items-center gap-1', sameWinner ? 'text-[#3CAC3B]' : 'text-gray-700 dark:text-gray-300')}>
+                                🏆 <TeamFlag flagCode={myWinner.flag_code} name={myWinner.name} size={14} />
+                                {myWinner.code}
+                                <span className="text-[9px] text-gray-400 font-mono">#{myWinner.fifa_ranking}</span>
                               </span>
                             ) : <span className="text-xs text-gray-300">—</span>}
                           </div>
@@ -202,14 +253,33 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                           <div className="flex-1 min-w-0 text-right">
                             {(theirHome || theirAway) && (
                               <div className="flex items-center gap-1 justify-end mb-0.5">
-                                <span className="text-[10px] font-body text-gray-400 truncate">
-                                  {theirHome ? `${theirHome.flag_emoji} ${theirHome.code}` : '?'} vs {theirAway ? `${theirAway.flag_emoji} ${theirAway.code}` : '?'}
+                                <span className="text-[10px] font-body text-gray-400 flex items-center gap-1 justify-end truncate">
+                                  {theirHome ? (
+                                    <>
+                                      <TeamFlag flagCode={theirHome.flag_code} name={theirHome.name} size={12} />
+                                      <span>{theirHome.code}</span>
+                                    </>
+                                  ) : (
+                                    '?'
+                                  )}
+                                  <span className="mx-0.5 text-gray-300">vs</span>
+                                  {theirAway ? (
+                                    <>
+                                      <TeamFlag flagCode={theirAway.flag_code} name={theirAway.name} size={12} />
+                                      <span>{theirAway.code}</span>
+                                    </>
+                                  ) : (
+                                    '?'
+                                  )}
                                 </span>
                               </div>
                             )}
                             {theirWinner ? (
-                              <span className={cn('text-xs font-body font-semibold', sameWinner ? 'text-[#3CAC3B]' : 'text-gray-700 dark:text-gray-300')}>
-                                🏆 {theirWinner.flag_emoji} {theirWinner.code}
+                              <span className={cn('text-xs font-body font-semibold flex items-center gap-1 justify-end', sameWinner ? 'text-[#3CAC3B]' : 'text-gray-700 dark:text-gray-300')}>
+                                <span className="text-[9px] text-gray-400 font-mono">#{theirWinner.fifa_ranking}</span>
+                                {theirWinner.code}
+                                <TeamFlag flagCode={theirWinner.flag_code} name={theirWinner.name} size={14} />
+                                🏆
                               </span>
                             ) : <span className="text-xs text-gray-300">—</span>}
                           </div>

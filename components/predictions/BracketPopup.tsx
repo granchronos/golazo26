@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, useCallback } from 'react'
 import { Trophy, Share2, Download, Loader2 } from 'lucide-react'
 import { toPng } from 'html-to-image'
 import { cn } from '@/lib/utils/cn'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import { TEAMS, WC_HISTORY } from '@/lib/constants/teams'
 import {
   R16_BRACKET,
@@ -217,7 +218,7 @@ function TeamSlot({
     >
       {team ? (
         <>
-          <span className="text-[11px] leading-none flex-shrink-0">{team.flag_emoji}</span>
+          <TeamFlag flagCode={team.flag_code} name={team.name} size={12} className="flex-shrink-0" />
           <span
             className={cn(
               'text-[10px] font-body leading-none flex-shrink-0',
@@ -228,6 +229,7 @@ function TeamSlot({
           >
             {team.code}
           </span>
+          <span className="text-[7px] font-mono text-gray-400 ml-0.5 flex-shrink-0">#{team.fifa_ranking}</span>
           <span className="flex-1" />
           {/* WC history badge */}
           {history && history.titles > 0 ? (
@@ -493,9 +495,10 @@ export function BracketPopup({ groupSelections, knockoutPredictions, userName }:
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C9A84C] to-[#D4AF37] flex items-center justify-center shadow-md shadow-[#C9A84C]/20">
                   <Trophy size={14} className="text-white" />
                 </div>
-                <span className="text-lg">{champion.flag_emoji}</span>
-                <span className="text-xs font-display text-[#C9A84C] tracking-wide">
+                <TeamFlag flagCode={champion.flag_code} name={champion.name} size={24} />
+                <span className="text-xs font-display text-[#C9A84C] tracking-wide flex items-center gap-1">
                   {champion.name}
+                  <span className="text-[9px] font-mono text-gray-400 font-normal">#{champion.fifa_ranking}</span>
                 </span>
                 {championHistory && championHistory.titles > 0 ? (
                   <span className="text-[9px] font-bold text-[#C9A84C]">

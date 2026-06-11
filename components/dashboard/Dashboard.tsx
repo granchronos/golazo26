@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { Trophy, Users, BarChart2, MapPin, Calendar, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import { TEAMS, GROUP_LETTERS as GL } from '@/lib/constants/teams'
 import type { TeamData } from '@/lib/constants/teams'
 import type { GroupLetter } from '@/types/database'
@@ -289,13 +290,14 @@ function MiniGroupTable({ letter, teams }: {
               qualifies && 'bg-[#3CAC3B]/5'
             )}>
               <span className="text-[10px] font-mono text-gray-400 w-3">{idx + 1}</span>
-              <span className="text-sm flex-shrink-0">{team.flag_emoji}</span>
+              <TeamFlag flagCode={team.flag_code} name={team.name} size={14} className="flex-shrink-0" />
               <span className={cn(
                 'text-[11px] font-body truncate flex-1',
                 qualifies ? 'font-semibold text-[#3CAC3B]' : 'text-gray-500 dark:text-gray-400'
               )}>
                 {team.code}
               </span>
+              <span className="text-[9px] font-mono text-gray-400 flex-shrink-0">#{team.fifa_ranking}</span>
               <span className="text-[10px] font-mono font-bold text-gray-600 dark:text-gray-300">{t.pts}</span>
               <span className={cn(
                 'text-[9px] font-mono w-6 text-right',

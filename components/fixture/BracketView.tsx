@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import { WCBadge } from '@/components/ui/WCBadge'
 import type { TeamData } from '@/lib/constants/teams'
 
@@ -34,11 +35,20 @@ function BracketMatchBox({ match }: { match: BracketMatch }) {
         'flex items-center gap-2 py-1 px-1 rounded',
         match.winnerId === match.homeTeam?.id && 'bg-[#2A398D]/10'
       )}>
-        <span className="text-base">{match.homeTeam?.flag_emoji || '🏳️'}</span>
+        {match.homeTeam ? (
+          <TeamFlag flagCode={match.homeTeam.flag_code} name={match.homeTeam.name} size={16} />
+        ) : (
+          <span className="text-base leading-none">🏳️</span>
+        )}
         <span className="flex-1 font-medium truncate dark:text-white">
           {match.homeTeam?.code || 'TBD'}
         </span>
-        {match.homeTeam && <WCBadge teamId={match.homeTeam.id} size="xs" />}
+        {match.homeTeam && (
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <span className="text-[9px] text-gray-400 font-mono">#{match.homeTeam.fifa_ranking}</span>
+            <WCBadge teamId={match.homeTeam.id} size="xs" />
+          </div>
+        )}
         <span className="font-mono font-bold text-[#2A398D] dark:text-blue-400 w-4 text-center">
           {match.homeScore ?? '-'}
         </span>
@@ -48,11 +58,20 @@ function BracketMatchBox({ match }: { match: BracketMatch }) {
         'flex items-center gap-2 py-1 px-1 rounded',
         match.winnerId === match.awayTeam?.id && 'bg-[#2A398D]/10'
       )}>
-        <span className="text-base">{match.awayTeam?.flag_emoji || '🏳️'}</span>
+        {match.awayTeam ? (
+          <TeamFlag flagCode={match.awayTeam.flag_code} name={match.awayTeam.name} size={16} />
+        ) : (
+          <span className="text-base leading-none">🏳️</span>
+        )}
         <span className="flex-1 font-medium truncate dark:text-white">
           {match.awayTeam?.code || 'TBD'}
         </span>
-        {match.awayTeam && <WCBadge teamId={match.awayTeam.id} size="xs" />}
+        {match.awayTeam && (
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <span className="text-[9px] text-gray-400 font-mono">#{match.awayTeam.fifa_ranking}</span>
+            <WCBadge teamId={match.awayTeam.id} size="xs" />
+          </div>
+        )}
         <span className="font-mono font-bold text-[#2A398D] dark:text-blue-400 w-4 text-center">
           {match.awayScore ?? '-'}
         </span>

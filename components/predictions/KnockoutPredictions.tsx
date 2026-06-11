@@ -6,6 +6,7 @@ import { Check, Loader2, ChevronDown, Trophy, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils/cn'
 import { WCBadge } from '@/components/ui/WCBadge'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import { saveKnockoutPrediction } from '@/app/actions/predictions'
 import { TEAMS, TEAMS_BY_GROUP } from '@/lib/constants/teams'
 import { BRACKET_ROUNDS, ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
@@ -143,8 +144,10 @@ export function KnockoutPredictions({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#C9A84C]/10 border border-[#C9A84C]/30"
           >
             <Trophy size={13} className="text-[#C9A84C]" />
-            <span className="text-xs font-body font-semibold text-[#C9A84C]">
-              {champion.flag_emoji} {champion.name}
+            <span className="text-xs font-body font-semibold text-[#C9A84C] flex items-center gap-1">
+              <TeamFlag flagCode={champion.flag_code} name={champion.name} size={14} />
+              {champion.name}
+              <span className="text-[9px] font-mono text-gray-400 font-normal">#{champion.fifa_ranking}</span>
             </span>
           </motion.div>
         )}
@@ -312,7 +315,15 @@ function MatchCard({
 
         {pick && (
           <p className="text-[10px] text-center font-body text-[#3CAC3B]">
-            Ganador: {TEAMS_BY_ID[pick]?.flag_emoji} {TEAMS_BY_ID[pick]?.name}
+            {(() => {
+              const t = TEAMS_BY_ID[pick];
+              return t ? (
+                <span className="inline-flex items-center gap-1">
+                  Ganador: <TeamFlag flagCode={t.flag_code} name={t.name} size={14} /> {t.name}
+                  <span className="text-[9px] font-mono text-gray-400">#{t.fifa_ranking}</span>
+                </span>
+              ) : null;
+            })()}
           </p>
         )}
       </div>
@@ -400,7 +411,7 @@ function TeamButton({ team, label, isPicked, isLoser, disabled, isFinal, onClick
           : 'border-gray-200 dark:border-white/[0.08] hover:border-[#2A398D]/40 hover:bg-[#2A398D]/5 active:scale-95'
       )}
     >
-      <span className="text-xl leading-none">{team.flag_emoji}</span>
+      <TeamFlag flagCode={team.flag_code} name={team.name} size={24} />
       <span
         className={cn(
           'text-[11px] font-body font-medium text-center leading-tight',
@@ -413,6 +424,7 @@ function TeamButton({ team, label, isPicked, isLoser, disabled, isFinal, onClick
       >
         {team.code}
       </span>
+      <span className="text-[8px] font-mono text-gray-400">FIFA #{team.fifa_ranking}</span>
       <WCBadge teamId={team.id} size="xs" />
       {isPicked && (
         <span className="text-[8px] font-mono font-bold uppercase tracking-wider text-[#2A398D] dark:text-blue-400">
@@ -464,8 +476,9 @@ function PoolSide({
                 : 'hover:bg-gray-50 dark:hover:bg-white/[0.04] text-gray-700 dark:text-gray-300'
             )}
           >
-            <span className="text-sm leading-none">{team.flag_emoji}</span>
-            <span className="flex-1 text-left">{team.name}</span>
+            <TeamFlag flagCode={team.flag_code} name={team.name} size={16} />
+            <span className="flex-1 text-left truncate">{team.name}</span>
+            <span className={cn('text-[9px] font-mono', pick === team.id ? 'text-white/70' : 'text-gray-400')}>#{team.fifa_ranking}</span>
             <WCBadge teamId={team.id} size="xs" className={pick === team.id ? '!text-white/70' : ''} />
           </button>
         ))}
