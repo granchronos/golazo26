@@ -48,7 +48,7 @@ All mutations go through Server Actions in `app/actions/`. They:
 ### Data Flow for Predictions
 - **Group stage predictions** → `group_predictions` table, one row per `(user_id, group_letter)`, upserted
 - **Knockout predictions** → `predictions` table, one row per `(user_id, match_id)`, upserted
-- **Deadlines**: All group picks close at `2026-06-11T17:50:00Z`. Each knockout match closes 10 min before its own `match_date` (see `getMatchDeadline` in `lib/utils/date.ts`)
+- **Deadlines**: All group picks close at `2026-06-11T17:50:00Z`. Each match closes 5 min before its own `match_date` (see `getMatchDeadline` in `lib/utils/date.ts`)
 - Scores are stored denormalized in the `scores` table and updated server-side when match results are entered
 
 ### Static Data

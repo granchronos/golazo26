@@ -209,7 +209,7 @@ function MatchRow({ roomId, match, knockoutPrediction, savedScore, isAdmin = fal
 
   useEffect(() => {
     const deadline = new Date(match.match_date)
-    deadline.setMinutes(deadline.getMinutes() - 10)
+    deadline.setMinutes(deadline.getMinutes() - 5)
     setIsBeforeDeadline(new Date() < deadline)
   }, [match.match_date])
 
