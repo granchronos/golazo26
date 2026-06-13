@@ -5,7 +5,7 @@
  * Docs: https://www.football-data.org/documentation/quickstart
  */
 
-const API_BASE = 'http://api.football-data.org/v4'
+const API_BASE = 'https://api.football-data.org/v4'
 
 export interface LiveMatch {
   apiFixtureId: number
@@ -35,7 +35,7 @@ async function apiFetch<T>(endpoint: string): Promise<T | null> {
   try {
     const res = await fetch(url, {
       headers: { 'X-Auth-Token': apiKey },
-      next: { revalidate: 60 }, // Cache for 60 seconds in Next.js
+      cache: 'no-store',
     })
 
     if (!res.ok) {

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getWorldCupFixtures, mapApiStatus, getMatchEvents, getMatchesTrends } from '@/lib/api/football'
@@ -100,8 +102,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'No se recibieron datos de la API de fútbol' })
     }
 
-    // Fetch match trends from the API for the World Cup period (to query pre-match odds)
-    const trendsMap = await getMatchesTrends('2026-06-11', '2026-07-20')
+    // Fetch match trends from the API for a 5-day window around today (to query pre-match odds)
+    // The API limits date range to max 5 days.
+    const dateFrom = new Date().toISOString().split('T')[0]
+    const dateTo = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const trendsMap = await getMatchesTrends(dateFrom, dateTo)
 
     const admin = await createAdminClient()
 
