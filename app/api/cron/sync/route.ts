@@ -155,11 +155,12 @@ export async function GET(request: Request) {
         matchOdds = getOddsForTeams(matchedDb.home_team_id, matchedDb.away_team_id)
       }
 
-      // Only skip if the API says scheduled AND the database also says scheduled (or postponed) AND odds match.
+      // Only skip if the API says scheduled AND the database also says scheduled (or postponed) AND odds match AND dates match.
       // If the database has a status like 'live' or 'finished', but the API says 'scheduled':
       // We should only reset the match back to scheduled if the match is scheduled in the future (to correct stuck future matches).
       // If the match is in the past, we should NOT reset it to scheduled as the API might be lagging.
-      if (apiStatus === 'scheduled' && matchedDb.odds === matchOdds) {
+      const datesMatch = new Date(matchedDb.match_date).getTime() === new Date(apiMatch.date).getTime()
+      if (apiStatus === 'scheduled' && matchedDb.odds === matchOdds && datesMatch) {
         const isFutureMatch = new Date(matchedDb.match_date).getTime() > Date.now()
         if (matchedDb.status === 'scheduled' || matchedDb.status === 'postponed' || !isFutureMatch) {
           continue
@@ -213,14 +214,16 @@ export async function GET(request: Request) {
           }
         }
 
-        // Only update if there is a change in status, scores, odds, or if new events were fetched/cleared
+        // Only update if there is a change in status, scores, odds, date, or if new events were fetched/cleared
+        const dateChanged = new Date(matchedDb.match_date).getTime() !== new Date(apiMatch.date).getTime()
         const hasChanges = 
           matchedDb.status !== apiStatus ||
           matchedDb.home_score !== homeScore ||
           matchedDb.away_score !== awayScore ||
           fetchedEvents ||
           (apiStatus === 'scheduled' && matchedDb.events !== null) ||
-          matchedDb.odds !== matchOdds
+          matchedDb.odds !== matchOdds ||
+          dateChanged
 
         if (hasChanges) {
           const { error: updateError } = await admin
@@ -231,7 +234,8 @@ export async function GET(request: Request) {
               status: apiStatus,
               winner_id: winnerId,
               events: eventsPayload,
-              odds: matchOdds
+              odds: matchOdds,
+              match_date: apiMatch.date
             })
             .eq('id', matchedDb.id)
 
