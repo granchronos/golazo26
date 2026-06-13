@@ -198,8 +198,12 @@ function mapFootballDataMatch(m: any): LiveMatch {
 export async function getWorldCupFixtures(): Promise<LiveMatch[]> {
   const data = await apiFetch<{ matches: any[] }>('/competitions/WC/matches')
   if (!data || !data.matches || data.matches.length === 0) {
-    console.log('[football-api] Returning simulated 2026 World Cup fixtures (Free Plan limit/network fallback)')
-    return getSimulatedMatches()
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[football-api] Returning simulated 2026 World Cup fixtures (Free Plan limit/network fallback)')
+      return getSimulatedMatches()
+    }
+    console.warn('[football-api] API fetch failed in production. Aborting sync to prevent overwriting real data.')
+    return []
   }
   return data.matches.map(mapFootballDataMatch)
 }
