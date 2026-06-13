@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/sync?secret=super_secret_cron_pass_2026",
-      "schedule": "*/10 * * * *"
-    }
-  ]
-}
