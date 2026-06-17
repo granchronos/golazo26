@@ -315,324 +315,230 @@ function MatchRow({
     }
   }
 
-  // Calculate bet distributions for the pool
-  const { homeCount, drawCount, awayCount, totalBets } = useMemo(() => {
-    let hCount = 0
-    let dCount = 0
-    let aCount = 0
-    let total = 0
+  // Live minutes dynamic fallback calculation
+  const [liveElapsed, setLiveElapsed] = useState<number | null>(match.elapsed)
 
-    if (allMembersPredictions && homeTeam && awayTeam) {
-      for (const member of allMembersPredictions) {
-        const scorePred = member.scorePredictions?.[match.match_number]
-        if (scorePred) {
-          total++
-          if (scorePred.home > scorePred.away) {
-            hCount++
-          } else if (scorePred.home < scorePred.away) {
-            aCount++
-          } else {
-            dCount++
-          }
-        } else {
-          const winnerPred = member.knockoutPredictions?.[match.match_number]
-          if (winnerPred) {
-            total++
-            if (winnerPred === match.home_team_id) {
-              hCount++
-            } else if (winnerPred === match.away_team_id) {
-              aCount++
-            }
-          }
+  useEffect(() => {
+    if (isLive) {
+      const calculateElapsed = () => {
+        if (match.elapsed !== null && match.elapsed !== undefined) {
+          setLiveElapsed(match.elapsed)
+          return
         }
+        // Fallback calculation in frontend based on match start date
+        const matchDate = new Date(match.match_date)
+        const elapsedMs = Date.now() - matchDate.getTime()
+        const elapsedMin = Math.max(0, Math.floor(elapsedMs / 60000))
+        setLiveElapsed(elapsedMin > 120 ? 90 : elapsedMin)
       }
+
+      calculateElapsed()
+      const interval = setInterval(calculateElapsed, 30000)
+      return () => clearInterval(interval)
     }
-
-    return { homeCount: hCount, drawCount: dCount, awayCount: aCount, totalBets: total }
-  }, [
-    allMembersPredictions,
-    match.match_number,
-    match.home_team_id,
-    match.away_team_id,
-    homeTeam,
-    awayTeam,
-  ])
-
-  const { homePct, drawPct, awayPct } = useMemo(() => {
-    if (totalBets === 0) return { homePct: 0, drawPct: 0, awayPct: 0 }
-    const hPct = Math.round((homeCount / totalBets) * 100)
-    const dPct = Math.round((drawCount / totalBets) * 100)
-    const aPct = 100 - hPct - dPct
-    return { homePct: hPct, drawPct: dPct, awayPct: aPct }
-  }, [homeCount, drawCount, totalBets])
+  }, [isLive, match.elapsed, match.match_date])
 
   return (
     <>
       <div
         className={cn(
-          'flex flex-col gap-3.5 px-4 py-3 border-b border-gray-100 dark:border-white/[0.04] last:border-0 transition-all duration-300 relative overflow-hidden',
+          'flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-white/[0.04] last:border-0 transition-all duration-300 relative overflow-hidden',
           isLive && 'bg-[#E61D25]/[0.03] dark:bg-red-500/[0.02] shadow-[inset_3px_0_0_0_#E61D25]'
         )}
       >
-        {/* Main match elements row */}
-        <div className="flex items-center gap-2">
-          {/* Home team */}
-          <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
-            {homeTeam ? (
-              <>
-                <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">
-                  #{homeTeam.fifa_ranking}
-                </span>
-                <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
-                  {homeTeam.name}
-                </span>
-                <TeamFlag flagCode={homeTeam.flag_code} name={homeTeam.name} size={16} />
-              </>
-            ) : (
-              <span className="text-xs text-gray-400 font-body">TBD</span>
-            )}
-          </div>
-
-          {/* Score / Time / Prediction */}
-          <div className="flex flex-col items-center w-28 flex-shrink-0 gap-0.5">
-            {isFinished ? (
-              <>
-                <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
-                  {match.home_score} - {match.away_score}
-                </span>
-                <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  FINALIZADO
-                </span>
-              </>
-            ) : isLive ? (
-              <>
-                <span className="font-mono text-sm font-bold text-[#E61D25] dark:text-red-500">
-                  {match.home_score ?? 0} - {match.away_score ?? 0}
-                </span>
-                <div className="flex items-center gap-1.5 bg-[#E61D25]/10 dark:bg-red-500/15 px-2 py-0.5 rounded-full border border-[#E61D25]/20 dark:border-red-500/20">
-                  <span className="w-1.5 h-1.5 bg-[#E61D25] rounded-full animate-pulse" />
-                  <span className="font-mono text-[9px] font-bold text-[#E61D25] dark:text-red-400">
-                    {match.elapsed ? `${match.elapsed}'` : 'EN VIVO'}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <LocalTime
-                dateStr={match.match_date}
-                mode="full"
-                className="font-mono text-xs text-gray-400"
-              />
-            )}
-
-            {/* Score prediction inputs */}
-            {canPredict && isBeforeDeadline && (
-              <div className="flex items-center gap-1 mt-1">
-                <input
-                  type="number"
-                  min={0}
-                  max={20}
-                  value={homeScore}
-                  onChange={(e) => setHomeScore(e.target.value)}
-                  onBlur={handleScoreSave}
-                  className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
-                  placeholder="-"
-                />
-                <span className="text-[9px] text-gray-300">-</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={20}
-                  value={awayScore}
-                  onChange={(e) => setAwayScore(e.target.value)}
-                  onBlur={handleScoreSave}
-                  className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
-                  placeholder="-"
-                />
-                {isPending && <Loader2 size={10} className="text-[#2A398D] animate-spin" />}
-              </div>
-            )}
-
-            {/* Saved prediction display (after deadline or finished) */}
-            {savedScore && !canPredict && (
-              <span className="text-[10px] font-mono text-gray-400 mt-0.5">
-                mi apuesta: {savedScore.home}-{savedScore.away}
+        {/* Home team */}
+        <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+          {homeTeam ? (
+            <>
+              <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">
+                #{homeTeam.fifa_ranking}
               </span>
-            )}
-            {savedScore && canPredict && !isBeforeDeadline && (
-              <span className="text-[10px] font-mono text-gray-400 mt-0.5">
-                {savedScore.home}-{savedScore.away}
+              <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
+                {homeTeam.name}
               </span>
-            )}
-
-            {/* Score correctness badge */}
-            {scoreStatus && <ScoreBadge status={scoreStatus} />}
-
-            {/* Knockout prediction indicator */}
-            {knockoutPrediction && !savedScore && (
-              <PredictionBadge
-                status={
-                  isFinished && match.winner_id
-                    ? knockoutPrediction === match.winner_id
-                      ? 'correct'
-                      : 'wrong'
-                    : 'pending'
-                }
-              />
-            )}
-          </div>
-
-          {/* Away team */}
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            {awayTeam ? (
-              <>
-                <TeamFlag flagCode={awayTeam.flag_code} name={awayTeam.name} size={16} />
-                <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
-                  {awayTeam.name}
-                </span>
-                <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">
-                  #{awayTeam.fifa_ranking}
-                </span>
-              </>
-            ) : (
-              <span className="text-xs text-gray-400 font-body">TBD</span>
-            )}
-          </div>
-
-          {/* Admin edit button */}
-          {isAdmin && (
-            <button
-              onClick={() => setIsAdminEditing(!isAdminEditing)}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded transition-colors text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              title="Editar resultado oficial"
-            >
-              <Edit size={12} />
-            </button>
+              <TeamFlag flagCode={homeTeam.flag_code} name={homeTeam.name} size={16} />
+            </>
+          ) : (
+            <span className="text-xs text-gray-400 font-body">TBD</span>
           )}
         </div>
 
-        {/* Bet Distribution Bar */}
-        {totalBets > 0 && (
-          <div className="mt-0.5 pt-2 border-t border-gray-100/50 dark:border-white/[0.04] bg-gray-50/30 dark:bg-white/[0.01] px-2 py-1.5 rounded-lg">
-            <div className="flex items-center justify-between text-[9px] text-gray-500 dark:text-gray-400 font-mono mb-1.5 px-0.5">
-              <span className="truncate max-w-[100px] sm:max-w-none text-left font-medium">
-                {homeTeam?.name || 'Local'} ({homePct}%)
+        {/* Score / Time / Prediction */}
+        <div className="flex flex-col items-center w-28 flex-shrink-0 gap-0.5">
+          {isFinished ? (
+            <>
+              <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
+                {match.home_score} - {match.away_score}
               </span>
-              <span className="font-semibold text-[8px] text-gray-400 dark:text-gray-500 tracking-wider uppercase">
-                Apuestas de la sala ({totalBets})
+              <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                FINALIZADO
               </span>
-              <span className="truncate max-w-[100px] sm:max-w-none text-right font-medium">
-                ({awayPct}%) {awayTeam?.name || 'Visitante'}
+            </>
+          ) : isLive ? (
+            <>
+              <span className="font-mono text-sm font-bold text-[#E61D25] dark:text-red-500">
+                {match.home_score ?? 0} - {match.away_score ?? 0}
               </span>
-            </div>
-
-            <div className="relative h-2 bg-gray-200/50 dark:bg-white/[0.04] rounded-full overflow-hidden flex w-full">
-              {homePct > 0 && (
-                <div
-                  className="h-full bg-blue-500 dark:bg-blue-600 transition-all duration-500 hover:opacity-90"
-                  style={{ width: `${homePct}%` }}
-                  title={`Gana ${homeTeam?.name || 'Local'}: ${homeCount} voto(s)`}
-                />
-              )}
-              {drawPct > 0 && (
-                <div
-                  className="h-full bg-slate-350 dark:bg-zinc-600 transition-all duration-500 hover:opacity-90"
-                  style={{ width: `${drawPct}%` }}
-                  title={`Empate: ${drawCount} voto(s)`}
-                />
-              )}
-              {awayPct > 0 && (
-                <div
-                  className="h-full bg-red-500 dark:bg-red-600 transition-all duration-500 hover:opacity-90"
-                  style={{ width: `${awayPct}%` }}
-                  title={`Gana ${awayTeam?.name || 'Visitante'}: ${awayCount} voto(s)`}
-                />
-              )}
-            </div>
-
-            <div className="flex items-center justify-between text-[8px] font-mono text-gray-450 dark:text-gray-500 mt-1.5 px-0.5">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                <span>
-                  {homeCount} {homeCount === 1 ? 'voto local' : 'votos local'}
+              <div className="flex items-center gap-1.5 bg-[#E61D25]/10 dark:bg-red-500/15 px-2 py-0.5 rounded-full border border-[#E61D25]/20 dark:border-red-500/20">
+                <span className="w-1.5 h-1.5 bg-[#E61D25] rounded-full animate-pulse" />
+                <span className="font-mono text-[9px] font-bold text-[#E61D25] dark:text-red-400">
+                  {liveElapsed !== null ? `${liveElapsed}'` : 'EN VIVO'}
                 </span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-350 dark:bg-zinc-600" />
-                <span>
-                  {drawCount} {drawCount === 1 ? 'empate' : 'empates'}
-                </span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                <span>
-                  {awayCount} {awayCount === 1 ? 'voto visitante' : 'votos visitante'}
-                </span>
-              </span>
-            </div>
-          </div>
-        )}
+              </div>
+            </>
+          ) : (
+            <LocalTime
+              dateStr={match.match_date}
+              mode="full"
+              className="font-mono text-xs text-gray-400"
+            />
+          )}
 
-        {/* Admin result editor drawer */}
-        {isAdmin && isAdminEditing && (
-          <div className="px-4 py-3 bg-red-50/10 dark:bg-zinc-800/40 border border-red-100 dark:border-white/5 rounded-xl flex flex-wrap items-center gap-4 text-xs font-body mt-1">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-700 dark:text-gray-300">
-                Resultado Oficial:
-              </span>
+          {/* Score prediction inputs */}
+          {canPredict && isBeforeDeadline && (
+            <div className="flex items-center gap-1 mt-1">
               <input
                 type="number"
                 min={0}
-                value={actualHomeScore}
-                onChange={(e) => setActualHomeScore(e.target.value)}
-                className="w-10 h-7 text-center rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
-                placeholder="0"
+                max={20}
+                value={homeScore}
+                onChange={(e) => setHomeScore(e.target.value)}
+                onBlur={handleScoreSave}
+                className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
+                placeholder="-"
               />
-              <span className="text-gray-400">-</span>
+              <span className="text-[9px] text-gray-300">-</span>
               <input
                 type="number"
                 min={0}
-                value={actualAwayScore}
-                onChange={(e) => setActualAwayScore(e.target.value)}
-                className="w-10 h-7 text-center rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
-                placeholder="0"
+                max={20}
+                value={awayScore}
+                onChange={(e) => setAwayScore(e.target.value)}
+                onBlur={handleScoreSave}
+                className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
+                placeholder="-"
               />
+              {isPending && <Loader2 size={10} className="text-[#2A398D] animate-spin" />}
             </div>
+          )}
 
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-700 dark:text-gray-300">Estado:</span>
-              <select
-                value={actualStatus}
-                onChange={(e) => setActualStatus(e.target.value as any)}
-                className="h-7 px-2 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
-              >
-                <option value="scheduled">Programado</option>
-                <option value="live">En Vivo</option>
-                <option value="finished">Finalizado</option>
-              </select>
-            </div>
+          {/* Saved prediction display (after deadline or finished) */}
+          {savedScore && !canPredict && (
+            <span className="text-[10px] font-mono text-gray-400 mt-0.5">
+              mi apuesta: {savedScore.home}-{savedScore.away}
+            </span>
+          )}
+          {savedScore && canPredict && !isBeforeDeadline && (
+            <span className="text-[10px] font-mono text-gray-400 mt-0.5">
+              {savedScore.home}-{savedScore.away}
+            </span>
+          )}
 
-            <div className="flex items-center gap-2 ml-auto">
-              <button
-                onClick={handleAdminSaveResult}
-                disabled={isResultSaving}
-                className="px-3 py-1.5 bg-[#E61D25] text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors text-[10px]"
-              >
-                {isResultSaving ? 'Guardando...' : 'Guardar'}
-              </button>
-              <button
-                onClick={() => setIsAdminEditing(false)}
-                className="px-3 py-1.5 bg-gray-150 dark:bg-zinc-800 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors text-[10px]"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
+          {/* Score correctness badge */}
+          {scoreStatus && <ScoreBadge status={scoreStatus} />}
+
+          {/* Knockout prediction indicator */}
+          {knockoutPrediction && !savedScore && (
+            <PredictionBadge
+              status={
+                isFinished && match.winner_id
+                  ? knockoutPrediction === match.winner_id
+                    ? 'correct'
+                    : 'wrong'
+                  : 'pending'
+              }
+            />
+          )}
+        </div>
+
+        {/* Away team */}
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          {awayTeam ? (
+            <>
+              <TeamFlag flagCode={awayTeam.flag_code} name={awayTeam.name} size={16} />
+              <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
+                {awayTeam.name}
+              </span>
+              <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">
+                #{awayTeam.fifa_ranking}
+              </span>
+            </>
+          ) : (
+            <span className="text-xs text-gray-400 font-body">TBD</span>
+          )}
+        </div>
+
+        {/* Admin edit button */}
+        {isAdmin && (
+          <button
+            onClick={() => setIsAdminEditing(!isAdminEditing)}
+            className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded transition-colors text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            title="Editar resultado oficial"
+          >
+            <Edit size={12} />
+          </button>
         )}
       </div>
+
+      {/* Admin result editor drawer */}
+      {isAdmin && isAdminEditing && (
+        <div className="px-4 py-3 bg-red-50/10 dark:bg-zinc-800/40 border-b border-gray-100 dark:border-white/[0.04] flex flex-wrap items-center gap-4 text-xs font-body">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-700 dark:text-gray-300">
+              Resultado Oficial:
+            </span>
+            <input
+              type="number"
+              min={0}
+              value={actualHomeScore}
+              onChange={(e) => setActualHomeScore(e.target.value)}
+              className="w-10 h-7 text-center rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
+              placeholder="0"
+            />
+            <span className="text-gray-400">-</span>
+            <input
+              type="number"
+              min={0}
+              value={actualAwayScore}
+              onChange={(e) => setActualAwayScore(e.target.value)}
+              className="w-10 h-7 text-center rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-700 dark:text-gray-300">Estado:</span>
+            <select
+              value={actualStatus}
+              onChange={(e) => setActualStatus(e.target.value as any)}
+              className="h-7 px-2 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
+            >
+              <option value="scheduled">Programado</option>
+              <option value="live">En Vivo</option>
+              <option value="finished">Finalizado</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={handleAdminSaveResult}
+              disabled={isResultSaving}
+              className="px-3 py-1.5 bg-[#E61D25] text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors text-[10px]"
+            >
+              {isResultSaving ? 'Guardando...' : 'Guardar'}
+            </button>
+            <button
+              onClick={() => setIsAdminEditing(false)}
+              className="px-3 py-1.5 bg-gray-150 dark:bg-zinc-800 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors text-[10px]"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }
-
 function ScoreBadge({ status }: { status: 'exact' | 'winner' | 'wrong' }) {
   if (status === 'exact') {
     return (
