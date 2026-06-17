@@ -1,8 +1,17 @@
 /**
- * Football-Data.org API integration for live World Cup 2026 results.
+ * Football-Data.org API v4 integration for live World Cup 2026 results.
  *
  * Env vars: FOOTBALL_DATA_API_KEY (required)
- * Docs: https://www.football-data.org/documentation/quickstart
+ * Docs: https://docs.football-data.org/general/v4/index.html
+ *
+ * API Status workflow: SCHEDULED → TIMED → IN_PLAY → PAUSED → FINISHED
+ *                       Also: EXTRA_TIME, PENALTY_SHOOTOUT, SUSPENDED, POSTPONED, CANCELLED, AWARDED
+ * Score node: fullTime, halfTime, regularTime, extraTime, penalties
+ *   - fullTime = running score (set to 0 when IN_PLAY, final score when FINISHED)
+ *   - score.winner = "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null
+ *   - score.duration = "REGULAR" | "EXTRA_TIME" | "PENALTY_SHOOTOUT"
+ *
+ * Stage enum (knockout): LAST_32, LAST_16, QUARTER_FINALS, SEMI_FINALS, THIRD_PLACE, FINAL
  */
 
 const API_BASE = 'https://api.football-data.org/v4'
@@ -293,8 +302,18 @@ function getSimulatedMatches(): LiveMatch[] {
       if (homeGoals > awayGoals) homeWinner = true
       else if (awayGoals > homeGoals) awayWinner = true
     } else if (elapsedMs >= 0) {
-      statusShort = '1H' // Live
-      elapsed = Math.max(0, Math.floor(elapsedMs / 60000))
+      const rawElapsed = Math.max(0, Math.floor(elapsedMs / 60000))
+      // Half-time: between 45 and 60 minutes elapsed
+      if (rawElapsed >= 45 && rawElapsed < 60) {
+        statusShort = 'HT'
+        elapsed = 45
+      } else if (rawElapsed >= 60) {
+        statusShort = '2H'
+        elapsed = Math.min(90, rawElapsed - 15) // Subtract 15 min half-time break
+      } else {
+        statusShort = '1H'
+        elapsed = rawElapsed
+      }
       homeGoals = m.homeGoals
       awayGoals = m.awayGoals
     }
@@ -317,15 +336,78 @@ function getSimulatedMatches(): LiveMatch[] {
   })
 }
 
-function mapFootballDataMatch(m: any): LiveMatch {
-  const statusShort = mapApiStatus(m.status)
+/**
+ * Map an API v4 stage to a friendly round string.
+ * API stages: GROUP_STAGE, LAST_32, LAST_16, QUARTER_FINALS, SEMI_FINALS, THIRD_PLACE, FINAL
+ */
+function mapStageToRound(stage: string, group: string | null): string {
+  if (stage === 'GROUP_STAGE') {
+    const groupName = group ? group.replace('GROUP_', '') : ''
+    return `Group Stage - Group ${groupName}`
+  }
 
+  const STAGE_MAP: Record<string, string> = {
+    LAST_32: 'Round of 32',
+    LAST_16: 'Round of 16',
+    QUARTER_FINALS: 'Quarter Finals',
+    SEMI_FINALS: 'Semi Finals',
+    THIRD_PLACE: 'Third Place',
+    FINAL: 'Final',
+    // Fallback for older enum values
+    ROUND_4: 'Round 4',
+    ROUND_3: 'Round 3',
+    ROUND_2: 'Round 2',
+    ROUND_1: 'Round 1',
+    PLAYOFFS: 'Playoffs',
+  }
+
+  return STAGE_MAP[stage] || stage
+}
+
+/**
+ * Map a short statusShort (e.g. '1H', 'HT') to a display-friendly statusShort
+ * for the return object. This is what gets used in our LiveMatch.statusShort field.
+ */
+function mapApiStatusToShort(apiStatus: string): string {
+  switch (apiStatus) {
+    case 'FINISHED':
+    case 'AWARDED':
+      return 'FT'
+    case 'IN_PLAY':
+      return '1H' // Will be refined to '2H' based on minute
+    case 'PAUSED':
+      return 'HT'
+    case 'EXTRA_TIME':
+      return 'ET'
+    case 'PENALTY_SHOOTOUT':
+      return 'PEN'
+    case 'SUSPENDED':
+      return 'SUSP'
+    case 'POSTPONED':
+      return 'PST'
+    case 'CANCELLED':
+      return 'CANC'
+    case 'SCHEDULED':
+    case 'TIMED':
+    default:
+      return 'NS'
+  }
+}
+
+function mapFootballDataMatch(m: any): LiveMatch {
+  const dbStatus = mapApiStatus(m.status)
+  let statusShort = mapApiStatusToShort(m.status)
+
+  // v4 score node: fullTime.home / fullTime.away
+  // For extra time / penalties: use regularTime for 90-min score, fullTime for total
+  // score.winner: "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null
+  // score.duration: "REGULAR" | "EXTRA_TIME" | "PENALTY_SHOOTOUT"
   let homeGoals = m.score?.fullTime?.home ?? null
   let awayGoals = m.score?.fullTime?.away ?? null
 
-  // Fallback to SIMULATED_MATCHES if the API reports finished/live but scores are null (lag or free tier limitation)
+  // Fallback to SIMULATED_MATCHES if the API reports finished/live but scores are null
   if (
-    (statusShort === 'finished' || statusShort === 'live') &&
+    (dbStatus === 'finished' || dbStatus === 'live') &&
     (homeGoals === null || awayGoals === null)
   ) {
     const sim = SIMULATED_MATCHES.find(
@@ -347,31 +429,53 @@ function mapFootballDataMatch(m: any): LiveMatch {
     }
   }
 
+  // Determine winner using API's score.winner field (handles penalties & ET correctly)
   let homeWinner = null
   let awayWinner = null
-  if (statusShort === 'finished' && homeGoals !== null && awayGoals !== null) {
-    if (homeGoals > awayGoals) homeWinner = true
-    else if (awayGoals > homeGoals) awayWinner = true
+  if (dbStatus === 'finished') {
+    const apiWinner = m.score?.winner
+    if (apiWinner === 'HOME_TEAM') {
+      homeWinner = true
+    } else if (apiWinner === 'AWAY_TEAM') {
+      awayWinner = true
+    } else if (!apiWinner && homeGoals !== null && awayGoals !== null) {
+      // Fallback: derive from goals if winner field not set
+      if (homeGoals > awayGoals) homeWinner = true
+      else if (awayGoals > homeGoals) awayWinner = true
+    }
   }
 
-  let elapsed = null
-  if (statusShort === 'live') {
-    const matchDate = new Date(m.utcDate)
-    const elapsedMs = new Date().getTime() - matchDate.getTime()
-    elapsed = Math.max(0, Math.floor(elapsedMs / 60000))
-  } else if (statusShort === 'finished') {
-    elapsed = 90
+  // Elapsed time: prefer API's `minute` field (v4 provides this directly)
+  // Fallback to time-based calculation only if minute is not available
+  let elapsed: number | null = null
+  if (dbStatus === 'live') {
+    if (m.minute !== undefined && m.minute !== null) {
+      // Use the API-provided minute directly
+      elapsed = m.minute
+    } else if (m.status === 'PAUSED') {
+      elapsed = 45 // Half-time
+    } else {
+      // Fallback: calculate from utcDate, capped
+      const matchDate = new Date(m.utcDate)
+      const elapsedMs = new Date().getTime() - matchDate.getTime()
+      const rawElapsed = Math.max(0, Math.floor(elapsedMs / 60000))
+      const isExtraTime = m.status === 'EXTRA_TIME' || m.status === 'PENALTY_SHOOTOUT'
+      elapsed = Math.min(isExtraTime ? 120 : 90, rawElapsed)
+    }
+    // Refine statusShort based on elapsed minute
+    if (m.status === 'IN_PLAY' && elapsed !== null && elapsed > 45) {
+      statusShort = '2H'
+    }
+  } else if (dbStatus === 'finished') {
+    // For finished matches, use minute from API if available, else default 90
+    elapsed = m.minute ?? 90
   }
 
-  // Map stage to friendly round
-  let friendlyRound = m.stage
-  if (m.stage === 'GROUP_STAGE') {
-    const groupName = m.group ? m.group.replace('GROUP_', '') : ''
-    friendlyRound = `Group Stage - Group ${groupName}`
-  }
+  // Map stage to friendly round using API's stage/group fields
+  const friendlyRound = mapStageToRound(m.stage || '', m.group || null)
 
-  // Parse odds if available from API
-  let apiOdds = null
+  // Parse odds if available from API (v4 provides odds.homeWin, odds.draw, odds.awayWin)
+  let apiOdds: string | undefined = undefined
   if (m.odds && m.odds.homeWin !== undefined && m.odds.homeWin !== null) {
     apiOdds = `${m.odds.homeWin} / ${m.odds.draw} / ${m.odds.awayWin}`
   }
@@ -379,12 +483,7 @@ function mapFootballDataMatch(m: any): LiveMatch {
   return {
     apiFixtureId: m.id,
     date: m.utcDate,
-    statusShort:
-      m.status === 'FINISHED'
-        ? 'FT'
-        : m.status === 'IN_PLAY' || m.status === 'PAUSED'
-          ? '1H'
-          : 'NS',
+    statusShort,
     elapsed,
     round: friendlyRound,
     homeTeam: m.homeTeam?.name || 'TBD',
@@ -395,7 +494,7 @@ function mapFootballDataMatch(m: any): LiveMatch {
     awayWinner,
     homeTla: m.homeTeam?.tla?.toLowerCase() ?? undefined,
     awayTla: m.awayTeam?.tla?.toLowerCase() ?? undefined,
-    odds: apiOdds ?? undefined,
+    odds: apiOdds,
   }
 }
 
@@ -418,28 +517,49 @@ export async function getWorldCupFixtures(): Promise<LiveMatch[]> {
 
 /**
  * Fetch only live/in-play World Cup fixtures.
+ * Uses API status filter: ?status=LIVE (pseudo-filter that combines IN_PLAY + PAUSED)
  */
 export async function getLiveWorldCupFixtures(): Promise<LiveMatch[]> {
-  const data = await apiFetch<{ matches: any[] }>('/competitions/WC/matches')
+  // Try fetching only live matches directly (reduces payload)
+  const data = await apiFetch<{ matches: any[] }>('/competitions/WC/matches?status=LIVE')
   if (!data || !data.matches || data.matches.length === 0) {
-    const all = getSimulatedMatches()
-    return all.filter((m) => mapApiStatus(m.statusShort) === 'live')
+    // Fallback: filter from all matches
+    const allData = await apiFetch<{ matches: any[] }>('/competitions/WC/matches')
+    if (!allData || !allData.matches) {
+      const all = getSimulatedMatches()
+      return all.filter((m) => mapApiStatus(m.statusShort) === 'live')
+    }
+    return allData.matches
+      .filter(
+        (m) =>
+          m.status === 'IN_PLAY' ||
+          m.status === 'PAUSED' ||
+          m.status === 'EXTRA_TIME' ||
+          m.status === 'PENALTY_SHOOTOUT'
+      )
+      .map(mapFootballDataMatch)
   }
-  return data.matches
-    .map(mapFootballDataMatch)
-    .filter((m) => mapApiStatus(m.statusShort) === 'live')
+  return data.matches.map(mapFootballDataMatch)
 }
 
 /**
  * Fetch fixtures for a specific date (YYYY-MM-DD).
+ * Uses API dateFrom/dateTo filters (dateTo is exclusive per API docs).
  */
 export async function getWorldCupFixturesByDate(date: string): Promise<LiveMatch[]> {
-  const data = await apiFetch<{ matches: any[] }>('/competitions/WC/matches')
+  // API dateTo is exclusive, so add 1 day
+  const dateObj = new Date(date + 'T00:00:00Z')
+  const nextDay = new Date(dateObj.getTime() + 24 * 60 * 60 * 1000)
+  const dateTo = nextDay.toISOString().split('T')[0]
+
+  const data = await apiFetch<{ matches: any[] }>(
+    `/competitions/WC/matches?dateFrom=${date}&dateTo=${dateTo}`
+  )
   if (!data || !data.matches || data.matches.length === 0) {
     const all = getSimulatedMatches()
     return all.filter((m) => m.date.startsWith(date))
   }
-  return data.matches.map(mapFootballDataMatch).filter((m) => m.date.startsWith(date))
+  return data.matches.map(mapFootballDataMatch)
 }
 
 /**
@@ -467,28 +587,54 @@ export async function getMatchesTrends(
 }
 
 /**
- * Maps API statuses to our DB status values.
+ * Maps API v4 statuses to our DB status values.
+ *
+ * API statuses (per docs §12.1):
+ *   SCHEDULED, TIMED, IN_PLAY, PAUSED, EXTRA_TIME, PENALTY_SHOOTOUT,
+ *   FINISHED, SUSPENDED, POSTPONED, CANCELLED, AWARDED
+ *
+ * Also handles simulated/internal short statuses: FT, 1H, HT, 2H, ET, PEN, NS, etc.
  */
 export function mapApiStatus(status: string): 'scheduled' | 'live' | 'finished' {
-  if (status === 'FINISHED' || status === 'FT' || status === 'AET' || status === 'PEN')
-    return 'finished'
-  if (
-    status === 'IN_PLAY' ||
-    status === 'PAUSED' ||
-    status === '1H' ||
-    status === 'HT' ||
-    status === '2H' ||
-    status === 'ET' ||
-    status === 'BT' ||
-    status === 'P' ||
-    status === 'LIVE'
-  )
-    return 'live'
-  return 'scheduled'
+  switch (status) {
+    // Finished states
+    case 'FINISHED':
+    case 'AWARDED':
+    case 'FT':
+    case 'AET': // legacy
+    case 'PEN': // our short form
+      return 'finished'
+
+    // Live states
+    case 'IN_PLAY':
+    case 'PAUSED':
+    case 'EXTRA_TIME':
+    case 'PENALTY_SHOOTOUT':
+    case 'LIVE': // pseudo-filter
+    case '1H':
+    case 'HT':
+    case '2H':
+    case 'ET':
+    case 'BT': // legacy
+    case 'P':  // legacy
+    case 'SUSP':
+      return 'live'
+
+    // Scheduled states
+    case 'SCHEDULED':
+    case 'TIMED':
+    case 'POSTPONED':
+    case 'CANCELLED':
+    case 'NS':
+    default:
+      return 'scheduled'
+  }
 }
 
 /**
  * Fetch events (goals, cards, substitutions) for a specific match.
+ * In v4, goals/bookings/substitutions are part of the single match response.
+ * Use X-Unfold-Goals: true header for list responses.
  */
 export async function getMatchEvents(apiFixtureId: number): Promise<any[]> {
   // Support both old API-Football and new Football-Data IDs for simulation continuity
@@ -558,5 +704,46 @@ export async function getMatchEvents(apiFixtureId: number): Promise<any[]> {
     ]
   }
 
-  return []
+  // For real API matches: fetch the single match endpoint which includes goals/bookings
+  const match = await apiFetch<any>(`/matches/${apiFixtureId}`)
+  if (!match) return []
+
+  const events: any[] = []
+
+  // Map API v4 goals to our event format
+  if (match.goals && Array.isArray(match.goals)) {
+    for (const goal of match.goals) {
+      events.push({
+        time: { elapsed: goal.minute, extra: goal.injuryTime },
+        team: { name: goal.team?.name || '' },
+        player: { name: goal.scorer?.name || '' },
+        type: 'Goal',
+        detail: goal.type === 'OWN' ? 'Own Goal' : goal.type === 'PENALTY' ? 'Penalty' : 'Normal Goal',
+      })
+    }
+  }
+
+  // Map API v4 bookings to our event format
+  if (match.bookings && Array.isArray(match.bookings)) {
+    for (const booking of match.bookings) {
+      const cardType =
+        booking.card === 'RED'
+          ? 'Red Card'
+          : booking.card === 'YELLOW_RED'
+            ? 'Yellow → Red Card'
+            : 'Yellow Card'
+      events.push({
+        time: { elapsed: booking.minute, extra: null },
+        team: { name: booking.team?.name || '' },
+        player: { name: booking.player?.name || '' },
+        type: 'Card',
+        detail: cardType,
+      })
+    }
+  }
+
+  // Sort by time
+  events.sort((a, b) => (a.time.elapsed || 0) - (b.time.elapsed || 0))
+
+  return events
 }

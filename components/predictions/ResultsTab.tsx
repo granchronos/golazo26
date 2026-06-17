@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useMemo, useTransition, useEffect } from 'react'
-import { Check, X, Clock, Loader2, Award, Edit } from 'lucide-react'
+import { useState, useMemo, useTransition, useEffect, useRef, useCallback } from 'react'
+import { Check, X, Clock, Loader2, Award, Edit, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils/cn'
 import { TeamFlag } from '@/components/ui/TeamFlag'
 import { TEAMS } from '@/lib/constants/teams'
-import { ROUND_LABELS, SCORE_BONUS } from '@/lib/constants/points'
+import { ROUND_LABELS, calculateMatchPoints, SIGN_POINTS, TEAM_BET_POINTS } from '@/lib/constants/points'
 import { ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
 import { formatShortDate, formatMatchDate } from '@/lib/utils/date'
 import { LocalTime } from '@/components/ui/LocalTime'
@@ -57,10 +57,35 @@ export function ResultsTab({
 }: ResultsTabProps) {
   const [actualGoleadorText, setActualGoleadorText] = useState(actualGoleador || '')
   const [isGoleadorSaving, startGoleadorSaving] = useTransition()
+  const [showRules, setShowRules] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setActualGoleadorText(actualGoleador || '')
   }, [actualGoleador])
+
+  // Auto-scroll to live match or last finished match
+  useEffect(() => {
+    if (!containerRef.current) return
+    const timeout = setTimeout(() => {
+      const container = containerRef.current
+      if (!container) return
+
+      // Try to find a live match first
+      const liveEl = container.querySelector('[data-match-status="live"]')
+      if (liveEl) {
+        liveEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        return
+      }
+
+      // Otherwise scroll to the last finished match
+      const finishedEls = container.querySelectorAll('[data-match-status="finished"]')
+      if (finishedEls.length > 0) {
+        finishedEls[finishedEls.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }, 300)
+    return () => clearTimeout(timeout)
+  }, [])
 
   const handleSaveActualGoleador = () => {
     startGoleadorSaving(async () => {
@@ -116,7 +141,7 @@ export function ResultsTab({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" ref={containerRef}>
       {/* Admin Panel */}
       {isAdmin && (
         <div className="glass-card p-4 sm:p-5 border-l-4 border-l-[#E61D25] bg-red-50/10 dark:bg-zinc-950/20 relative overflow-hidden">
@@ -152,17 +177,127 @@ export function ResultsTab({
         </div>
       )}
 
-      {/* Legend */}
-      <div className="flex items-center gap-4 text-[10px] font-body text-gray-400">
-        <span>
-          Resultado exacto:{' '}
-          <span className="text-[#3CAC3B] font-semibold">+{SCORE_BONUS.exactScore} pts</span>
-        </span>
-        <span>
-          Ganador correcto:{' '}
-          <span className="text-[#C9A84C] font-semibold">+{SCORE_BONUS.correctWinner} pt</span>
-        </span>
+      {/* Legend + Info button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4 text-[10px] font-body text-gray-400">
+          <span>
+            Signo correcto:{' '}
+            <span className="text-[#3CAC3B] font-semibold">+{SIGN_POINTS} pts</span>
+          </span>
+          <span>
+            Aprox. exacta:{' '}
+            <span className="text-[#C9A84C] font-semibold">+4 pts base</span>
+          </span>
+        </div>
+        <button
+          onClick={() => setShowRules((v) => !v)}
+          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          title="Reglas de puntuación"
+        >
+          <Info size={16} />
+        </button>
       </div>
+
+      {/* Scoring Rules Modal */}
+      {showRules && (
+        <div className="glass-card p-4 sm:p-5 border-l-4 border-l-[#2A398D] relative overflow-hidden animate-in slide-in-from-top-2 duration-200">
+          <button
+            onClick={() => setShowRules(false)}
+            className="absolute top-3 right-3 p-1 rounded hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-400"
+          >
+            <X size={14} />
+          </button>
+          <h3 className="font-display text-sm text-gray-900 dark:text-white flex items-center gap-2 mb-3">
+            📊 Sistema de Puntuación
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-body text-gray-600 dark:text-gray-300">
+            {/* Result Bets */}
+            <div className="space-y-3">
+              <div>
+                <p className="font-bold text-gray-900 dark:text-white mb-1.5">
+                  🎯 Predicción de Marcador
+                </p>
+                <div className="space-y-2 pl-1">
+                  <div className="bg-[#3CAC3B]/5 dark:bg-[#3CAC3B]/10 rounded-lg p-2">
+                    <p className="font-bold text-[#3CAC3B]">Acierto del Signo (1/X/2): +3 pts</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">Si aciertas quién gana o si hay empate.</p>
+                  </div>
+                  <div className="bg-[#C9A84C]/5 dark:bg-[#C9A84C]/10 rounded-lg p-2">
+                    <p className="font-bold text-[#C9A84C]">Aproximación al resultado: 0-4+ pts</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      Base 4 pts + bonus por goles altos y diferencia grande, menos desvío de tu predicción.
+                    </p>
+                    <p className="text-[10px] text-gray-500 mt-0.5 font-mono">
+                      max(0, 4 + bonus − desvío)
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-2">
+                    <p className="font-bold text-blue-600 dark:text-blue-400">Ejemplo: Partido 4-2, Apuesta 3-1</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      Signo ✓ (+3) + Aprox: max(0, 4+1+0-2-0) = 3 → <strong>Total: 6 pts</strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 dark:text-white mb-1">
+                  📋 Clasificados de Grupos
+                </p>
+                <ul className="list-disc list-inside space-y-1 pl-1">
+                  <li>
+                    <span className="font-bold text-[#2A398D] dark:text-blue-400">5 pts</span>{' '}
+                    por acertar 1.° de grupo
+                  </li>
+                  <li>
+                    <span className="font-bold text-[#2A398D] dark:text-blue-400">5 pts</span>{' '}
+                    por acertar 2.° de grupo
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Team Bets + Knockout */}
+            <div className="space-y-3">
+              <div>
+                <p className="font-bold text-gray-900 dark:text-white mb-1.5">
+                  🏆 Team Bets (derivado de tu bracket)
+                </p>
+                <p className="text-[10px] text-gray-500 mb-1.5">
+                  Si predices que un equipo gana en una ronda, implícitamente apuestas a que llega a la siguiente.
+                </p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-1">
+                  <div>• Llega a Octavos: <span className="font-bold text-gray-900 dark:text-white">5 pts</span></div>
+                  <div>• Llega a Cuartos: <span className="font-bold text-gray-900 dark:text-white">10 pts</span></div>
+                  <div>• Llega a Semis: <span className="font-bold text-gray-900 dark:text-white">15 pts</span></div>
+                  <div>• Llega a Final: <span className="font-bold text-gray-900 dark:text-white">25 pts</span></div>
+                  <div className="col-span-2">• Gana el torneo: <span className="font-bold text-gray-900 dark:text-white">50 pts</span></div>
+                </div>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 dark:text-white mb-1">
+                  ⚔️ Ganador de Eliminatoria
+                </p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-1">
+                  <div>• R. de 32: <span className="font-bold text-gray-900 dark:text-white">10 pts</span></div>
+                  <div>• Octavos: <span className="font-bold text-gray-900 dark:text-white">15 pts</span></div>
+                  <div>• Cuartos: <span className="font-bold text-gray-900 dark:text-white">20 pts</span></div>
+                  <div>• Semis: <span className="font-bold text-gray-900 dark:text-white">50 pts</span></div>
+                  <div className="col-span-2">• Final: <span className="font-bold text-gray-900 dark:text-white">100 pts</span></div>
+                </div>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 dark:text-white mb-1">
+                  🌟 Predicciones Especiales
+                </p>
+                <ul className="list-disc list-inside space-y-1 pl-1">
+                  <li><span className="font-bold text-[#C9A84C]">15 pts</span> Campeón del mundo</li>
+                  <li><span className="font-bold text-[#C9A84C]">10 pts</span> Goleador del torneo</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {roundOrder.map((round) => {
         const roundMatches = matchesByRound.get(round) || []
@@ -293,29 +428,19 @@ function MatchRow({
     })
   }
 
-  // Check correctness if finished
-  let scoreStatus: 'exact' | 'winner' | 'wrong' | null = null
-  if (isFinished && savedScore && match.home_score != null && match.away_score != null) {
-    if (savedScore.home === match.home_score && savedScore.away === match.away_score) {
-      scoreStatus = 'exact'
-    } else {
-      const actualWinner =
-        match.home_score > match.away_score
-          ? 'home'
-          : match.away_score > match.home_score
-            ? 'away'
-            : 'draw'
-      const predWinner =
-        savedScore.home > savedScore.away
-          ? 'home'
-          : savedScore.away > savedScore.home
-            ? 'away'
-            : 'draw'
-      scoreStatus = actualWinner === predWinner ? 'winner' : 'wrong'
-    }
-  }
+  // Calculate points using new formula if match is finished or live and user has a prediction
+  const matchPoints = useMemo(() => {
+    if (!savedScore || match.home_score == null || match.away_score == null) return null
+    if (!isFinished && !isLive) return null
+    return calculateMatchPoints(
+      savedScore.home,
+      savedScore.away,
+      match.home_score,
+      match.away_score
+    )
+  }, [savedScore, match.home_score, match.away_score, isFinished, isLive])
 
-  // Live minutes dynamic fallback calculation
+  // Live minutes: use DB elapsed directly (no frontend fallback that could exceed 90')
   const [liveElapsed, setLiveElapsed] = useState<number | null>(match.elapsed)
 
   useEffect(() => {
@@ -325,11 +450,11 @@ function MatchRow({
           setLiveElapsed(match.elapsed)
           return
         }
-        // Fallback calculation in frontend based on match start date
+        // Fallback: cap at 90
         const matchDate = new Date(match.match_date)
         const elapsedMs = Date.now() - matchDate.getTime()
-        const elapsedMin = Math.max(0, Math.floor(elapsedMs / 60000))
-        setLiveElapsed(elapsedMin > 120 ? 90 : elapsedMin)
+        const rawElapsed = Math.max(0, Math.floor(elapsedMs / 60000))
+        setLiveElapsed(Math.min(90, rawElapsed))
       }
 
       calculateElapsed()
@@ -341,6 +466,7 @@ function MatchRow({
   return (
     <>
       <div
+        data-match-status={match.status}
         className={cn(
           'flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-white/[0.04] last:border-0 transition-all duration-300 relative overflow-hidden',
           isLive && 'bg-[#E61D25]/[0.03] dark:bg-red-500/[0.02] shadow-[inset_3px_0_0_0_#E61D25]'
@@ -382,7 +508,7 @@ function MatchRow({
               <div className="flex items-center gap-1.5 bg-[#E61D25]/10 dark:bg-red-500/15 px-2 py-0.5 rounded-full border border-[#E61D25]/20 dark:border-red-500/20">
                 <span className="w-1.5 h-1.5 bg-[#E61D25] rounded-full animate-pulse" />
                 <span className="font-mono text-[9px] font-bold text-[#E61D25] dark:text-red-400">
-                  {liveElapsed !== null ? `${liveElapsed}'` : 'EN VIVO'}
+                  {liveElapsed === 45 ? 'DT' : liveElapsed !== null ? `${liveElapsed}'` : 'EN VIVO'}
                 </span>
               </div>
             </>
@@ -434,10 +560,10 @@ function MatchRow({
             </span>
           )}
 
-          {/* Score correctness badge */}
-          {scoreStatus && <ScoreBadge status={scoreStatus} />}
+          {/* Points badge (new system) */}
+          {matchPoints && <PointsBadge points={matchPoints} />}
 
-          {/* Knockout prediction indicator */}
+          {/* Knockout prediction indicator (only when no score prediction) */}
           {knockoutPrediction && !savedScore && (
             <PredictionBadge
               status={
@@ -539,27 +665,27 @@ function MatchRow({
     </>
   )
 }
-function ScoreBadge({ status }: { status: 'exact' | 'winner' | 'wrong' }) {
-  if (status === 'exact') {
+
+// ─── Points Badge (new scoring system) ─────────────────────────────────
+
+function PointsBadge({ points }: { points: { signPoints: number; extraPoints: number; total: number } }) {
+  if (points.total === 0) {
     return (
       <div className="flex items-center gap-0.5">
-        <Check size={9} className="text-[#3CAC3B]" />
-        <span className="text-[9px] font-mono text-[#3CAC3B]">+3 exacto</span>
+        <X size={9} className="text-[#E61D25]" />
+        <span className="text-[9px] font-mono text-[#E61D25]">0 pts</span>
       </div>
     )
   }
-  if (status === 'winner') {
-    return (
-      <div className="flex items-center gap-0.5">
-        <Check size={9} className="text-[#C9A84C]" />
-        <span className="text-[9px] font-mono text-[#C9A84C]">+1 ganador</span>
-      </div>
-    )
-  }
+
+  const color = points.total >= 5 ? '#3CAC3B' : points.total >= 3 ? '#C9A84C' : '#2A398D'
+
   return (
     <div className="flex items-center gap-0.5">
-      <X size={9} className="text-[#E61D25]" />
-      <span className="text-[9px] font-mono text-[#E61D25]">fallé</span>
+      <Check size={9} style={{ color }} />
+      <span className="text-[9px] font-mono font-bold" style={{ color }}>
+        +{points.total} pts
+      </span>
     </div>
   )
 }

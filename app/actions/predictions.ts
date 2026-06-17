@@ -5,9 +5,11 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import {
   GROUP_STAGE_DEADLINE,
   CHAMPION_GOLEADOR_DEADLINE,
-  SCORE_POINTS,
   POINTS_SYSTEM,
   ROUND_POINTS,
+  calculateMatchPoints,
+  TEAM_BET_POINTS,
+  NEXT_ROUND,
 } from '@/lib/constants/points'
 import { getMatchPredictionDeadline, getMatchDeadline } from '@/lib/utils/date'
 import type { GroupLetter } from '@/types/database'
@@ -444,13 +446,27 @@ export async function recalculateRoomScores(roomId: string) {
     }
   }
 
+  // Build a set of teams that participated in each round (for team bets)
+  const teamsInRounds: Record<string, Set<string>> = {}
+  const tournamentWinnerId = matches.find(
+    (m) => m.round === 'final' && m.status === 'finished' && m.winner_id
+  )?.winner_id || null
+
+  for (const match of matches) {
+    if (match.status === 'finished') {
+      if (!teamsInRounds[match.round]) teamsInRounds[match.round] = new Set()
+      if (match.home_team_id) teamsInRounds[match.round].add(match.home_team_id)
+      if (match.away_team_id) teamsInRounds[match.round].add(match.away_team_id)
+    }
+  }
+
   // Recalculate scores for each member
   for (const member of members) {
     let groupPoints = 0
     let knockoutPoints = 0
     let correctPredictionsCount = 0
 
-    // 1. Group/Knockout Stage Match Score Predictions
+    // 1. Match Score Predictions (new formula: sign + approximation)
     const memberPreds = (predictions || []).filter((p) => p.user_id === member.user_id)
 
     for (const match of matches) {
@@ -459,38 +475,22 @@ export async function recalculateRoomScores(roomId: string) {
       if (match.status === 'finished') {
         const isGroupMatch = match.round === 'group'
 
-        // Match prediction score verification
+        // Score prediction: new formula
         if (pred && pred.predicted_home_score != null && pred.predicted_away_score != null) {
-          const ph = pred.predicted_home_score
-          const pa = pred.predicted_away_score
-          const ah = match.home_score ?? 0
-          const aa = match.away_score ?? 0
-
-          let pointsForMatch = 0
-          if (ph === ah && pa === aa) {
-            pointsForMatch = SCORE_POINTS.exactScore // 3 pts
-          } else {
-            const actualWinner = ah > aa ? 'home' : aa > ah ? 'away' : 'draw'
-            const predWinner = ph > pa ? 'home' : pa > ph ? 'away' : 'draw'
-
-            if (actualWinner === predWinner) {
-              const actualDiff = ah - aa
-              const predDiff = ph - pa
-              if (actualDiff === predDiff) {
-                pointsForMatch = SCORE_POINTS.correctDifference // 2 pts
-              } else {
-                pointsForMatch = SCORE_POINTS.correctWinner // 1 pt
-              }
-            }
-          }
+          const result = calculateMatchPoints(
+            pred.predicted_home_score,
+            pred.predicted_away_score,
+            match.home_score ?? 0,
+            match.away_score ?? 0
+          )
 
           if (isGroupMatch) {
-            groupPoints += pointsForMatch
+            groupPoints += result.total
           } else {
-            knockoutPoints += pointsForMatch
+            knockoutPoints += result.total
           }
 
-          if (pointsForMatch > 0) {
+          if (result.total > 0) {
             correctPredictionsCount++
           }
         }
@@ -505,6 +505,32 @@ export async function recalculateRoomScores(roomId: string) {
               correctPredictionsCount++
             }
           }
+        }
+      }
+    }
+
+    // 2.5. Team Bets: derived from knockout bracket
+    // If user predicts team X wins in round R, they implicitly predict X reaches NEXT_ROUND[R]
+    for (const pred of memberPreds) {
+      const match = matches.find((m) => m.id === pred.match_id)
+      if (!match || match.round === 'group' || !pred.predicted_winner_id) continue
+
+      const nextRound = NEXT_ROUND[match.round]
+      if (!nextRound) continue
+
+      const teamBetPts = TEAM_BET_POINTS[match.round] || 0
+      if (teamBetPts === 0) continue
+
+      if (nextRound === 'winner') {
+        // Final winner = tournament winner
+        if (tournamentWinnerId && pred.predicted_winner_id === tournamentWinnerId) {
+          knockoutPoints += teamBetPts
+        }
+      } else {
+        // Check if team actually participated in the next round
+        const teamsInNext = teamsInRounds[nextRound]
+        if (teamsInNext && teamsInNext.has(pred.predicted_winner_id)) {
+          knockoutPoints += teamBetPts
         }
       }
     }

@@ -81,8 +81,8 @@ interface GroupRoomProps {
 type Tab = 'predictions' | 'results' | 'leaderboard' | 'comparison' | 'pool'
 
 const BASE_TABS: { id: Tab; label: string; icon: typeof Trophy }[] = [
-  { id: 'predictions', label: 'Apuestas', icon: Trophy },
   { id: 'results', label: 'Resultados', icon: CalendarDays },
+  { id: 'predictions', label: 'Apuestas', icon: Trophy },
   { id: 'leaderboard', label: 'Ranking', icon: BarChart2 },
   { id: 'comparison', label: 'Comparar', icon: GitCompareArrows },
 ]
@@ -97,7 +97,7 @@ export function GroupRoom({
   currentUserId,
   allMembersPredictions,
 }: GroupRoomProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('predictions')
+  const [activeTab, setActiveTab] = useState<Tab>('results')
   const [copied, setCopied] = useState(false)
   const [showBracket, setShowBracket] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
@@ -660,25 +660,21 @@ export function GroupRoom({
                     <ul className="list-disc list-inside space-y-1 pl-1">
                       <li>
                         <span className="font-bold text-green-600 dark:text-green-400">
-                          3 Puntos:
+                          Signo (1/X/2):
                         </span>{' '}
-                        Resultado exacto (ej. predices 2-1 y queda 2-1).
+                        +3 pts si aciertas quién gana o empate.
                       </li>
                       <li>
                         <span className="font-bold text-blue-600 dark:text-blue-400">
-                          2 Puntos:
+                          Aproximación:
                         </span>{' '}
-                        Ganador correcto y misma diferencia de goles (ej. predices 1-0 y queda 2-1).
+                        0 a 4+ pts extra por cercanía al resultado real.
                       </li>
                       <li>
                         <span className="font-bold text-yellow-600 dark:text-yellow-500">
-                          1 Punto:
+                          Ejemplo:
                         </span>{' '}
-                        Solo ganador/empate correcto (ej. predices 3-0 y queda 1-0).
-                      </li>
-                      <li>
-                        <span className="font-bold text-red-500">0 Puntos:</span> Predicción
-                        incorrecta.
+                        Partido 4-2, apuesta 3-1 = 6 pts (3 signo + 3 aprox).
                       </li>
                     </ul>
                   </div>
@@ -700,7 +696,34 @@ export function GroupRoom({
                 <div className="space-y-3">
                   <div>
                     <p className="font-bold text-gray-900 dark:text-white mb-1">
-                      Rondas Eliminatorias (Clasificación en Llave):
+                      Team Bets (derivado de tu bracket):
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-1">
+                      <div>
+                        • Llega a Octavos:{' '}
+                        <span className="font-bold text-gray-900 dark:text-white">5 pts</span>
+                      </div>
+                      <div>
+                        • Llega a Cuartos:{' '}
+                        <span className="font-bold text-gray-900 dark:text-white">10 pts</span>
+                      </div>
+                      <div>
+                        • Llega a Semis:{' '}
+                        <span className="font-bold text-gray-900 dark:text-white">15 pts</span>
+                      </div>
+                      <div>
+                        • Llega a Final:{' '}
+                        <span className="font-bold text-gray-900 dark:text-white">25 pts</span>
+                      </div>
+                      <div className="col-span-2">
+                        • Campeón:{' '}
+                        <span className="font-bold text-gray-900 dark:text-white">50 pts</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white mb-1">
+                      Rondas Eliminatorias (Ganador de Partido):
                     </p>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-1">
                       <div>
@@ -720,7 +743,7 @@ export function GroupRoom({
                         <span className="font-bold text-gray-900 dark:text-white">50 pts</span>
                       </div>
                       <div className="col-span-2">
-                        • Campeón de Llave:{' '}
+                        • Final:{' '}
                         <span className="font-bold text-gray-900 dark:text-white">100 pts</span>
                       </div>
                     </div>
