@@ -7,7 +7,9 @@ import { GROUP_STAGE_DEADLINE } from '@/lib/constants/points'
 
 async function verifyAdmin(roomId: string) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return { error: 'No autorizado' as const, user: null, admin: null }
 
   const adminClient = await createAdminClient()

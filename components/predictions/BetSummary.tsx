@@ -11,13 +11,16 @@ const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) =
 
 interface BetSummaryProps {
   knockoutPredictions: Record<number, string>
-  allMembersPredictions?: Record<string, { name: string; champion: string | null; runnerUp: string | null }>
+  allMembersPredictions?: Record<
+    string,
+    { name: string; champion: string | null; runnerUp: string | null }
+  >
   predictedChampionId?: string | null
   predictedGoleador?: string
 }
 
-export function BetSummary({ 
-  knockoutPredictions, 
+export function BetSummary({
+  knockoutPredictions,
   allMembersPredictions,
   predictedChampionId = null,
   predictedGoleador = '',
@@ -25,10 +28,13 @@ export function BetSummary({
   const champion = knockoutPredictions[103] ? TEAMS_BY_ID[knockoutPredictions[103]] : null
 
   // Runner up = loser of the final = the team in final that is NOT the champion
-  const { semifinal1Winner, semifinal2Winner } = useMemo(() => ({
-    semifinal1Winner: knockoutPredictions[101] ? TEAMS_BY_ID[knockoutPredictions[101]] : null,
-    semifinal2Winner: knockoutPredictions[102] ? TEAMS_BY_ID[knockoutPredictions[102]] : null,
-  }), [knockoutPredictions])
+  const { semifinal1Winner, semifinal2Winner } = useMemo(
+    () => ({
+      semifinal1Winner: knockoutPredictions[101] ? TEAMS_BY_ID[knockoutPredictions[101]] : null,
+      semifinal2Winner: knockoutPredictions[102] ? TEAMS_BY_ID[knockoutPredictions[102]] : null,
+    }),
+    [knockoutPredictions]
+  )
 
   const runnerUp = useMemo(() => {
     if (!champion || !semifinal1Winner || !semifinal2Winner) return null
@@ -57,8 +63,12 @@ export function BetSummary({
               <div className="flex flex-col items-center gap-1 opacity-80">
                 <Medal size={14} className="text-gray-400 dark:text-gray-500" />
                 <TeamFlag flagCode={runnerUp.flag_code} name={runnerUp.name} size={36} />
-                <span className="text-xs font-body font-medium text-gray-500 dark:text-gray-400">{runnerUp.name}</span>
-                <span className="text-[9px] font-mono text-gray-400">FIFA #{runnerUp.fifa_ranking}</span>
+                <span className="text-xs font-body font-medium text-gray-500 dark:text-gray-400">
+                  {runnerUp.name}
+                </span>
+                <span className="text-[9px] font-mono text-gray-400">
+                  FIFA #{runnerUp.fifa_ranking}
+                </span>
                 <span className="text-[9px] font-mono text-gray-400 uppercase">Subcampeón</span>
               </div>
             ) : (
@@ -72,9 +82,15 @@ export function BetSummary({
               <div className="relative z-10 my-1">
                 <TeamFlag flagCode={champion.flag_code} name={champion.name} size={54} />
               </div>
-              <span className="text-sm sm:text-base font-display font-bold text-[#C9A84C] relative z-10">{champion.name}</span>
-              <span className="text-[10px] font-mono text-[#C9A84C] relative z-10">FIFA #{champion.fifa_ranking}</span>
-              <span className="text-[9px] font-mono text-[#C9A84C]/70 uppercase tracking-wider relative z-10">Mi Campeón del Bracket</span>
+              <span className="text-sm sm:text-base font-display font-bold text-[#C9A84C] relative z-10">
+                {champion.name}
+              </span>
+              <span className="text-[10px] font-mono text-[#C9A84C] relative z-10">
+                FIFA #{champion.fifa_ranking}
+              </span>
+              <span className="text-[9px] font-mono text-[#C9A84C]/70 uppercase tracking-wider relative z-10">
+                Mi Campeón del Bracket
+              </span>
             </div>
 
             {/* Runner-up placeholder — right, mirror */}
@@ -95,21 +111,31 @@ export function BetSummary({
 
       {/* ── Special picks — Mi Campeón & Goleador ── */}
       {(predictedChampionId || predictedGoleador) && (
-        <div className={cn(
-          'flex flex-col sm:flex-row sm:items-stretch divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-white/[0.06]',
-          champion && 'border-t border-gray-100 dark:border-white/[0.06]'
-        )}>
+        <div
+          className={cn(
+            'flex flex-col sm:flex-row sm:items-stretch divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-white/[0.06]',
+            champion && 'border-t border-gray-100 dark:border-white/[0.06]'
+          )}
+        >
           {predictedChampionTeam && (
             <div className="flex items-center gap-3 px-4 py-3 flex-1">
               <div className="w-8 h-8 rounded-full bg-[#C9A84C]/10 flex items-center justify-center flex-shrink-0">
                 <Award size={14} className="text-[#C9A84C]" />
               </div>
               <div>
-                <p className="text-[9px] uppercase font-mono text-gray-400 tracking-wider leading-none mb-0.5">Mi Campeón</p>
+                <p className="text-[9px] uppercase font-mono text-gray-400 tracking-wider leading-none mb-0.5">
+                  Mi Campeón
+                </p>
                 <p className="text-sm font-body font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-                  <TeamFlag flagCode={predictedChampionTeam.flag_code} name={predictedChampionTeam.name} size={18} />
+                  <TeamFlag
+                    flagCode={predictedChampionTeam.flag_code}
+                    name={predictedChampionTeam.name}
+                    size={18}
+                  />
                   {predictedChampionTeam.name}
-                  <span className="text-[10px] font-mono text-gray-400 font-normal">FIFA #{predictedChampionTeam.fifa_ranking}</span>
+                  <span className="text-[10px] font-mono text-gray-400 font-normal">
+                    FIFA #{predictedChampionTeam.fifa_ranking}
+                  </span>
                 </p>
               </div>
             </div>
@@ -120,7 +146,9 @@ export function BetSummary({
                 <Zap size={14} className="text-amber-500" />
               </div>
               <div>
-                <p className="text-[9px] uppercase font-mono text-gray-400 tracking-wider leading-none mb-0.5">Mi Goleador</p>
+                <p className="text-[9px] uppercase font-mono text-gray-400 tracking-wider leading-none mb-0.5">
+                  Mi Goleador
+                </p>
                 <p className="text-sm font-body font-semibold text-gray-900 dark:text-white">
                   ⚽ {predictedGoleador}
                 </p>
@@ -133,7 +161,9 @@ export function BetSummary({
       {/* ── All members' champions ── */}
       {allMembersPredictions && Object.keys(allMembersPredictions).length > 0 && (
         <div className="border-t border-gray-100 dark:border-white/[0.06] px-4 py-3 bg-gray-50/50 dark:bg-white/[0.02]">
-          <p className="text-[9px] font-mono text-gray-400 uppercase tracking-wider mb-2">Apuestas de la sala</p>
+          <p className="text-[9px] font-mono text-gray-400 uppercase tracking-wider mb-2">
+            Apuestas de la sala
+          </p>
           <div className="flex flex-wrap gap-1.5">
             {Object.entries(allMembersPredictions).map(([userId, { name, champion: champId }]) => {
               const team = champId ? TEAMS_BY_ID[champId] : null
@@ -152,7 +182,9 @@ export function BetSummary({
                   ) : (
                     <span className="text-sm leading-none">⚽</span>
                   )}
-                  <span className="text-gray-600 dark:text-gray-300 truncate max-w-[60px]">{name.split(' ')[0]}</span>
+                  <span className="text-gray-600 dark:text-gray-300 truncate max-w-[60px]">
+                    {name.split(' ')[0]}
+                  </span>
                   {team && (
                     <span className="text-[9px] font-mono text-gray-400">#{team.fifa_ranking}</span>
                   )}

@@ -13,12 +13,14 @@ async function getLeaderboard() {
 
   const { data } = await admin
     .from('scores')
-    .select(`
+    .select(
+      `
       total_points,
       correct_predictions,
       user_id,
       profiles!inner(name, avatar_url)
-    `)
+    `
+    )
     .order('total_points', { ascending: false })
     .limit(50)
 
@@ -27,7 +29,7 @@ async function getLeaderboard() {
 
 export default async function LeaderboardPage() {
   const [supabase, entries] = await Promise.all([
-    createClient().then(s => s.auth.getUser().then(({ data: { user } }) => user)),
+    createClient().then((s) => s.auth.getUser().then(({ data: { user } }) => user)),
     getLeaderboard(),
   ])
 
@@ -58,15 +60,21 @@ export default async function LeaderboardPage() {
                   idx === 1 && 'sm:-mt-3'
                 )}
               >
-                <div className={cn(
-                  'w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold font-body mb-1.5',
-                  PODIUM_COLORS[realIdx],
-                )}>
+                <div
+                  className={cn(
+                    'w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold font-body mb-1.5',
+                    PODIUM_COLORS[realIdx]
+                  )}
+                >
                   {profile?.name?.[0]?.toUpperCase()}
                 </div>
                 <span className="text-base leading-none mb-1">{MEDALS[realIdx]}</span>
-                <p className="text-xs font-body font-medium dark:text-white truncate w-full">{profile?.name}</p>
-                <p className="font-mono text-lg font-bold text-[#2A398D] dark:text-blue-400 mt-0.5">{entry.total_points}</p>
+                <p className="text-xs font-body font-medium dark:text-white truncate w-full">
+                  {profile?.name}
+                </p>
+                <p className="font-mono text-lg font-bold text-[#2A398D] dark:text-blue-400 mt-0.5">
+                  {entry.total_points}
+                </p>
               </div>
             )
           })}
@@ -102,19 +110,25 @@ export default async function LeaderboardPage() {
               </div>
 
               {/* Avatar */}
-              <div className={cn(
-                'w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0',
-                isMe ? 'bg-[#2A398D]' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
-              )}>
+              <div
+                className={cn(
+                  'w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0',
+                  isMe
+                    ? 'bg-[#2A398D]'
+                    : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
+                )}
+              >
                 {profile?.name?.[0]?.toUpperCase()}
               </div>
 
               {/* Name */}
               <div className="flex-1 min-w-0">
-                <p className={cn(
-                  'text-sm font-body truncate dark:text-white',
-                  isMe && 'font-medium text-[#2A398D] dark:text-blue-400'
-                )}>
+                <p
+                  className={cn(
+                    'text-sm font-body truncate dark:text-white',
+                    isMe && 'font-medium text-[#2A398D] dark:text-blue-400'
+                  )}
+                >
                   {profile?.name} {isMe && <span className="text-xs text-gray-400">(tú)</span>}
                 </p>
               </div>

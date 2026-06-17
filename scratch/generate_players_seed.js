@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs')
+const path = require('path')
 
 // 48 teams seed data
 const squads = {
@@ -20,8 +20,8 @@ const squads = {
       { name: 'Lisandro Martínez', pos: 'DF', star: false },
       { name: 'Nahuel Molina', pos: 'DF', star: false },
       { name: 'Nicolás Tagliafico', pos: 'DF', star: false },
-      { name: 'Emiliano Martínez', pos: 'GK', star: false }
-    ]
+      { name: 'Emiliano Martínez', pos: 'GK', star: false },
+    ],
   },
   bra: {
     name: 'Brasil',
@@ -40,8 +40,8 @@ const squads = {
       { name: 'Éder Militão', pos: 'DF', star: false },
       { name: 'Gabriel Magalhães', pos: 'DF', star: false },
       { name: 'Danilo Luiz', pos: 'DF', star: false },
-      { name: 'Alisson Becker', pos: 'GK', star: false }
-    ]
+      { name: 'Alisson Becker', pos: 'GK', star: false },
+    ],
   },
   fra: {
     name: 'Francia',
@@ -60,8 +60,8 @@ const squads = {
       { name: 'Dayot Upamecano', pos: 'DF', star: false },
       { name: 'Ibrahima Konaté', pos: 'DF', star: false },
       { name: 'Theo Hernández', pos: 'DF', star: false },
-      { name: 'Mike Maignan', pos: 'GK', star: false }
-    ]
+      { name: 'Mike Maignan', pos: 'GK', star: false },
+    ],
   },
   por: {
     name: 'Portugal',
@@ -80,8 +80,8 @@ const squads = {
       { name: 'Nuno Mendes', pos: 'DF', star: false },
       { name: 'Pepe Ferreira', pos: 'DF', star: false },
       { name: 'António Silva', pos: 'DF', star: false },
-      { name: 'Diogo Costa', pos: 'GK', star: false }
-    ]
+      { name: 'Diogo Costa', pos: 'GK', star: false },
+    ],
   },
   eng: {
     name: 'Inglaterra',
@@ -100,8 +100,8 @@ const squads = {
       { name: 'Kieran Trippier', pos: 'DF', star: false },
       { name: 'Harry Maguire', pos: 'DF', star: false },
       { name: 'Luke Shaw', pos: 'DF', star: false },
-      { name: 'Jordan Pickford', pos: 'GK', star: false }
-    ]
+      { name: 'Jordan Pickford', pos: 'GK', star: false },
+    ],
   },
   esp: {
     name: 'España',
@@ -120,8 +120,8 @@ const squads = {
       { name: 'Robin Le Normand', pos: 'DF', star: false },
       { name: 'Alejandro Grimaldo', pos: 'DF', star: false },
       { name: 'Pau Cubarsí', pos: 'DF', star: false },
-      { name: 'Unai Simón', pos: 'GK', star: false }
-    ]
+      { name: 'Unai Simón', pos: 'GK', star: false },
+    ],
   },
   ger: {
     name: 'Alemania',
@@ -140,8 +140,8 @@ const squads = {
       { name: 'Jonathan Tah', pos: 'DF', star: false },
       { name: 'Nico Schlotterbeck', pos: 'DF', star: false },
       { name: 'Manuel Neuer', pos: 'GK', star: false },
-      { name: 'Marc-André ter Stegen', pos: 'GK', star: false }
-    ]
+      { name: 'Marc-André ter Stegen', pos: 'GK', star: false },
+    ],
   },
   col: {
     name: 'Colombia',
@@ -160,8 +160,8 @@ const squads = {
       { name: 'Carlos Cuesta', pos: 'DF', star: false },
       { name: 'Yerry Mina', pos: 'DF', star: false },
       { name: 'Johan Mojica', pos: 'DF', star: false },
-      { name: 'Camilo Vargas', pos: 'GK', star: false }
-    ]
+      { name: 'Camilo Vargas', pos: 'GK', star: false },
+    ],
   },
   uru: {
     name: 'Uruguay',
@@ -179,8 +179,8 @@ const squads = {
       { name: 'Mathías Olivera', pos: 'DF', star: false },
       { name: 'Guillermo Varela', pos: 'DF', star: false },
       { name: 'Matías Viña', pos: 'DF', star: false },
-      { name: 'Sergio Rochet', pos: 'GK', star: false }
-    ]
+      { name: 'Sergio Rochet', pos: 'GK', star: false },
+    ],
   },
   mex: {
     name: 'México',
@@ -199,8 +199,8 @@ const squads = {
       { name: 'Jorge Sánchez', pos: 'DF', star: false },
       { name: 'Gerardo Arteaga', pos: 'DF', star: false },
       { name: 'Luis Malagón', pos: 'GK', star: false },
-      { name: 'Guillermo Ochoa', pos: 'GK', star: false }
-    ]
+      { name: 'Guillermo Ochoa', pos: 'GK', star: false },
+    ],
   },
   ned: {
     name: 'Países Bajos',
@@ -219,8 +219,8 @@ const squads = {
       { name: 'Nathan Aké', pos: 'DF', star: false },
       { name: 'Denzel Dumfries', pos: 'DF', star: false },
       { name: 'Jeremie Frimpong', pos: 'DF', star: false },
-      { name: 'Bart Verbruggen', pos: 'GK', star: false }
-    ]
+      { name: 'Bart Verbruggen', pos: 'GK', star: false },
+    ],
   },
   usa: {
     name: 'Estados Unidos',
@@ -239,8 +239,8 @@ const squads = {
       { name: 'Chris Richards', pos: 'DF', star: false },
       { name: 'Cameron Carter-Vickers', pos: 'DF', star: false },
       { name: 'Joe Scally', pos: 'DF', star: false },
-      { name: 'Matt Turner', pos: 'GK', star: false }
-    ]
+      { name: 'Matt Turner', pos: 'GK', star: false },
+    ],
   },
   can: {
     name: 'Canadá',
@@ -257,8 +257,8 @@ const squads = {
       { name: 'Kamal Miller', pos: 'DF', star: false },
       { name: 'Derek Cornelius', pos: 'DF', star: false },
       { name: 'Moïse Bombito', pos: 'DF', star: false },
-      { name: 'Maxime Crépeau', pos: 'GK', star: false }
-    ]
+      { name: 'Maxime Crépeau', pos: 'GK', star: false },
+    ],
   },
   mar: {
     name: 'Marruecos',
@@ -276,8 +276,8 @@ const squads = {
       { name: 'Romain Saïss', pos: 'DF', star: false },
       { name: 'Noussair Mazraoui', pos: 'DF', star: false },
       { name: 'Chadi Riad', pos: 'DF', star: false },
-      { name: 'Yassine Bounou', pos: 'GK', star: false }
-    ]
+      { name: 'Yassine Bounou', pos: 'GK', star: false },
+    ],
   },
   bel: {
     name: 'Bélgica',
@@ -295,8 +295,8 @@ const squads = {
       { name: 'Timothy Castagne', pos: 'DF', star: false },
       { name: 'Arthur Theate', pos: 'DF', star: false },
       { name: 'Zeno Debast', pos: 'DF', star: false },
-      { name: 'Koen Casteels', pos: 'GK', star: false }
-    ]
+      { name: 'Koen Casteels', pos: 'GK', star: false },
+    ],
   },
   cro: {
     name: 'Croacia',
@@ -314,8 +314,8 @@ const squads = {
       { name: 'Josip Šutalo', pos: 'DF', star: false },
       { name: 'Borna Sosa', pos: 'DF', star: false },
       { name: 'Josip Stanišić', pos: 'DF', star: false },
-      { name: 'Dominik Livaković', pos: 'GK', star: false }
-    ]
+      { name: 'Dominik Livaković', pos: 'GK', star: false },
+    ],
   },
   nor: {
     name: 'Noruega',
@@ -333,8 +333,8 @@ const squads = {
       { name: 'Julian Ryerson', pos: 'DF', star: false },
       { name: 'Kristoffer Ajer', pos: 'DF', star: false },
       { name: 'David Møller Wolfe', pos: 'DF', star: false },
-      { name: 'Örjan Nyland', pos: 'GK', star: false }
-    ]
+      { name: 'Örjan Nyland', pos: 'GK', star: false },
+    ],
   },
   egy: {
     name: 'Egipto',
@@ -351,8 +351,8 @@ const squads = {
       { name: 'Mohamed Abdelmonem', pos: 'DF', star: false },
       { name: 'Mohamed Hany', pos: 'DF', star: false },
       { name: 'Rami Rabia', pos: 'DF', star: false },
-      { name: 'Mohamed El Shenawy', pos: 'GK', star: false }
-    ]
+      { name: 'Mohamed El Shenawy', pos: 'GK', star: false },
+    ],
   },
   kor: {
     name: 'Corea del Sur',
@@ -369,8 +369,8 @@ const squads = {
       { name: 'Jung Seung-hyun', pos: 'DF', star: false },
       { name: 'Kim Jin-su', pos: 'DF', star: false },
       { name: 'Seol Young-woo', pos: 'DF', star: false },
-      { name: 'Jo Hyeon-woo', pos: 'GK', star: false }
-    ]
+      { name: 'Jo Hyeon-woo', pos: 'GK', star: false },
+    ],
   },
   jpn: {
     name: 'Japón',
@@ -387,8 +387,8 @@ const squads = {
       { name: 'Hiroki Ito', pos: 'DF', star: false },
       { name: 'Takehiro Tomiyasu', pos: 'DF', star: false },
       { name: 'Yukinari Sugawara', pos: 'DF', star: false },
-      { name: 'Zion Suzuki', pos: 'GK', star: false }
-    ]
+      { name: 'Zion Suzuki', pos: 'GK', star: false },
+    ],
   },
   swe: {
     name: 'Suecia',
@@ -405,8 +405,8 @@ const squads = {
       { name: 'Isak Hien', pos: 'DF', star: false },
       { name: 'Ludwig Augustinsson', pos: 'DF', star: false },
       { name: 'Emil Krafth', pos: 'DF', star: false },
-      { name: 'Robin Olsen', pos: 'GK', star: false }
-    ]
+      { name: 'Robin Olsen', pos: 'GK', star: false },
+    ],
   },
   sen: {
     name: 'Senegal',
@@ -422,8 +422,8 @@ const squads = {
       { name: 'Moussa Niakhaté', pos: 'DF', star: false },
       { name: 'Abdou Diallo', pos: 'DF', star: false },
       { name: 'Ismail Jakobs', pos: 'DF', star: false },
-      { name: 'Édouard Mendy', pos: 'GK', star: false }
-    ]
+      { name: 'Édouard Mendy', pos: 'GK', star: false },
+    ],
   },
   civ: {
     name: 'Costa de Marfil',
@@ -438,8 +438,8 @@ const squads = {
       { name: 'Odilon Kossounou', pos: 'DF', star: false },
       { name: 'Ousmane Diomande', pos: 'DF', star: false },
       { name: 'Wilfried Singo', pos: 'DF', star: false },
-      { name: 'Yahia Fofana', pos: 'GK', star: false }
-    ]
+      { name: 'Yahia Fofana', pos: 'GK', star: false },
+    ],
   },
   ecu: {
     name: 'Ecuador',
@@ -454,8 +454,8 @@ const squads = {
       { name: 'Pervis Estupiñán', pos: 'DF', star: false },
       { name: 'Carlos Gruezo', pos: 'MF', star: false },
       { name: 'Alan Franco', pos: 'MF', star: false },
-      { name: 'Alexander Domínguez', pos: 'GK', star: false }
-    ]
+      { name: 'Alexander Domínguez', pos: 'GK', star: false },
+    ],
   },
   tur: {
     name: 'Turquía',
@@ -471,8 +471,8 @@ const squads = {
       { name: 'Merih Demiral', pos: 'DF', star: false },
       { name: 'Abdülkerim Bardakci', pos: 'DF', star: false },
       { name: 'Zeki Celik', pos: 'DF', star: false },
-      { name: 'Mert Günok', pos: 'GK', star: false }
-    ]
+      { name: 'Mert Günok', pos: 'GK', star: false },
+    ],
   },
   sui: {
     name: 'Suiza',
@@ -489,8 +489,8 @@ const squads = {
       { name: 'Nico Elvedi', pos: 'DF', star: false },
       { name: 'Ricardo Rodríguez', pos: 'DF', star: false },
       { name: 'Yann Sommer', pos: 'GK', star: false },
-      { name: 'Gregor Kobel', pos: 'GK', star: false }
-    ]
+      { name: 'Gregor Kobel', pos: 'GK', star: false },
+    ],
   },
   sco: {
     name: 'Escocia',
@@ -504,8 +504,8 @@ const squads = {
       { name: 'Andrew Robertson', pos: 'DF', star: true },
       { name: 'Kieran Tierney', pos: 'DF', star: false },
       { name: 'Jack Hendry', pos: 'DF', star: false },
-      { name: 'Angus Gunn', pos: 'GK', star: false }
-    ]
+      { name: 'Angus Gunn', pos: 'GK', star: false },
+    ],
   },
   aut: {
     name: 'Austria',
@@ -519,8 +519,8 @@ const squads = {
       { name: 'David Alaba', pos: 'DF', star: true },
       { name: 'Kevin Danso', pos: 'DF', star: false },
       { name: 'Stefan Posch', pos: 'DF', star: false },
-      { name: 'Patrick Pentz', pos: 'GK', star: false }
-    ]
+      { name: 'Patrick Pentz', pos: 'GK', star: false },
+    ],
   },
   cro: {
     name: 'Croacia',
@@ -529,8 +529,8 @@ const squads = {
       { name: 'Luka Modrić', pos: 'MF', star: true },
       { name: 'Mateo Kovačić', pos: 'MF', star: false },
       { name: 'Joško Gvardiol', pos: 'DF', star: true },
-      { name: 'Dominik Livaković', pos: 'GK', star: false }
-    ]
+      { name: 'Dominik Livaković', pos: 'GK', star: false },
+    ],
   },
   gha: {
     name: 'Ghana',
@@ -543,8 +543,8 @@ const squads = {
       { name: 'Salis Abdul Samed', pos: 'MF', star: false },
       { name: 'Mohammed Salisu', pos: 'DF', star: false },
       { name: 'Tariq Lamptey', pos: 'DF', star: false },
-      { name: 'Lawrence Ati-Zigi', pos: 'GK', star: false }
-    ]
+      { name: 'Lawrence Ati-Zigi', pos: 'GK', star: false },
+    ],
   },
   pan: {
     name: 'Panamá',
@@ -556,8 +556,8 @@ const squads = {
       { name: 'Michael Amir Murillo', pos: 'DF', star: false },
       { name: 'José Córdoba', pos: 'DF', star: false },
       { name: 'Fidel Escobar', pos: 'DF', star: false },
-      { name: 'Orlando Mosquera', pos: 'GK', star: false }
-    ]
+      { name: 'Orlando Mosquera', pos: 'GK', star: false },
+    ],
   },
   irn: {
     name: 'Irán',
@@ -568,8 +568,8 @@ const squads = {
       { name: 'Saman Ghoddos', pos: 'MF', star: false },
       { name: 'Milad Mohammadi', pos: 'DF', star: false },
       { name: 'Shojae Khalilzadeh', pos: 'DF', star: false },
-      { name: 'Alireza Beiranvand', pos: 'GK', star: false }
-    ]
+      { name: 'Alireza Beiranvand', pos: 'GK', star: false },
+    ],
   },
   nzl: {
     name: 'Nueva Zelanda',
@@ -580,8 +580,8 @@ const squads = {
       { name: 'Joe Bell', pos: 'MF', star: false },
       { name: 'Liberato Cacace', pos: 'DF', star: false },
       { name: 'Michael Boxall', pos: 'DF', star: false },
-      { name: 'Oliver Sail', pos: 'GK', star: false }
-    ]
+      { name: 'Oliver Sail', pos: 'GK', star: false },
+    ],
   },
   ksa: {
     name: 'Arabia Saudí',
@@ -592,8 +592,8 @@ const squads = {
       { name: 'Mohamed Kanno', pos: 'MF', star: false },
       { name: 'Saud Abdulhamid', pos: 'DF', star: false },
       { name: 'Ali Al-Bulaihi', pos: 'DF', star: false },
-      { name: 'Mohammed Al-Owais', pos: 'GK', star: false }
-    ]
+      { name: 'Mohammed Al-Owais', pos: 'GK', star: false },
+    ],
   },
   alg: {
     name: 'Argelia',
@@ -605,8 +605,8 @@ const squads = {
       { name: 'Houssem Aouar', pos: 'MF', star: false },
       { name: 'Rayan Aït-Nouri', pos: 'DF', star: false },
       { name: 'Aïssa Mandi', pos: 'DF', star: false },
-      { name: 'Anthony Mandrea', pos: 'GK', star: false }
-    ]
+      { name: 'Anthony Mandrea', pos: 'GK', star: false },
+    ],
   },
   cod: {
     name: 'RD del Congo',
@@ -617,8 +617,8 @@ const squads = {
       { name: 'Samuel Moutoussamy', pos: 'MF', star: false },
       { name: 'Chancel Mbemba', pos: 'DF', star: false },
       { name: 'Arthur Masuaku', pos: 'DF', star: false },
-      { name: 'Lionel Mpasi', pos: 'GK', star: false }
-    ]
+      { name: 'Lionel Mpasi', pos: 'GK', star: false },
+    ],
   },
   uzb: {
     name: 'Uzbekistán',
@@ -628,8 +628,8 @@ const squads = {
       { name: 'Otabek Shukurov', pos: 'MF', star: false },
       { name: 'Jaloliddin Masharipov', pos: 'MF', star: false },
       { name: 'Rustam Ashurmatov', pos: 'DF', star: false },
-      { name: 'Utkir Yusupov', pos: 'GK', star: false }
-    ]
+      { name: 'Utkir Yusupov', pos: 'GK', star: false },
+    ],
   },
   cze: {
     name: 'República Checa',
@@ -640,8 +640,8 @@ const squads = {
       { name: 'Antonín Barák', pos: 'MF', star: false },
       { name: 'Vladimír Coufal', pos: 'DF', star: false },
       { name: 'Ladislav Krejčí', pos: 'DF', star: false },
-      { name: 'Jindřich Staněk', pos: 'GK', star: false }
-    ]
+      { name: 'Jindřich Staněk', pos: 'GK', star: false },
+    ],
   },
   rsa: {
     name: 'Sudáfrica',
@@ -652,8 +652,8 @@ const squads = {
       { name: 'Sphephelo Sithole', pos: 'MF', star: false },
       { name: 'Aubrey Modiba', pos: 'DF', star: false },
       { name: 'Mothobi Mvala', pos: 'DF', star: false },
-      { name: 'Ronwen Williams', pos: 'GK', star: false }
-    ]
+      { name: 'Ronwen Williams', pos: 'GK', star: false },
+    ],
   },
   bih: {
     name: 'Bosnia y Herzegovina',
@@ -664,8 +664,8 @@ const squads = {
       { name: 'Rade Krunić', pos: 'MF', star: false },
       { name: 'Sead Kolašinac', pos: 'DF', star: false },
       { name: 'Dennis Hadžikadunić', pos: 'DF', star: false },
-      { name: 'Ibrahim Šehić', pos: 'GK', star: false }
-    ]
+      { name: 'Ibrahim Šehić', pos: 'GK', star: false },
+    ],
   },
   qat: {
     name: 'Catar',
@@ -676,8 +676,8 @@ const squads = {
       { name: 'Abdulaziz Hatem', pos: 'MF', star: false },
       { name: 'Boualem Khoukhi', pos: 'DF', star: false },
       { name: 'Ró-Ró Pedro', pos: 'DF', star: false },
-      { name: 'Meshaal Barsham', pos: 'GK', star: false }
-    ]
+      { name: 'Meshaal Barsham', pos: 'GK', star: false },
+    ],
   },
   hai: {
     name: 'Haití',
@@ -687,8 +687,8 @@ const squads = {
       { name: 'Derrick Etienne', pos: 'MF', star: false },
       { name: 'Carlens Arcus', pos: 'DF', star: false },
       { name: 'Alex Christian', pos: 'DF', star: false },
-      { name: 'Johny Placide', pos: 'GK', star: false }
-    ]
+      { name: 'Johny Placide', pos: 'GK', star: false },
+    ],
   },
   pry: {
     name: 'Paraguay',
@@ -699,8 +699,8 @@ const squads = {
       { name: 'Mathías Villasanti', pos: 'MF', star: false },
       { name: 'Gustavo Gómez', pos: 'DF', star: false },
       { name: 'Omar Alderete', pos: 'DF', star: false },
-      { name: 'Carlos Coronel', pos: 'GK', star: false }
-    ]
+      { name: 'Carlos Coronel', pos: 'GK', star: false },
+    ],
   },
   aus: {
     name: 'Australia',
@@ -710,8 +710,8 @@ const squads = {
       { name: 'Riley McGree', pos: 'MF', star: false },
       { name: 'Harry Souttar', pos: 'DF', star: false },
       { name: 'Kye Rowles', pos: 'DF', star: false },
-      { name: 'Mathew Ryan', pos: 'GK', star: false }
-    ]
+      { name: 'Mathew Ryan', pos: 'GK', star: false },
+    ],
   },
   cuw: {
     name: 'Curazao',
@@ -720,8 +720,8 @@ const squads = {
       { name: 'Juninho Bacuna', pos: 'MF', star: false },
       { name: 'Leandro Bacuna', pos: 'MF', star: false },
       { name: 'Cuco Martina', pos: 'DF', star: false },
-      { name: 'Eloy Room', pos: 'GK', star: false }
-    ]
+      { name: 'Eloy Room', pos: 'GK', star: false },
+    ],
   },
   tun: {
     name: 'Túnez',
@@ -731,8 +731,8 @@ const squads = {
       { name: 'Ellyes Skhiri', pos: 'MF', star: false },
       { name: 'Aissa Laïdouni', pos: 'MF', star: false },
       { name: 'Montassar Talbi', pos: 'DF', star: false },
-      { name: 'Bechir Ben Said', pos: 'GK', star: false }
-    ]
+      { name: 'Bechir Ben Said', pos: 'GK', star: false },
+    ],
   },
   cpv: {
     name: 'Cabo Verde',
@@ -742,8 +742,8 @@ const squads = {
       { name: 'Jamiro Monteiro', pos: 'MF', star: false },
       { name: 'Kenny Rocha', pos: 'MF', star: false },
       { name: 'Logan Costa', pos: 'DF', star: false },
-      { name: 'Vozinha Dias', pos: 'GK', star: false }
-    ]
+      { name: 'Vozinha Dias', pos: 'GK', star: false },
+    ],
   },
   irq: {
     name: 'Irak',
@@ -753,8 +753,8 @@ const squads = {
       { name: 'Ibrahim Bayesh', pos: 'MF', star: false },
       { name: 'Bashar Resan', pos: 'MF', star: false },
       { name: 'Rebin Sulaka', pos: 'DF', star: false },
-      { name: 'Jalal Hassan', pos: 'GK', star: false }
-    ]
+      { name: 'Jalal Hassan', pos: 'GK', star: false },
+    ],
   },
   jor: {
     name: 'Jordania',
@@ -763,10 +763,10 @@ const squads = {
       { name: 'Yazan Al-Naimat', pos: 'FW', star: false },
       { name: 'Nizar Al-Rashdan', pos: 'MF', star: false },
       { name: 'Yazan Al-Arab', pos: 'DF', star: false },
-      { name: 'Yazeed Abulaila', pos: 'GK', star: false }
-    ]
-  }
-};
+      { name: 'Yazeed Abulaila', pos: 'GK', star: false },
+    ],
+  },
+}
 
 // Generate SQL file contents
 let sql = `-- =============================================
@@ -774,17 +774,17 @@ let sql = `-- =============================================
 -- =============================================
 
 INSERT INTO players (team_id, name, position, is_star) VALUES
-`;
+`
 
-const insertRows = [];
+const insertRows = []
 for (const [teamId, squad] of Object.entries(squads)) {
   for (const player of squad.players) {
-    const escapedName = player.name.replace(/'/g, "''");
-    insertRows.push(`('${teamId}', '${escapedName}', '${player.pos}', ${player.star})`);
+    const escapedName = player.name.replace(/'/g, "''")
+    insertRows.push(`('${teamId}', '${escapedName}', '${player.pos}', ${player.star})`)
   }
 }
 
-sql += insertRows.join(',\n') + '\nON CONFLICT DO NOTHING;\n';
+sql += insertRows.join(',\n') + '\nON CONFLICT DO NOTHING;\n'
 
-fs.writeFileSync(path.join(__dirname, '../supabase/migrations/011_seed_players.sql'), sql);
-console.log('Successfully generated 011_seed_players.sql migration');
+fs.writeFileSync(path.join(__dirname, '../supabase/migrations/011_seed_players.sql'), sql)
+console.log('Successfully generated 011_seed_players.sql migration')

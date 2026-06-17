@@ -99,23 +99,38 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
           {/* Column headers */}
           <div className="flex items-center px-2 sm:px-4 gap-2">
             <span className="w-4" />
-            <span className="flex-1 text-[10px] font-display uppercase tracking-wider text-[#2A398D] dark:text-blue-400">Tú</span>
+            <span className="flex-1 text-[10px] font-display uppercase tracking-wider text-[#2A398D] dark:text-blue-400">
+              Tú
+            </span>
             <span className="w-6" />
-            <span className="flex-1 text-[10px] font-display uppercase tracking-wider text-right text-[#E61D25]">{other.name.split(' ')[0]}</span>
+            <span className="flex-1 text-[10px] font-display uppercase tracking-wider text-right text-[#E61D25]">
+              {other.name.split(' ')[0]}
+            </span>
           </div>
 
           {/* Groups comparison */}
           <div className="glass-card overflow-hidden">
             <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
-              <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">Fase de Grupos</span>
+              <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Fase de Grupos
+              </span>
               {(() => {
-                let matches = 0, total = 0
+                let matches = 0,
+                  total = 0
                 for (const letter of GROUP_LETTERS) {
                   const mp = me.groupPredictions[letter]
                   const tp = other.groupPredictions[letter]
-                  if (mp && tp) { total += 2; if (mp.team_1st_id === tp.team_1st_id) matches++; if (mp.team_2nd_id === tp.team_2nd_id) matches++ }
+                  if (mp && tp) {
+                    total += 2
+                    if (mp.team_1st_id === tp.team_1st_id) matches++
+                    if (mp.team_2nd_id === tp.team_2nd_id) matches++
+                  }
                 }
-                return total > 0 ? <span className="text-[10px] font-mono text-[#3CAC3B]">{matches}/{total} iguales</span> : null
+                return total > 0 ? (
+                  <span className="text-[10px] font-mono text-[#3CAC3B]">
+                    {matches}/{total} iguales
+                  </span>
+                ) : null
               })()}
             </div>
             <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
@@ -130,34 +145,73 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                 const their1st = theirPred ? TEAMS_BY_ID[theirPred.team_1st_id] : null
                 const their2nd = theirPred ? TEAMS_BY_ID[theirPred.team_2nd_id] : null
                 return (
-                  <div key={letter} className="flex items-center px-2 sm:px-4 py-2.5 gap-1.5 sm:gap-2">
-                    <span className="text-[10px] font-mono font-bold text-gray-400 w-4">{letter}</span>
+                  <div
+                    key={letter}
+                    className="flex items-center px-2 sm:px-4 py-2.5 gap-1.5 sm:gap-2"
+                  >
+                    <span className="text-[10px] font-mono font-bold text-gray-400 w-4">
+                      {letter}
+                    </span>
                     <div className="flex-1 flex items-center gap-1.5">
                       {my1st ? (
-                        <span className={cn('text-xs font-body flex items-center gap-1', same1st ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>
+                        <span
+                          className={cn(
+                            'text-xs font-body flex items-center gap-1',
+                            same1st
+                              ? 'text-[#3CAC3B] font-semibold'
+                              : 'text-gray-700 dark:text-gray-300'
+                          )}
+                        >
                           <TeamFlag flagCode={my1st.flag_code} name={my1st.name} size={14} />
                           {my1st.code}
-                          <span className="text-[9px] text-gray-400 font-mono">#{my1st.fifa_ranking}</span>
+                          <span className="text-[9px] text-gray-400 font-mono">
+                            #{my1st.fifa_ranking}
+                          </span>
                         </span>
                       ) : (
                         <span className="text-xs text-gray-300">—</span>
                       )}
                       <span className="text-gray-200 dark:text-gray-700">/</span>
                       {my2nd ? (
-                        <span className={cn('text-xs font-body flex items-center gap-1', same2nd ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>
+                        <span
+                          className={cn(
+                            'text-xs font-body flex items-center gap-1',
+                            same2nd
+                              ? 'text-[#3CAC3B] font-semibold'
+                              : 'text-gray-700 dark:text-gray-300'
+                          )}
+                        >
                           <TeamFlag flagCode={my2nd.flag_code} name={my2nd.name} size={14} />
                           {my2nd.code}
-                          <span className="text-[9px] text-gray-400 font-mono">#{my2nd.fifa_ranking}</span>
+                          <span className="text-[9px] text-gray-400 font-mono">
+                            #{my2nd.fifa_ranking}
+                          </span>
                         </span>
                       ) : (
                         <span className="text-xs text-gray-300">—</span>
                       )}
                     </div>
-                    <span className={cn('text-[10px] w-6 text-center', same1st && same2nd ? 'text-[#3CAC3B]' : 'text-gray-300 dark:text-gray-600')}>{same1st && same2nd ? '✓' : 'vs'}</span>
+                    <span
+                      className={cn(
+                        'text-[10px] w-6 text-center',
+                        same1st && same2nd ? 'text-[#3CAC3B]' : 'text-gray-300 dark:text-gray-600'
+                      )}
+                    >
+                      {same1st && same2nd ? '✓' : 'vs'}
+                    </span>
                     <div className="flex-1 flex items-center gap-1.5 justify-end">
                       {their1st ? (
-                        <span className={cn('text-xs font-body flex items-center gap-1 justify-end', same1st ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>
-                          <span className="text-[9px] text-gray-400 font-mono">#{their1st.fifa_ranking}</span>
+                        <span
+                          className={cn(
+                            'text-xs font-body flex items-center gap-1 justify-end',
+                            same1st
+                              ? 'text-[#3CAC3B] font-semibold'
+                              : 'text-gray-700 dark:text-gray-300'
+                          )}
+                        >
+                          <span className="text-[9px] text-gray-400 font-mono">
+                            #{their1st.fifa_ranking}
+                          </span>
                           {their1st.code}
                           <TeamFlag flagCode={their1st.flag_code} name={their1st.name} size={14} />
                         </span>
@@ -166,8 +220,17 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                       )}
                       <span className="text-gray-200 dark:text-gray-700">/</span>
                       {their2nd ? (
-                        <span className={cn('text-xs font-body flex items-center gap-1 justify-end', same2nd ? 'text-[#3CAC3B] font-semibold' : 'text-gray-700 dark:text-gray-300')}>
-                          <span className="text-[9px] text-gray-400 font-mono">#{their2nd.fifa_ranking}</span>
+                        <span
+                          className={cn(
+                            'text-xs font-body flex items-center gap-1 justify-end',
+                            same2nd
+                              ? 'text-[#3CAC3B] font-semibold'
+                              : 'text-gray-700 dark:text-gray-300'
+                          )}
+                        >
+                          <span className="text-[9px] text-gray-400 font-mono">
+                            #{their2nd.fifa_ranking}
+                          </span>
                           {their2nd.code}
                           <TeamFlag flagCode={their2nd.flag_code} name={their2nd.name} size={14} />
                         </span>
@@ -183,14 +246,25 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
 
           {/* Knockout comparison */}
           {BRACKET_ROUNDS.map((round) => {
-            const matchesWithPicks = round.matches.filter((m) => me.knockoutPredictions[m.matchNumber] || other.knockoutPredictions[m.matchNumber])
+            const matchesWithPicks = round.matches.filter(
+              (m) =>
+                me.knockoutPredictions[m.matchNumber] || other.knockoutPredictions[m.matchNumber]
+            )
             if (matchesWithPicks.length === 0) return null
-            const sameCount = matchesWithPicks.filter((m) => me.knockoutPredictions[m.matchNumber] && me.knockoutPredictions[m.matchNumber] === other.knockoutPredictions[m.matchNumber]).length
+            const sameCount = matchesWithPicks.filter(
+              (m) =>
+                me.knockoutPredictions[m.matchNumber] &&
+                me.knockoutPredictions[m.matchNumber] === other.knockoutPredictions[m.matchNumber]
+            ).length
             return (
               <div key={round.id} className="glass-card overflow-hidden">
                 <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
-                  <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">{round.label}</span>
-                  <span className="text-[10px] font-mono text-[#3CAC3B]">{sameCount}/{matchesWithPicks.length} iguales</span>
+                  <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    {round.label}
+                  </span>
+                  <span className="text-[10px] font-mono text-[#3CAC3B]">
+                    {sameCount}/{matchesWithPicks.length} iguales
+                  </span>
                 </div>
                 <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
                   {matchesWithPicks.map((m) => {
@@ -201,8 +275,16 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                     const sameWinner = myWinnerId && myWinnerId === theirWinnerId
 
                     // Resolve matchup for each person
-                    const myMatchup = resolveMatchup(m.matchNumber, me.groupPredictions, me.knockoutPredictions)
-                    const theirMatchup = resolveMatchup(m.matchNumber, other.groupPredictions, other.knockoutPredictions)
+                    const myMatchup = resolveMatchup(
+                      m.matchNumber,
+                      me.groupPredictions,
+                      me.knockoutPredictions
+                    )
+                    const theirMatchup = resolveMatchup(
+                      m.matchNumber,
+                      other.groupPredictions,
+                      other.knockoutPredictions
+                    )
                     const myHome = myMatchup.home ? TEAMS_BY_ID[myMatchup.home] : null
                     const myAway = myMatchup.away ? TEAMS_BY_ID[myMatchup.away] : null
                     const theirHome = theirMatchup.home ? TEAMS_BY_ID[theirMatchup.home] : null
@@ -211,7 +293,9 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                     return (
                       <div key={m.matchNumber} className="px-2 sm:px-4 py-2.5">
                         <div className="flex items-center gap-1.5 sm:gap-2">
-                          <span className="text-[10px] font-mono text-gray-400 w-6 flex-shrink-0">P{m.matchNumber}</span>
+                          <span className="text-[10px] font-mono text-gray-400 w-6 flex-shrink-0">
+                            P{m.matchNumber}
+                          </span>
 
                           {/* My side */}
                           <div className="flex-1 min-w-0">
@@ -220,7 +304,11 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                                 <span className="text-[10px] font-body text-gray-400 flex items-center gap-1 truncate">
                                   {myHome ? (
                                     <>
-                                      <TeamFlag flagCode={myHome.flag_code} name={myHome.name} size={12} />
+                                      <TeamFlag
+                                        flagCode={myHome.flag_code}
+                                        name={myHome.name}
+                                        size={12}
+                                      />
                                       <span>{myHome.code}</span>
                                     </>
                                   ) : (
@@ -229,7 +317,11 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                                   <span className="mx-0.5 text-gray-300">vs</span>
                                   {myAway ? (
                                     <>
-                                      <TeamFlag flagCode={myAway.flag_code} name={myAway.name} size={12} />
+                                      <TeamFlag
+                                        flagCode={myAway.flag_code}
+                                        name={myAway.name}
+                                        size={12}
+                                      />
                                       <span>{myAway.code}</span>
                                     </>
                                   ) : (
@@ -239,15 +331,36 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                               </div>
                             )}
                             {myWinner ? (
-                              <span className={cn('text-xs font-body font-semibold flex items-center gap-1', sameWinner ? 'text-[#3CAC3B]' : 'text-gray-700 dark:text-gray-300')}>
-                                🏆 <TeamFlag flagCode={myWinner.flag_code} name={myWinner.name} size={14} />
+                              <span
+                                className={cn(
+                                  'text-xs font-body font-semibold flex items-center gap-1',
+                                  sameWinner ? 'text-[#3CAC3B]' : 'text-gray-700 dark:text-gray-300'
+                                )}
+                              >
+                                🏆{' '}
+                                <TeamFlag
+                                  flagCode={myWinner.flag_code}
+                                  name={myWinner.name}
+                                  size={14}
+                                />
                                 {myWinner.code}
-                                <span className="text-[9px] text-gray-400 font-mono">#{myWinner.fifa_ranking}</span>
+                                <span className="text-[9px] text-gray-400 font-mono">
+                                  #{myWinner.fifa_ranking}
+                                </span>
                               </span>
-                            ) : <span className="text-xs text-gray-300">—</span>}
+                            ) : (
+                              <span className="text-xs text-gray-300">—</span>
+                            )}
                           </div>
 
-                          <span className={cn('text-[10px] w-6 text-center flex-shrink-0', sameWinner ? 'text-[#3CAC3B]' : 'text-gray-300 dark:text-gray-600')}>{sameWinner ? '✓' : '≠'}</span>
+                          <span
+                            className={cn(
+                              'text-[10px] w-6 text-center flex-shrink-0',
+                              sameWinner ? 'text-[#3CAC3B]' : 'text-gray-300 dark:text-gray-600'
+                            )}
+                          >
+                            {sameWinner ? '✓' : '≠'}
+                          </span>
 
                           {/* Their side */}
                           <div className="flex-1 min-w-0 text-right">
@@ -256,7 +369,11 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                                 <span className="text-[10px] font-body text-gray-400 flex items-center gap-1 justify-end truncate">
                                   {theirHome ? (
                                     <>
-                                      <TeamFlag flagCode={theirHome.flag_code} name={theirHome.name} size={12} />
+                                      <TeamFlag
+                                        flagCode={theirHome.flag_code}
+                                        name={theirHome.name}
+                                        size={12}
+                                      />
                                       <span>{theirHome.code}</span>
                                     </>
                                   ) : (
@@ -265,7 +382,11 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                                   <span className="mx-0.5 text-gray-300">vs</span>
                                   {theirAway ? (
                                     <>
-                                      <TeamFlag flagCode={theirAway.flag_code} name={theirAway.name} size={12} />
+                                      <TeamFlag
+                                        flagCode={theirAway.flag_code}
+                                        name={theirAway.name}
+                                        size={12}
+                                      />
                                       <span>{theirAway.code}</span>
                                     </>
                                   ) : (
@@ -275,13 +396,26 @@ export function ComparisonView({ currentUserId, allMembers }: ComparisonViewProp
                               </div>
                             )}
                             {theirWinner ? (
-                              <span className={cn('text-xs font-body font-semibold flex items-center gap-1 justify-end', sameWinner ? 'text-[#3CAC3B]' : 'text-gray-700 dark:text-gray-300')}>
-                                <span className="text-[9px] text-gray-400 font-mono">#{theirWinner.fifa_ranking}</span>
+                              <span
+                                className={cn(
+                                  'text-xs font-body font-semibold flex items-center gap-1 justify-end',
+                                  sameWinner ? 'text-[#3CAC3B]' : 'text-gray-700 dark:text-gray-300'
+                                )}
+                              >
+                                <span className="text-[9px] text-gray-400 font-mono">
+                                  #{theirWinner.fifa_ranking}
+                                </span>
                                 {theirWinner.code}
-                                <TeamFlag flagCode={theirWinner.flag_code} name={theirWinner.name} size={14} />
+                                <TeamFlag
+                                  flagCode={theirWinner.flag_code}
+                                  name={theirWinner.name}
+                                  size={14}
+                                />
                                 🏆
                               </span>
-                            ) : <span className="text-xs text-gray-300">—</span>}
+                            ) : (
+                              <span className="text-xs text-gray-300">—</span>
+                            )}
                           </div>
                         </div>
                       </div>

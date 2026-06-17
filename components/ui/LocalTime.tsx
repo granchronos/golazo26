@@ -21,11 +21,24 @@ export function LocalTime({ dateStr, mode = 'full', className }: LocalTimeProps)
       const d = new Date(dateStr)
       // Format as DD MMM in UTC for server fallback
       const day = d.getUTCDate()
-      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+      const months = [
+        'Ene',
+        'Feb',
+        'Mar',
+        'Abr',
+        'May',
+        'Jun',
+        'Jul',
+        'Ago',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dic',
+      ]
       const month = months[d.getUTCMonth()]
       const hour = String(d.getUTCHours()).padStart(2, '0')
       const min = String(d.getUTCMinutes()).padStart(2, '0')
-      
+
       if (mode === 'short') return `${day} ${month}`
       if (mode === 'time') return `${hour}:${min} UTC`
       if (mode === 'date') return `${day} ${month} ${d.getUTCFullYear()}`

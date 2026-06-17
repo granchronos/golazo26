@@ -10,7 +10,11 @@ import { ROUND_LABELS, SCORE_BONUS } from '@/lib/constants/points'
 import { ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
 import { formatShortDate, formatMatchDate } from '@/lib/utils/date'
 import { LocalTime } from '@/components/ui/LocalTime'
-import { saveMatchScorePrediction, saveMatchResult, saveActualGoleador } from '@/app/actions/predictions'
+import {
+  saveMatchScorePrediction,
+  saveMatchResult,
+  saveActualGoleador,
+} from '@/app/actions/predictions'
 import type { Match, GroupLetter, GroupPrediction } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
 
@@ -22,22 +26,32 @@ export interface ScorePrediction {
   awayScore: number
 }
 
+interface MemberPredictions {
+  userId: string
+  name: string
+  groupPredictions: Record<GroupLetter, GroupPrediction | null>
+  knockoutPredictions: Record<number, string>
+  scorePredictions: Record<number, { home: number; away: number }>
+}
+
 interface ResultsTabProps {
   roomId: string
   matches: Match[]
   groupPredictions: Record<GroupLetter, GroupPrediction | null>
   knockoutPredictions: Record<number, string>
   scorePredictions: Record<number, { home: number; away: number }>
+  allMembersPredictions?: MemberPredictions[]
   isAdmin?: boolean
   actualGoleador?: string | null
 }
 
-export function ResultsTab({ 
-  roomId, 
-  matches, 
-  groupPredictions, 
-  knockoutPredictions, 
+export function ResultsTab({
+  roomId,
+  matches,
+  groupPredictions,
+  knockoutPredictions,
   scorePredictions,
+  allMembersPredictions = [],
   isAdmin = false,
   actualGoleador = null,
 }: ResultsTabProps) {
@@ -64,9 +78,23 @@ export function ResultsTab({
     []
   )
 
-  const roundOrder = ['group', 'round_of_32', 'round_of_16', 'quarter_finals', 'semi_finals', 'final'] as const
+  const roundOrder = [
+    'group',
+    'round_of_32',
+    'round_of_16',
+    'quarter_finals',
+    'semi_finals',
+    'final',
+  ] as const
   const matchesByRound = useMemo(() => {
-    const rounds = ['group', 'round_of_32', 'round_of_16', 'quarter_finals', 'semi_finals', 'final'] as const
+    const rounds = [
+      'group',
+      'round_of_32',
+      'round_of_16',
+      'quarter_finals',
+      'semi_finals',
+      'final',
+    ] as const
     const map = new Map<string, Match[]>()
     for (const round of rounds) {
       map.set(round, [])
@@ -97,7 +125,8 @@ export function ResultsTab({
             ⚙️ Panel de Administrador de la Sala
           </h3>
           <p className="text-[11px] font-body text-gray-500 mb-4">
-            Como administrador, puedes registrar el Goleador Oficial de la sala y actualizar los marcadores reales de cada partido.
+            Como administrador, puedes registrar el Goleador Oficial de la sala y actualizar los
+            marcadores reales de cada partido.
           </p>
           <div className="flex flex-col sm:flex-row items-end gap-3">
             <div className="flex-1 space-y-1.5 w-full">
@@ -125,8 +154,14 @@ export function ResultsTab({
 
       {/* Legend */}
       <div className="flex items-center gap-4 text-[10px] font-body text-gray-400">
-        <span>Resultado exacto: <span className="text-[#3CAC3B] font-semibold">+{SCORE_BONUS.exactScore} pts</span></span>
-        <span>Ganador correcto: <span className="text-[#C9A84C] font-semibold">+{SCORE_BONUS.correctWinner} pt</span></span>
+        <span>
+          Resultado exacto:{' '}
+          <span className="text-[#3CAC3B] font-semibold">+{SCORE_BONUS.exactScore} pts</span>
+        </span>
+        <span>
+          Ganador correcto:{' '}
+          <span className="text-[#C9A84C] font-semibold">+{SCORE_BONUS.correctWinner} pt</span>
+        </span>
       </div>
 
       {roundOrder.map((round) => {
@@ -151,7 +186,11 @@ export function ResultsTab({
             {Array.from(byDate.entries()).map(([dateKey, dayMatches]) => (
               <div key={dateKey}>
                 <div className="px-4 py-1.5 bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/[0.04]">
-                  <LocalTime dateStr={dayMatches[0].match_date} mode="short" className="text-[10px] font-mono text-gray-400 uppercase tracking-wider" />
+                  <LocalTime
+                    dateStr={dayMatches[0].match_date}
+                    mode="short"
+                    className="text-[10px] font-mono text-gray-400 uppercase tracking-wider"
+                  />
                 </div>
                 {dayMatches.map((match) => (
                   <MatchRow
@@ -160,10 +199,11 @@ export function ResultsTab({
                     match={match}
                     knockoutPrediction={
                       bracketMatchNumbers.has(match.match_number)
-                        ? knockoutPredictions[match.match_number] ?? null
+                        ? (knockoutPredictions[match.match_number] ?? null)
                         : null
                     }
                     savedScore={scorePredictions[match.match_number] ?? null}
+                    allMembersPredictions={allMembersPredictions}
                     isAdmin={isAdmin}
                   />
                 ))}
@@ -183,10 +223,18 @@ interface MatchRowProps {
   match: Match
   knockoutPrediction: string | null
   savedScore: { home: number; away: number } | null
+  allMembersPredictions?: MemberPredictions[]
   isAdmin?: boolean
 }
 
-function MatchRow({ roomId, match, knockoutPrediction, savedScore, isAdmin = false }: MatchRowProps) {
+function MatchRow({
+  roomId,
+  match,
+  knockoutPrediction,
+  savedScore,
+  allMembersPredictions = [],
+  isAdmin = false,
+}: MatchRowProps) {
   const homeTeam = match.home_team_id ? TEAMS_BY_ID[match.home_team_id] : null
   const awayTeam = match.away_team_id ? TEAMS_BY_ID[match.away_team_id] : null
 
@@ -251,196 +299,336 @@ function MatchRow({ roomId, match, knockoutPrediction, savedScore, isAdmin = fal
     if (savedScore.home === match.home_score && savedScore.away === match.away_score) {
       scoreStatus = 'exact'
     } else {
-      const actualWinner = match.home_score > match.away_score ? 'home' : match.away_score > match.home_score ? 'away' : 'draw'
-      const predWinner = savedScore.home > savedScore.away ? 'home' : savedScore.away > savedScore.home ? 'away' : 'draw'
+      const actualWinner =
+        match.home_score > match.away_score
+          ? 'home'
+          : match.away_score > match.home_score
+            ? 'away'
+            : 'draw'
+      const predWinner =
+        savedScore.home > savedScore.away
+          ? 'home'
+          : savedScore.away > savedScore.home
+            ? 'away'
+            : 'draw'
       scoreStatus = actualWinner === predWinner ? 'winner' : 'wrong'
     }
   }
+
+  // Calculate bet distributions for the pool
+  const { homeCount, drawCount, awayCount, totalBets } = useMemo(() => {
+    let hCount = 0
+    let dCount = 0
+    let aCount = 0
+    let total = 0
+
+    if (allMembersPredictions && homeTeam && awayTeam) {
+      for (const member of allMembersPredictions) {
+        const scorePred = member.scorePredictions?.[match.match_number]
+        if (scorePred) {
+          total++
+          if (scorePred.home > scorePred.away) {
+            hCount++
+          } else if (scorePred.home < scorePred.away) {
+            aCount++
+          } else {
+            dCount++
+          }
+        } else {
+          const winnerPred = member.knockoutPredictions?.[match.match_number]
+          if (winnerPred) {
+            total++
+            if (winnerPred === match.home_team_id) {
+              hCount++
+            } else if (winnerPred === match.away_team_id) {
+              aCount++
+            }
+          }
+        }
+      }
+    }
+
+    return { homeCount: hCount, drawCount: dCount, awayCount: aCount, totalBets: total }
+  }, [
+    allMembersPredictions,
+    match.match_number,
+    match.home_team_id,
+    match.away_team_id,
+    homeTeam,
+    awayTeam,
+  ])
+
+  const { homePct, drawPct, awayPct } = useMemo(() => {
+    if (totalBets === 0) return { homePct: 0, drawPct: 0, awayPct: 0 }
+    const hPct = Math.round((homeCount / totalBets) * 100)
+    const dPct = Math.round((drawCount / totalBets) * 100)
+    const aPct = 100 - hPct - dPct
+    return { homePct: hPct, drawPct: dPct, awayPct: aPct }
+  }, [homeCount, drawCount, totalBets])
 
   return (
     <>
       <div
         className={cn(
-          'flex items-center gap-2 px-4 py-2.5 border-b border-gray-50 dark:border-white/[0.04] last:border-0',
-          isLive && 'bg-[#E61D25]/[0.03]'
+          'flex flex-col gap-3.5 px-4 py-3 border-b border-gray-100 dark:border-white/[0.04] last:border-0 transition-all duration-300 relative overflow-hidden',
+          isLive && 'bg-[#E61D25]/[0.03] dark:bg-red-500/[0.02] shadow-[inset_3px_0_0_0_#E61D25]'
         )}
       >
-        {/* Home team */}
-        <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
-          {homeTeam ? (
-            <>
-              <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">#{homeTeam.fifa_ranking}</span>
-              <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
-                {homeTeam.name}
-              </span>
-              <TeamFlag flagCode={homeTeam.flag_code} name={homeTeam.name} size={16} />
-            </>
-          ) : (
-            <span className="text-xs text-gray-400 font-body">TBD</span>
-          )}
-        </div>
+        {/* Main match elements row */}
+        <div className="flex items-center gap-2">
+          {/* Home team */}
+          <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+            {homeTeam ? (
+              <>
+                <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">
+                  #{homeTeam.fifa_ranking}
+                </span>
+                <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
+                  {homeTeam.name}
+                </span>
+                <TeamFlag flagCode={homeTeam.flag_code} name={homeTeam.name} size={16} />
+              </>
+            ) : (
+              <span className="text-xs text-gray-400 font-body">TBD</span>
+            )}
+          </div>
 
-        {/* Score / Time / Prediction */}
-        <div className="flex flex-col items-center w-28 flex-shrink-0 gap-0.5">
-          {isFinished ? (
-            <>
-              <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
-                {match.home_score} - {match.away_score}
-              </span>
-              <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                FINALIZADO
-              </span>
-            </>
-          ) : isLive ? (
-            <>
-              <span className="font-mono text-sm font-bold text-[#E61D25] dark:text-red-500">
-                {match.home_score ?? 0} - {match.away_score ?? 0}
-              </span>
-              <div className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-[#E61D25] rounded-full animate-pulse" />
-                <span className="font-mono text-[9px] font-bold text-[#E61D25]">EN VIVO</span>
+          {/* Score / Time / Prediction */}
+          <div className="flex flex-col items-center w-28 flex-shrink-0 gap-0.5">
+            {isFinished ? (
+              <>
+                <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
+                  {match.home_score} - {match.away_score}
+                </span>
+                <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  FINALIZADO
+                </span>
+              </>
+            ) : isLive ? (
+              <>
+                <span className="font-mono text-sm font-bold text-[#E61D25] dark:text-red-500">
+                  {match.home_score ?? 0} - {match.away_score ?? 0}
+                </span>
+                <div className="flex items-center gap-1.5 bg-[#E61D25]/10 dark:bg-red-500/15 px-2 py-0.5 rounded-full border border-[#E61D25]/20 dark:border-red-500/20">
+                  <span className="w-1.5 h-1.5 bg-[#E61D25] rounded-full animate-pulse" />
+                  <span className="font-mono text-[9px] font-bold text-[#E61D25] dark:text-red-400">
+                    {match.elapsed ? `${match.elapsed}'` : 'EN VIVO'}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <LocalTime
+                dateStr={match.match_date}
+                mode="full"
+                className="font-mono text-xs text-gray-400"
+              />
+            )}
+
+            {/* Score prediction inputs */}
+            {canPredict && isBeforeDeadline && (
+              <div className="flex items-center gap-1 mt-1">
+                <input
+                  type="number"
+                  min={0}
+                  max={20}
+                  value={homeScore}
+                  onChange={(e) => setHomeScore(e.target.value)}
+                  onBlur={handleScoreSave}
+                  className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
+                  placeholder="-"
+                />
+                <span className="text-[9px] text-gray-300">-</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={20}
+                  value={awayScore}
+                  onChange={(e) => setAwayScore(e.target.value)}
+                  onBlur={handleScoreSave}
+                  className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
+                  placeholder="-"
+                />
+                {isPending && <Loader2 size={10} className="text-[#2A398D] animate-spin" />}
               </div>
-            </>
-          ) : (
-            <LocalTime dateStr={match.match_date} mode="full" className="font-mono text-xs text-gray-400" />
-          )}
+            )}
 
-          {/* Score prediction inputs */}
-          {canPredict && isBeforeDeadline && (
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                min={0}
-                max={20}
-                value={homeScore}
-                onChange={(e) => setHomeScore(e.target.value)}
-                onBlur={handleScoreSave}
-                className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
-                placeholder="-"
-              />
-              <span className="text-[9px] text-gray-300">-</span>
-              <input
-                type="number"
-                min={0}
-                max={20}
-                value={awayScore}
-                onChange={(e) => setAwayScore(e.target.value)}
-                onBlur={handleScoreSave}
-                className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
-                placeholder="-"
-              />
-              {isPending && <Loader2 size={10} className="text-[#2A398D] animate-spin" />}
-            </div>
-          )}
-
-          {/* Saved prediction display (after deadline or finished) */}
-          {savedScore && !canPredict && (
-            <span className="text-[10px] font-mono text-gray-400">
-              mi apuesta: {savedScore.home}-{savedScore.away}
-            </span>
-          )}
-          {savedScore && canPredict && !isBeforeDeadline && (
-            <span className="text-[10px] font-mono text-gray-400">
-              {savedScore.home}-{savedScore.away}
-            </span>
-          )}
-
-          {/* Score correctness badge */}
-          {scoreStatus && <ScoreBadge status={scoreStatus} />}
-
-          {/* Knockout prediction indicator */}
-          {knockoutPrediction && !savedScore && (
-            <PredictionBadge
-              status={
-                isFinished && match.winner_id
-                  ? knockoutPrediction === match.winner_id ? 'correct' : 'wrong'
-                  : 'pending'
-              }
-            />
-          )}
-        </div>
-
-        {/* Away team */}
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          {awayTeam ? (
-            <>
-              <TeamFlag flagCode={awayTeam.flag_code} name={awayTeam.name} size={16} />
-              <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
-                {awayTeam.name}
+            {/* Saved prediction display (after deadline or finished) */}
+            {savedScore && !canPredict && (
+              <span className="text-[10px] font-mono text-gray-400 mt-0.5">
+                mi apuesta: {savedScore.home}-{savedScore.away}
               </span>
-              <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">#{awayTeam.fifa_ranking}</span>
-            </>
-          ) : (
-            <span className="text-xs text-gray-400 font-body">TBD</span>
+            )}
+            {savedScore && canPredict && !isBeforeDeadline && (
+              <span className="text-[10px] font-mono text-gray-400 mt-0.5">
+                {savedScore.home}-{savedScore.away}
+              </span>
+            )}
+
+            {/* Score correctness badge */}
+            {scoreStatus && <ScoreBadge status={scoreStatus} />}
+
+            {/* Knockout prediction indicator */}
+            {knockoutPrediction && !savedScore && (
+              <PredictionBadge
+                status={
+                  isFinished && match.winner_id
+                    ? knockoutPrediction === match.winner_id
+                      ? 'correct'
+                      : 'wrong'
+                    : 'pending'
+                }
+              />
+            )}
+          </div>
+
+          {/* Away team */}
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            {awayTeam ? (
+              <>
+                <TeamFlag flagCode={awayTeam.flag_code} name={awayTeam.name} size={16} />
+                <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
+                  {awayTeam.name}
+                </span>
+                <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">
+                  #{awayTeam.fifa_ranking}
+                </span>
+              </>
+            ) : (
+              <span className="text-xs text-gray-400 font-body">TBD</span>
+            )}
+          </div>
+
+          {/* Admin edit button */}
+          {isAdmin && (
+            <button
+              onClick={() => setIsAdminEditing(!isAdminEditing)}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded transition-colors text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              title="Editar resultado oficial"
+            >
+              <Edit size={12} />
+            </button>
           )}
         </div>
 
-        {/* Admin edit button */}
-        {isAdmin && (
-          <button
-            onClick={() => setIsAdminEditing(!isAdminEditing)}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded transition-colors text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            title="Editar resultado oficial"
-          >
-            <Edit size={12} />
-          </button>
+        {/* Bet Distribution Bar */}
+        {totalBets > 0 && (
+          <div className="mt-0.5 pt-2 border-t border-gray-100/50 dark:border-white/[0.04] bg-gray-50/30 dark:bg-white/[0.01] px-2 py-1.5 rounded-lg">
+            <div className="flex items-center justify-between text-[9px] text-gray-500 dark:text-gray-400 font-mono mb-1.5 px-0.5">
+              <span className="truncate max-w-[100px] sm:max-w-none text-left font-medium">
+                {homeTeam?.name || 'Local'} ({homePct}%)
+              </span>
+              <span className="font-semibold text-[8px] text-gray-400 dark:text-gray-500 tracking-wider uppercase">
+                Apuestas de la sala ({totalBets})
+              </span>
+              <span className="truncate max-w-[100px] sm:max-w-none text-right font-medium">
+                ({awayPct}%) {awayTeam?.name || 'Visitante'}
+              </span>
+            </div>
+
+            <div className="relative h-2 bg-gray-200/50 dark:bg-white/[0.04] rounded-full overflow-hidden flex w-full">
+              {homePct > 0 && (
+                <div
+                  className="h-full bg-blue-500 dark:bg-blue-600 transition-all duration-500 hover:opacity-90"
+                  style={{ width: `${homePct}%` }}
+                  title={`Gana ${homeTeam?.name || 'Local'}: ${homeCount} voto(s)`}
+                />
+              )}
+              {drawPct > 0 && (
+                <div
+                  className="h-full bg-slate-350 dark:bg-zinc-600 transition-all duration-500 hover:opacity-90"
+                  style={{ width: `${drawPct}%` }}
+                  title={`Empate: ${drawCount} voto(s)`}
+                />
+              )}
+              {awayPct > 0 && (
+                <div
+                  className="h-full bg-red-500 dark:bg-red-600 transition-all duration-500 hover:opacity-90"
+                  style={{ width: `${awayPct}%` }}
+                  title={`Gana ${awayTeam?.name || 'Visitante'}: ${awayCount} voto(s)`}
+                />
+              )}
+            </div>
+
+            <div className="flex items-center justify-between text-[8px] font-mono text-gray-450 dark:text-gray-500 mt-1.5 px-0.5">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <span>
+                  {homeCount} {homeCount === 1 ? 'voto local' : 'votos local'}
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-350 dark:bg-zinc-600" />
+                <span>
+                  {drawCount} {drawCount === 1 ? 'empate' : 'empates'}
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                <span>
+                  {awayCount} {awayCount === 1 ? 'voto visitante' : 'votos visitante'}
+                </span>
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Admin result editor drawer */}
+        {isAdmin && isAdminEditing && (
+          <div className="px-4 py-3 bg-red-50/10 dark:bg-zinc-800/40 border border-red-100 dark:border-white/5 rounded-xl flex flex-wrap items-center gap-4 text-xs font-body mt-1">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-gray-700 dark:text-gray-300">
+                Resultado Oficial:
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={actualHomeScore}
+                onChange={(e) => setActualHomeScore(e.target.value)}
+                className="w-10 h-7 text-center rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
+                placeholder="0"
+              />
+              <span className="text-gray-400">-</span>
+              <input
+                type="number"
+                min={0}
+                value={actualAwayScore}
+                onChange={(e) => setActualAwayScore(e.target.value)}
+                className="w-10 h-7 text-center rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
+                placeholder="0"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-gray-700 dark:text-gray-300">Estado:</span>
+              <select
+                value={actualStatus}
+                onChange={(e) => setActualStatus(e.target.value as any)}
+                className="h-7 px-2 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
+              >
+                <option value="scheduled">Programado</option>
+                <option value="live">En Vivo</option>
+                <option value="finished">Finalizado</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={handleAdminSaveResult}
+                disabled={isResultSaving}
+                className="px-3 py-1.5 bg-[#E61D25] text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors text-[10px]"
+              >
+                {isResultSaving ? 'Guardando...' : 'Guardar'}
+              </button>
+              <button
+                onClick={() => setIsAdminEditing(false)}
+                className="px-3 py-1.5 bg-gray-150 dark:bg-zinc-800 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors text-[10px]"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
         )}
       </div>
-
-      {/* Admin result editor drawer */}
-      {isAdmin && isAdminEditing && (
-        <div className="px-4 py-3 bg-red-50/10 dark:bg-red-950/5 border-b border-gray-100 dark:border-white/[0.04] flex flex-wrap items-center gap-4 text-xs font-body">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-700 dark:text-gray-300">Resultado Oficial:</span>
-            <input
-              type="number"
-              min={0}
-              value={actualHomeScore}
-              onChange={(e) => setActualHomeScore(e.target.value)}
-              className="w-10 h-7 text-center rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
-              placeholder="0"
-            />
-            <span className="text-gray-400">-</span>
-            <input
-              type="number"
-              min={0}
-              value={actualAwayScore}
-              onChange={(e) => setActualAwayScore(e.target.value)}
-              className="w-10 h-7 text-center rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
-              placeholder="0"
-            />
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-700 dark:text-gray-300">Estado:</span>
-            <select
-              value={actualStatus}
-              onChange={(e) => setActualStatus(e.target.value as any)}
-              className="h-7 px-2 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
-            >
-              <option value="scheduled">Programado</option>
-              <option value="live">En Vivo</option>
-              <option value="finished">Finalizado</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2 ml-auto">
-            <button
-              onClick={handleAdminSaveResult}
-              disabled={isResultSaving}
-              className="px-3 py-1.5 bg-[#E61D25] text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors text-[10px]"
-            >
-              {isResultSaving ? 'Guardando...' : 'Guardar'}
-            </button>
-            <button
-              onClick={() => setIsAdminEditing(false)}
-              className="px-3 py-1.5 bg-gray-150 dark:bg-zinc-800 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors text-[10px]"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
     </>
   )
 }

@@ -32,7 +32,9 @@ interface NavigationProps {
 
 export function MobileNav({ profile, hasRooms = true }: NavigationProps) {
   const pathname = usePathname()
-  const items = hasRooms ? NAV_ITEMS : NAV_ITEMS.filter((i) => i.href === '/' || i.href === '/groups')
+  const items = hasRooms
+    ? NAV_ITEMS
+    : NAV_ITEMS.filter((i) => i.href === '/' || i.href === '/groups')
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 sm:hidden">
@@ -79,7 +81,11 @@ export function MobileNav({ profile, hasRooms = true }: NavigationProps) {
                   className="absolute inset-0 bg-[#2A398D]/8 dark:bg-[#2A398D]/15 rounded-xl"
                 />
               )}
-              <UserCircle size={20} strokeWidth={pathname === '/profile' ? 2.5 : 1.5} className="relative z-10" />
+              <UserCircle
+                size={20}
+                strokeWidth={pathname === '/profile' ? 2.5 : 1.5}
+                className="relative z-10"
+              />
             </Link>
           </div>
         </div>
@@ -93,7 +99,9 @@ const SIDEBAR_KEY = 'golazo26_sidebar_collapsed'
 export function Sidebar({ profile, hasRooms = true }: NavigationProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
-  const sidebarItems = hasRooms ? NAV_ITEMS : NAV_ITEMS.filter((i) => i.href === '/' || i.href === '/groups')
+  const sidebarItems = hasRooms
+    ? NAV_ITEMS
+    : NAV_ITEMS.filter((i) => i.href === '/' || i.href === '/groups')
 
   useEffect(() => {
     const stored = localStorage.getItem(SIDEBAR_KEY)
@@ -117,23 +125,37 @@ export function Sidebar({ profile, hasRooms = true }: NavigationProps) {
       )}
     >
       {/* Logo */}
-      <div className={cn(
-        'border-b border-gray-100 dark:border-white/[0.06]',
-        collapsed ? 'px-0 py-4 flex flex-col items-center gap-2' : 'px-3 py-5 flex items-center justify-between'
-      )}>
-        <Link href="/" className={cn(
-          'flex items-center overflow-hidden',
-          collapsed ? 'justify-center' : 'gap-2.5'
-        )}>
+      <div
+        className={cn(
+          'border-b border-gray-100 dark:border-white/[0.06]',
+          collapsed
+            ? 'px-0 py-4 flex flex-col items-center gap-2'
+            : 'px-3 py-5 flex items-center justify-between'
+        )}
+      >
+        <Link
+          href="/"
+          className={cn(
+            'flex items-center overflow-hidden',
+            collapsed ? 'justify-center' : 'gap-2.5'
+          )}
+        >
           <div className="w-9 h-9 rounded-lg bg-[#2A398D] flex items-center justify-center flex-shrink-0">
             <span className="font-display text-white text-base">26</span>
           </div>
-          {!collapsed && <span className="font-display text-lg text-gray-900 dark:text-white whitespace-nowrap">Golazo</span>}
+          {!collapsed && (
+            <span className="font-display text-lg text-gray-900 dark:text-white whitespace-nowrap">
+              Golazo
+            </span>
+          )}
         </Link>
-        <button onClick={toggle} className={cn(
-          'p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors flex-shrink-0',
-          collapsed && 'mt-0.5'
-        )}>
+        <button
+          onClick={toggle}
+          className={cn(
+            'p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors flex-shrink-0',
+            collapsed && 'mt-0.5'
+          )}
+        >
           {collapsed ? <PanelLeft size={14} /> : <PanelLeftClose size={16} />}
         </button>
       </div>
@@ -162,7 +184,11 @@ export function Sidebar({ profile, hasRooms = true }: NavigationProps) {
                   className="absolute inset-0 bg-[#2A398D]/[0.06] dark:bg-[#2A398D]/15 rounded-xl"
                 />
               )}
-              <Icon size={16} strokeWidth={isActive ? 2.5 : 1.5} className="relative z-10 flex-shrink-0" />
+              <Icon
+                size={16}
+                strokeWidth={isActive ? 2.5 : 1.5}
+                className="relative z-10 flex-shrink-0"
+              />
               {!collapsed && <span className="relative z-10">{item.label}</span>}
             </Link>
           )
@@ -172,13 +198,18 @@ export function Sidebar({ profile, hasRooms = true }: NavigationProps) {
       {/* User & Logout */}
       <div className="px-2 py-4 border-t border-gray-100 dark:border-white/[0.06] space-y-2">
         {profile && !collapsed && (
-          <Link href="/profile" className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors">
+          <Link
+            href="/profile"
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
+          >
             <div className="w-7 h-7 rounded-full bg-[#2A398D] flex items-center justify-center flex-shrink-0">
               <span className="text-white text-xs font-semibold font-body">
                 {profile.name?.[0]?.toUpperCase()}
               </span>
             </div>
-            <p className="text-[13px] font-body font-medium truncate dark:text-white">{profile.name}</p>
+            <p className="text-[13px] font-body font-medium truncate dark:text-white">
+              {profile.name}
+            </p>
           </Link>
         )}
         {profile && collapsed && (

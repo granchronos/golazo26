@@ -51,13 +51,13 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning className={`${bebasNeue.variable} ${notoSans.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="es"
+      suppressHydrationWarning
+      className={`${bebasNeue.variable} ${notoSans.variable} ${jetbrainsMono.variable}`}
+    >
       <body>
         <Providers>
           {children}

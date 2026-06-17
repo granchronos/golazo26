@@ -14,14 +14,19 @@ export async function createRoom(_prevState: unknown, formData: FormData) {
   }
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) return { error: 'No autorizado' }
 
   const admin = await createAdminClient()
 
   // Check max 2 created rooms (also enforced by DB trigger)
-  const { count } = await admin.from('rooms').select('id', { count: 'exact', head: true }).eq('admin_id', user.id)
+  const { count } = await admin
+    .from('rooms')
+    .select('id', { count: 'exact', head: true })
+    .eq('admin_id', user.id)
   if ((count ?? 0) >= 2) return { error: 'Solo puedes crear un máximo de 2 salas' }
 
   const code = generateRoomCode()
@@ -54,17 +59,15 @@ export async function joinRoom(_prevState: unknown, formData: FormData) {
   }
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) return { error: 'No autorizado' }
 
   const admin = await createAdminClient()
 
-  const { data: room } = await admin
-    .from('rooms')
-    .select('id')
-    .eq('code', code)
-    .single()
+  const { data: room } = await admin.from('rooms').select('id').eq('code', code).single()
 
   if (!room) return { error: 'Sala no encontrada' }
 
@@ -79,12 +82,11 @@ export async function joinRoom(_prevState: unknown, formData: FormData) {
     redirect(`/groups/${room.id}`)
   }
 
-  const { error } = await admin
-    .from('room_members')
-    .insert({ room_id: room.id, user_id: user.id })
+  const { error } = await admin.from('room_members').insert({ room_id: room.id, user_id: user.id })
 
   if (error) {
-    if (error.message.includes('máximo') || error.message.includes('llena')) return { error: error.message }
+    if (error.message.includes('máximo') || error.message.includes('llena'))
+      return { error: error.message }
     return { error: 'No se pudo unir a la sala' }
   }
 
@@ -94,17 +96,15 @@ export async function joinRoom(_prevState: unknown, formData: FormData) {
 
 export async function joinRoomBySlug(slug: string) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) return { error: 'No autorizado' }
 
   const admin = await createAdminClient()
 
-  const { data: room } = await admin
-    .from('rooms')
-    .select('id')
-    .eq('invite_slug', slug)
-    .single()
+  const { data: room } = await admin.from('rooms').select('id').eq('invite_slug', slug).single()
 
   if (!room) return { error: 'Sala no encontrada' }
 
@@ -117,12 +117,11 @@ export async function joinRoomBySlug(slug: string) {
 
   if (existing) return { roomId: room.id }
 
-  const { error } = await admin
-    .from('room_members')
-    .insert({ room_id: room.id, user_id: user.id })
+  const { error } = await admin.from('room_members').insert({ room_id: room.id, user_id: user.id })
 
   if (error) {
-    if (error.message.includes('máximo') || error.message.includes('llena')) return { error: error.message }
+    if (error.message.includes('máximo') || error.message.includes('llena'))
+      return { error: error.message }
     return { error: 'No se pudo unir a la sala' }
   }
 

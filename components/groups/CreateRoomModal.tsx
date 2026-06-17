@@ -10,7 +10,11 @@ import { createRoom } from '@/app/actions/rooms'
 
 function SubmitBtn() {
   const { pending } = useFormStatus()
-  return <Button type="submit" loading={pending} className="w-full">Crear sala</Button>
+  return (
+    <Button type="submit" loading={pending} className="w-full">
+      Crear sala
+    </Button>
+  )
 }
 
 export function CreateRoomModal({ variant = 'default' }: { variant?: 'default' | 'compact' }) {
@@ -21,9 +25,10 @@ export function CreateRoomModal({ variant = 'default' }: { variant?: 'default' |
     <>
       <button
         onClick={() => setOpen(true)}
-        className={variant === 'compact'
-          ? 'flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#2A398D]/10 hover:bg-[#2A398D]/20 text-[#2A398D] text-xs font-body font-medium transition-colors'
-          : 'btn-fwc w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-base'
+        className={
+          variant === 'compact'
+            ? 'flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#2A398D]/10 hover:bg-[#2A398D]/20 text-[#2A398D] text-xs font-body font-medium transition-colors'
+            : 'btn-fwc w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-base'
         }
       >
         <Plus size={variant === 'compact' ? 14 : 20} />
@@ -32,9 +37,7 @@ export function CreateRoomModal({ variant = 'default' }: { variant?: 'default' |
 
       <Modal open={open} onClose={() => setOpen(false)} title="Crear sala">
         <form action={formAction} className="space-y-4">
-          {state?.error && (
-            <p className="text-sm text-red-500 font-body">{state.error}</p>
-          )}
+          {state?.error && <p className="text-sm text-red-500 font-body">{state.error}</p>}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium font-body text-gray-700 dark:text-gray-300">
               Nombre de la sala

@@ -31,10 +31,12 @@ function BracketMatchBox({ match }: { match: BracketMatch }) {
       whileHover={{ scale: 1.02 }}
       className="glass-card p-1.5 sm:p-2 min-w-[130px] sm:min-w-[160px] text-xs font-body"
     >
-      <div className={cn(
-        'flex items-center gap-2 py-1 px-1 rounded',
-        match.winnerId === match.homeTeam?.id && 'bg-[#2A398D]/10'
-      )}>
+      <div
+        className={cn(
+          'flex items-center gap-2 py-1 px-1 rounded',
+          match.winnerId === match.homeTeam?.id && 'bg-[#2A398D]/10'
+        )}
+      >
         {match.homeTeam ? (
           <TeamFlag flagCode={match.homeTeam.flag_code} name={match.homeTeam.name} size={16} />
         ) : (
@@ -45,7 +47,9 @@ function BracketMatchBox({ match }: { match: BracketMatch }) {
         </span>
         {match.homeTeam && (
           <div className="flex items-center gap-1 flex-shrink-0">
-            <span className="text-[9px] text-gray-400 font-mono">#{match.homeTeam.fifa_ranking}</span>
+            <span className="text-[9px] text-gray-400 font-mono">
+              #{match.homeTeam.fifa_ranking}
+            </span>
             <WCBadge teamId={match.homeTeam.id} size="xs" />
           </div>
         )}
@@ -54,10 +58,12 @@ function BracketMatchBox({ match }: { match: BracketMatch }) {
         </span>
       </div>
       <div className="border-t border-gray-100 dark:border-white/10 my-0.5" />
-      <div className={cn(
-        'flex items-center gap-2 py-1 px-1 rounded',
-        match.winnerId === match.awayTeam?.id && 'bg-[#2A398D]/10'
-      )}>
+      <div
+        className={cn(
+          'flex items-center gap-2 py-1 px-1 rounded',
+          match.winnerId === match.awayTeam?.id && 'bg-[#2A398D]/10'
+        )}
+      >
         {match.awayTeam ? (
           <TeamFlag flagCode={match.awayTeam.flag_code} name={match.awayTeam.name} size={16} />
         ) : (
@@ -68,7 +74,9 @@ function BracketMatchBox({ match }: { match: BracketMatch }) {
         </span>
         {match.awayTeam && (
           <div className="flex items-center gap-1 flex-shrink-0">
-            <span className="text-[9px] text-gray-400 font-mono">#{match.awayTeam.fifa_ranking}</span>
+            <span className="text-[9px] text-gray-400 font-mono">
+              #{match.awayTeam.fifa_ranking}
+            </span>
             <WCBadge teamId={match.awayTeam.id} size="xs" />
           </div>
         )}
@@ -96,14 +104,13 @@ export function BracketView({ rounds }: BracketViewProps) {
           <div key={round.label} className="flex flex-col justify-around gap-3 sm:gap-4">
             {/* Round label */}
             <div className="text-center mb-2">
-              <span className="font-display text-lg tracking-wide gradient-text">{round.label}</span>
+              <span className="font-display text-lg tracking-wide gradient-text">
+                {round.label}
+              </span>
             </div>
 
             {/* Matches */}
-            <div
-              className="flex flex-col"
-              style={{ gap: `${Math.pow(2, rIdx) * 20}px` }}
-            >
+            <div className="flex flex-col" style={{ gap: `${Math.pow(2, rIdx) * 20}px` }}>
               {round.matches.map((match) => (
                 <div key={match.id} className="relative">
                   <BracketMatchBox match={match} />
@@ -117,7 +124,9 @@ export function BracketView({ rounds }: BracketViewProps) {
           </div>
         ))}
       </div>
-      <p className="sm:hidden text-center text-[10px] text-gray-400 pb-2">← Desliza para ver más →</p>
+      <p className="sm:hidden text-center text-[10px] text-gray-400 pb-2">
+        ← Desliza para ver más →
+      </p>
     </div>
   )
 }

@@ -38,7 +38,13 @@ interface DashboardProps {
 
 // ─── Dashboard ───────────────────────────────────────────────────────
 
-export function Dashboard({ userName, currentUserId, roomRankings, matches, countdown }: DashboardProps) {
+export function Dashboard({
+  userName,
+  currentUserId,
+  roomRankings,
+  matches,
+  countdown,
+}: DashboardProps) {
   const stats = useMemo(() => {
     const total = matches.length
     const finished = matches.filter((m) => m.status === 'finished').length
@@ -60,14 +66,25 @@ export function Dashboard({ userName, currentUserId, roomRankings, matches, coun
         final: 'Gran Final',
       }
       for (const r of rounds.reverse()) {
-        if (matches.some((m) => m.round === r && (m.status === 'live' || m.status === 'finished'))) {
+        if (
+          matches.some((m) => m.round === r && (m.status === 'live' || m.status === 'finished'))
+        ) {
           currentPhase = labels[r] ?? r
           break
         }
       }
     }
 
-    return { total, finished, live, groupFinished, groupTotal: groupMatches.length, knockoutFinished, knockoutTotal: knockoutMatches.length, currentPhase }
+    return {
+      total,
+      finished,
+      live,
+      groupFinished,
+      groupTotal: groupMatches.length,
+      knockoutFinished,
+      knockoutTotal: knockoutMatches.length,
+      currentPhase,
+    }
   }, [matches])
 
   // Group standings from finished matches
@@ -79,7 +96,8 @@ export function Dashboard({ userName, currentUserId, roomRankings, matches, coun
       for (const t of groupTeams) teamStats[t.id] = { pts: 0, gf: 0, ga: 0 }
 
       for (const m of matches.filter((m) => m.round === 'group' && m.status === 'finished')) {
-        if (!m.home_team_id || !m.away_team_id || m.home_score == null || m.away_score == null) continue
+        if (!m.home_team_id || !m.away_team_id || m.home_score == null || m.away_score == null)
+          continue
         const ht = TEAMS_BY_ID[m.home_team_id]
         const at = TEAMS_BY_ID[m.away_team_id]
         if (!ht || !at || ht.group_letter !== letter) continue
@@ -114,7 +132,13 @@ export function Dashboard({ userName, currentUserId, roomRankings, matches, coun
         <StatCard
           icon={<Calendar size={16} className="text-[#2A398D]" />}
           label={stats.currentPhase}
-          value={countdown ? `${countdown.days}d ${countdown.hours}h` : stats.live > 0 ? 'EN VIVO' : `${stats.finished}/${stats.total}`}
+          value={
+            countdown
+              ? `${countdown.days}d ${countdown.hours}h`
+              : stats.live > 0
+                ? 'EN VIVO'
+                : `${stats.finished}/${stats.total}`
+          }
           accent={stats.live > 0 ? 'live' : 'default'}
         />
         <StatCard
@@ -182,7 +206,13 @@ export function Dashboard({ userName, currentUserId, roomRankings, matches, coun
 
 // ─── Stat Card ───────────────────────────────────────────────────────
 
-function StatCard({ icon, label, value, sub, accent = 'default' }: {
+function StatCard({
+  icon,
+  label,
+  value,
+  sub,
+  accent = 'default',
+}: {
   icon: React.ReactNode
   label: string
   value: string
@@ -193,13 +223,17 @@ function StatCard({ icon, label, value, sub, accent = 'default' }: {
     <div className="glass-card p-3">
       <div className="flex items-center gap-1.5 mb-2">
         {icon}
-        <span className="text-[10px] font-body text-gray-400 uppercase tracking-wider truncate">{label}</span>
+        <span className="text-[10px] font-body text-gray-400 uppercase tracking-wider truncate">
+          {label}
+        </span>
       </div>
       <div className="flex items-baseline gap-1">
-        <span className={cn(
-          'font-display text-2xl',
-          accent === 'live' ? 'text-[#E61D25] animate-pulse' : 'dark:text-white'
-        )}>
+        <span
+          className={cn(
+            'font-display text-2xl',
+            accent === 'live' ? 'text-[#E61D25] animate-pulse' : 'dark:text-white'
+          )}
+        >
           {value}
         </span>
         {sub && <span className="text-xs font-body text-gray-400">{sub}</span>}
@@ -217,35 +251,49 @@ function RoomRankingCard({ room }: { room: RoomRanking }) {
   return (
     <div className="glass-card overflow-hidden">
       <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
-        <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">{room.roomName}</span>
+        <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          {room.roomName}
+        </span>
         <span className="text-[10px] font-mono text-gray-400">{sorted.length} miembros</span>
       </div>
       <div className="p-4 space-y-2.5">
         {sorted.map((member, idx) => {
           const barWidth = maxPoints > 0 ? Math.max((member.points / maxPoints) * 100, 2) : 2
           const colors = [
-            'from-[#C9A84C] to-[#D4AF37]',  // gold
-            'from-gray-400 to-gray-500',      // silver
-            'from-amber-600 to-amber-700',    // bronze
-            'from-[#2A398D] to-[#3a4da6]',    // blue
-            'from-[#3CAC3B] to-[#2d8e2c]',    // green
+            'from-[#C9A84C] to-[#D4AF37]', // gold
+            'from-gray-400 to-gray-500', // silver
+            'from-amber-600 to-amber-700', // bronze
+            'from-[#2A398D] to-[#3a4da6]', // blue
+            'from-[#3CAC3B] to-[#2d8e2c]', // green
           ]
           const barColor = colors[Math.min(idx, colors.length - 1)]
 
           return (
             <div key={member.userId} className="flex items-center gap-3">
-              <span className={cn(
-                'font-mono text-[10px] w-4 text-center font-bold',
-                idx === 0 ? 'text-[#C9A84C]' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-amber-700' : 'text-gray-400'
-              )}>
+              <span
+                className={cn(
+                  'font-mono text-[10px] w-4 text-center font-bold',
+                  idx === 0
+                    ? 'text-[#C9A84C]'
+                    : idx === 1
+                      ? 'text-gray-400'
+                      : idx === 2
+                        ? 'text-amber-700'
+                        : 'text-gray-400'
+                )}
+              >
                 {idx + 1}
               </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <span className={cn(
-                    'text-xs font-body truncate',
-                    member.isMe ? 'font-semibold text-[#2A398D] dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
-                  )}>
+                  <span
+                    className={cn(
+                      'text-xs font-body truncate',
+                      member.isMe
+                        ? 'font-semibold text-[#2A398D] dark:text-blue-400'
+                        : 'text-gray-700 dark:text-gray-300'
+                    )}
+                  >
                     {member.name.split(' ')[0]}
                     {member.isMe && <span className="text-[10px] text-gray-400 ml-1">(tú)</span>}
                   </span>
@@ -255,7 +303,10 @@ function RoomRankingCard({ room }: { room: RoomRanking }) {
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-white/[0.06] overflow-hidden">
                   <div
-                    className={cn('h-full rounded-full bg-gradient-to-r transition-all duration-500', barColor)}
+                    className={cn(
+                      'h-full rounded-full bg-gradient-to-r transition-all duration-500',
+                      barColor
+                    )}
                     style={{ width: `${barWidth}%` }}
                   />
                 </div>
@@ -270,14 +321,19 @@ function RoomRankingCard({ room }: { room: RoomRanking }) {
 
 // ─── Mini Group Table ────────────────────────────────────────────────
 
-function MiniGroupTable({ letter, teams }: {
+function MiniGroupTable({
+  letter,
+  teams,
+}: {
   letter: string
   teams: { teamId: string; pts: number; gd: number }[]
 }) {
   return (
     <div className="glass-card overflow-hidden">
       <div className="px-3 py-1.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
-        <span className="text-[10px] font-display text-gray-500 dark:text-gray-400 uppercase tracking-wider">Grupo {letter}</span>
+        <span className="text-[10px] font-display text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          Grupo {letter}
+        </span>
       </div>
       <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
         {teams.map((t, idx) => {
@@ -285,24 +341,37 @@ function MiniGroupTable({ letter, teams }: {
           if (!team) return null
           const qualifies = idx < 2
           return (
-            <div key={t.teamId} className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5',
-              qualifies && 'bg-[#3CAC3B]/5'
-            )}>
+            <div
+              key={t.teamId}
+              className={cn('flex items-center gap-1.5 px-3 py-1.5', qualifies && 'bg-[#3CAC3B]/5')}
+            >
               <span className="text-[10px] font-mono text-gray-400 w-3">{idx + 1}</span>
-              <TeamFlag flagCode={team.flag_code} name={team.name} size={14} className="flex-shrink-0" />
-              <span className={cn(
-                'text-[11px] font-body truncate flex-1',
-                qualifies ? 'font-semibold text-[#3CAC3B]' : 'text-gray-500 dark:text-gray-400'
-              )}>
+              <TeamFlag
+                flagCode={team.flag_code}
+                name={team.name}
+                size={14}
+                className="flex-shrink-0"
+              />
+              <span
+                className={cn(
+                  'text-[11px] font-body truncate flex-1',
+                  qualifies ? 'font-semibold text-[#3CAC3B]' : 'text-gray-500 dark:text-gray-400'
+                )}
+              >
                 {team.code}
               </span>
-              <span className="text-[9px] font-mono text-gray-400 flex-shrink-0">#{team.fifa_ranking}</span>
-              <span className="text-[10px] font-mono font-bold text-gray-600 dark:text-gray-300">{t.pts}</span>
-              <span className={cn(
-                'text-[9px] font-mono w-6 text-right',
-                t.gd > 0 ? 'text-[#3CAC3B]' : t.gd < 0 ? 'text-[#E61D25]' : 'text-gray-400'
-              )}>
+              <span className="text-[9px] font-mono text-gray-400 flex-shrink-0">
+                #{team.fifa_ranking}
+              </span>
+              <span className="text-[10px] font-mono font-bold text-gray-600 dark:text-gray-300">
+                {t.pts}
+              </span>
+              <span
+                className={cn(
+                  'text-[9px] font-mono w-6 text-right',
+                  t.gd > 0 ? 'text-[#3CAC3B]' : t.gd < 0 ? 'text-[#E61D25]' : 'text-gray-400'
+                )}
+              >
                 {t.gd > 0 ? `+${t.gd}` : t.gd}
               </span>
             </div>

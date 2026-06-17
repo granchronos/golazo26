@@ -1,5 +1,3 @@
-
-
 export function formatMatchDate(dateStr: string): string {
   const date = new Date(dateStr)
   return date.toLocaleDateString('es-ES', {
@@ -56,4 +54,3 @@ export function getMatchPredictionDeadline(matchNumber: number, matchDate: strin
   // All matches lock 5 minutes before their kickoff
   return getMatchDeadline(matchDate)
 }
-

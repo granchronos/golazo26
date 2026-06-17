@@ -16,7 +16,8 @@ export function RouteLoadingBar() {
       const anchor = (e.target as HTMLElement).closest('a')
       if (!anchor) return
       const href = anchor.getAttribute('href')
-      if (!href || href.startsWith('http') || href.startsWith('#') || href.startsWith('mailto:')) return
+      if (!href || href.startsWith('http') || href.startsWith('#') || href.startsWith('mailto:'))
+        return
       if (href !== prevPath.current) {
         setLoading(true)
       }

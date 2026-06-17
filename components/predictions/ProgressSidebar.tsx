@@ -27,7 +27,7 @@ export function ProgressSidebar({
     const letters = GROUP_LETTERS
     const completed: Record<GroupLetter, boolean> = {} as any
     let count = 0
-    
+
     letters.forEach((l) => {
       const pred = groupPredictions[l]
       const isOk = !!pred && !!pred.team_1st_id && !!pred.team_2nd_id
@@ -56,12 +56,14 @@ export function ProgressSidebar({
   const isAllDone = completedItems >= totalItems
 
   return (
-    <div className={cn(
-      'glass-card border-l-4 transition-colors',
-      isAllDone
-        ? 'border-l-emerald-500 bg-gradient-to-r from-emerald-50/30 to-white dark:from-emerald-950/10 dark:to-zinc-900/50'
-        : 'border-l-[#2A398D] bg-gradient-to-r from-blue-50/30 to-white dark:from-blue-950/10 dark:to-zinc-900/50'
-    )}>
+    <div
+      className={cn(
+        'glass-card border-l-4 transition-colors',
+        isAllDone
+          ? 'border-l-emerald-500 bg-gradient-to-r from-emerald-50/30 to-white dark:from-emerald-950/10 dark:to-zinc-900/50'
+          : 'border-l-[#2A398D] bg-gradient-to-r from-blue-50/30 to-white dark:from-blue-950/10 dark:to-zinc-900/50'
+      )}
+    >
       {/* Header — always visible, click to toggle */}
       <button
         onClick={() => setIsExpanded((v) => !v)}
@@ -77,7 +79,9 @@ export function ProgressSidebar({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">{completedItems}/{totalItems}</span>
+          <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
+            {completedItems}/{totalItems}
+          </span>
           <ChevronDown
             size={14}
             className={cn(
@@ -117,11 +121,17 @@ export function ProgressSidebar({
               {/* Groups */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-body font-medium text-gray-600 dark:text-gray-300">Fase de Grupos</span>
-                  <span className={cn(
-                    'font-mono',
-                    groupStats.count >= 12 ? 'text-emerald-500' : 'text-gray-400'
-                  )}>{groupStats.count}/12</span>
+                  <span className="font-body font-medium text-gray-600 dark:text-gray-300">
+                    Fase de Grupos
+                  </span>
+                  <span
+                    className={cn(
+                      'font-mono',
+                      groupStats.count >= 12 ? 'text-emerald-500' : 'text-gray-400'
+                    )}
+                  >
+                    {groupStats.count}/12
+                  </span>
                 </div>
                 <div className="grid grid-cols-6 sm:grid-cols-4 gap-1">
                   {GROUP_LETTERS.map((letter) => {
@@ -150,10 +160,12 @@ export function ProgressSidebar({
                   <span className="font-body font-medium text-gray-600 dark:text-gray-300 flex items-center gap-1">
                     <Layers size={12} className="text-[#2A398D]" /> Bracket
                   </span>
-                  <span className={cn(
-                    'font-mono',
-                    knockoutCount >= 31 ? 'text-emerald-500' : 'text-gray-400'
-                  )}>
+                  <span
+                    className={cn(
+                      'font-mono',
+                      knockoutCount >= 31 ? 'text-emerald-500' : 'text-gray-400'
+                    )}
+                  >
                     {knockoutCount}/31
                   </span>
                 </div>
@@ -179,7 +191,10 @@ export function ProgressSidebar({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs bg-gray-50 dark:bg-white/[0.03] p-2 rounded-lg border border-gray-100 dark:border-white/[0.06]">
                     <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                      <Trophy size={12} className={isChampionComplete ? 'text-[#C9A84C]' : 'text-gray-400'} />
+                      <Trophy
+                        size={12}
+                        className={isChampionComplete ? 'text-[#C9A84C]' : 'text-gray-400'}
+                      />
                       <span className="font-body">Campeón</span>
                     </div>
                     {isChampionComplete ? (
@@ -190,7 +205,10 @@ export function ProgressSidebar({
                   </div>
                   <div className="flex items-center justify-between text-xs bg-gray-50 dark:bg-white/[0.03] p-2 rounded-lg border border-gray-100 dark:border-white/[0.06]">
                     <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                      <User size={12} className={isGoleadorComplete ? 'text-[#C9A84C]' : 'text-gray-400'} />
+                      <User
+                        size={12}
+                        className={isGoleadorComplete ? 'text-[#C9A84C]' : 'text-gray-400'}
+                      />
                       <span className="font-body">Goleador</span>
                     </div>
                     {isGoleadorComplete ? (

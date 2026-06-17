@@ -1,5 +1,9 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { PageTransition, StaggerContainer, StaggerItem } from '@/components/animations/PageTransition'
+import {
+  PageTransition,
+  StaggerContainer,
+  StaggerItem,
+} from '@/components/animations/PageTransition'
 import { CreateRoomModal } from '@/components/groups/CreateRoomModal'
 import { JoinRoomForm } from '@/components/groups/JoinRoomForm'
 import { Users, Crown, ChevronRight } from 'lucide-react'
@@ -10,15 +14,19 @@ export const metadata = { title: 'Mis Salas' }
 
 export default async function GroupsPage({ searchParams }: { searchParams?: { error?: string } }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const admin = await createAdminClient()
   const { data: memberships } = await admin
     .from('room_members')
-    .select(`
+    .select(
+      `
       room_id,
       rooms!inner(id, name, description, code, admin_id, created_at)
-    `)
+    `
+    )
     .eq('user_id', user!.id)
 
   const rooms = memberships?.map((m) => m.rooms as unknown as Room) || []
@@ -56,7 +64,9 @@ export default async function GroupsPage({ searchParams }: { searchParams?: { er
           <div className="glass-card text-center py-16 mb-6">
             <Users size={32} className="mx-auto mb-3 text-gray-200 dark:text-white/10" />
             <p className="text-sm font-body text-gray-400">Aún no tienes salas</p>
-            <p className="text-xs text-gray-300 dark:text-gray-600 font-body mt-1">Crea una o únete con un código</p>
+            <p className="text-xs text-gray-300 dark:text-gray-600 font-body mt-1">
+              Crea una o únete con un código
+            </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <CreateRoomModal />
@@ -76,9 +86,13 @@ export default async function GroupsPage({ searchParams }: { searchParams?: { er
                         {room.admin_id === user!.id && (
                           <Crown size={12} className="text-[#C9A84C] flex-shrink-0" />
                         )}
-                        <h3 className="text-sm font-body font-semibold dark:text-white truncate">{room.name}</h3>
+                        <h3 className="text-sm font-body font-semibold dark:text-white truncate">
+                          {room.name}
+                        </h3>
                       </div>
-                      <span className="text-[10px] font-mono text-gray-400 tracking-wider">{room.code}</span>
+                      <span className="text-[10px] font-mono text-gray-400 tracking-wider">
+                        {room.code}
+                      </span>
                     </div>
                     <ChevronRight
                       size={16}

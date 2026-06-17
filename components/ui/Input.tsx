@@ -13,15 +13,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="space-y-1.5">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium font-body text-gray-700 dark:text-gray-300">
+          <label
+            htmlFor={inputId}
+            className="block text-sm font-medium font-body text-gray-700 dark:text-gray-300"
+          >
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              {icon}
-            </div>
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{icon}</div>
           )}
           <input
             ref={ref}
@@ -40,9 +41,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
         </div>
-        {error && (
-          <p className="text-xs text-red-500 font-body">{error}</p>
-        )}
+        {error && <p className="text-xs text-red-500 font-body">{error}</p>}
       </div>
     )
   }

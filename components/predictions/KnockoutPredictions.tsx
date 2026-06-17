@@ -50,8 +50,10 @@ export function KnockoutPredictions({
       if (!matchDef) return { home: null, away: null }
 
       const resolveSource = (source: SlotSource): TeamData | null => {
-        if (source.kind === '1st') return TEAMS_BY_ID[groupSelections[source.group]?.first ?? ''] ?? null
-        if (source.kind === '2nd') return TEAMS_BY_ID[groupSelections[source.group]?.second ?? ''] ?? null
+        if (source.kind === '1st')
+          return TEAMS_BY_ID[groupSelections[source.group]?.first ?? ''] ?? null
+        if (source.kind === '2nd')
+          return TEAMS_BY_ID[groupSelections[source.group]?.second ?? ''] ?? null
         if (source.kind === 'winner') {
           const parentTeams = getMatchTeams(source.matchNumber)
           const pickId = picks[source.matchNumber]
@@ -83,8 +85,10 @@ export function KnockoutPredictions({
 
   const resolveTeam = useCallback(
     (source: SlotSource): TeamData | null => {
-      if (source.kind === '1st') return TEAMS_BY_ID[groupSelections[source.group]?.first ?? ''] ?? null
-      if (source.kind === '2nd') return TEAMS_BY_ID[groupSelections[source.group]?.second ?? ''] ?? null
+      if (source.kind === '1st')
+        return TEAMS_BY_ID[groupSelections[source.group]?.first ?? ''] ?? null
+      if (source.kind === '2nd')
+        return TEAMS_BY_ID[groupSelections[source.group]?.second ?? ''] ?? null
       if (source.kind === 'winner') {
         const parentTeams = getMatchTeams(source.matchNumber)
         const pickId = picks[source.matchNumber]
@@ -97,7 +101,6 @@ export function KnockoutPredictions({
     },
     [groupSelections, picks, getMatchTeams]
   )
-
 
   const handlePick = useCallback(
     (matchNumber: number, teamId: string) => {
@@ -133,7 +136,9 @@ export function KnockoutPredictions({
         <div>
           <h3 className="font-display text-xl dark:text-white">Fase Eliminatoria</h3>
           <p className="text-xs font-body text-gray-400 mt-0.5">
-            <span className="font-mono font-bold text-gray-700 dark:text-gray-300">{totalPicked}</span>
+            <span className="font-mono font-bold text-gray-700 dark:text-gray-300">
+              {totalPicked}
+            </span>
             /{totalMatches} pronósticos guardados
           </p>
         </div>
@@ -147,7 +152,9 @@ export function KnockoutPredictions({
             <span className="text-xs font-body font-semibold text-[#C9A84C] flex items-center gap-1">
               <TeamFlag flagCode={champion.flag_code} name={champion.name} size={14} />
               {champion.name}
-              <span className="text-[9px] font-mono text-gray-400 font-normal">#{champion.fifa_ranking}</span>
+              <span className="text-[9px] font-mono text-gray-400 font-normal">
+                #{champion.fifa_ranking}
+              </span>
             </span>
           </motion.div>
         )}
@@ -159,7 +166,11 @@ export function KnockoutPredictions({
         const roundPicked = round.matches.filter((m) => picks[m.matchNumber]).length
 
         return (
-          <div key={round.id} id={`knockout-round-${roundIndex}`} className="glass-card overflow-hidden">
+          <div
+            key={round.id}
+            id={`knockout-round-${roundIndex}`}
+            className="glass-card overflow-hidden"
+          >
             {/* Round header */}
             <button
               onClick={() => setCollapsed((p) => ({ ...p, [round.id]: !p[round.id] }))}
@@ -199,9 +210,13 @@ export function KnockoutPredictions({
                     {round.id === 'round_of_32' && (
                       <div className="px-4 py-2.5 bg-[#2A398D]/[0.03] dark:bg-[#2A398D]/[0.06]">
                         <p className="text-[10px] font-body text-gray-500 dark:text-gray-400 leading-relaxed">
-                          <span className="font-semibold text-[#2A398D] dark:text-blue-400">Formato 2026:</span>{' '}
-                          12 grupos × 2 clasificados = 24 equipos + los <span className="font-semibold">8 mejores terceros</span> de los 12 grupos.
-                          Elige al ganador de cada enfrentamiento entre los terceros de sus respectivos grupos.
+                          <span className="font-semibold text-[#2A398D] dark:text-blue-400">
+                            Formato 2026:
+                          </span>{' '}
+                          12 grupos × 2 clasificados = 24 equipos + los{' '}
+                          <span className="font-semibold">8 mejores terceros</span> de los 12
+                          grupos. Elige al ganador de cada enfrentamiento entre los terceros de sus
+                          respectivos grupos.
                         </p>
                       </div>
                     )}
@@ -316,13 +331,13 @@ function MatchCard({
         {pick && (
           <p className="text-[10px] text-center font-body text-[#3CAC3B]">
             {(() => {
-              const t = TEAMS_BY_ID[pick];
+              const t = TEAMS_BY_ID[pick]
               return t ? (
                 <span className="inline-flex items-center gap-1">
                   Ganador: <TeamFlag flagCode={t.flag_code} name={t.name} size={14} /> {t.name}
                   <span className="text-[9px] font-mono text-gray-400">#{t.fifa_ranking}</span>
                 </span>
-              ) : null;
+              ) : null
             })()}
           </p>
         )}
@@ -386,12 +401,22 @@ interface TeamButtonProps {
   onClick: () => void
 }
 
-function TeamButton({ team, label, isPicked, isLoser, disabled, isFinal, onClick }: TeamButtonProps) {
+function TeamButton({
+  team,
+  label,
+  isPicked,
+  isLoser,
+  disabled,
+  isFinal,
+  onClick,
+}: TeamButtonProps) {
   if (!team) {
     return (
       <div className="flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl border border-dashed border-gray-200 dark:border-white/[0.06] opacity-50">
         <span className="text-base">⚽</span>
-        <span className="text-[10px] font-body text-gray-400 text-center leading-tight">{label}</span>
+        <span className="text-[10px] font-body text-gray-400 text-center leading-tight">
+          {label}
+        </span>
       </div>
     )
   }
@@ -407,8 +432,8 @@ function TeamButton({ team, label, isPicked, isLoser, disabled, isFinal, onClick
             ? 'bg-[#C9A84C]/10 border-[#C9A84C] shadow-sm'
             : 'bg-[#2A398D]/10 border-[#2A398D] shadow-sm'
           : isLoser
-          ? 'opacity-40 border-gray-100 dark:border-white/[0.04]'
-          : 'border-gray-200 dark:border-white/[0.08] hover:border-[#2A398D]/40 hover:bg-[#2A398D]/5 active:scale-95'
+            ? 'opacity-40 border-gray-100 dark:border-white/[0.04]'
+            : 'border-gray-200 dark:border-white/[0.08] hover:border-[#2A398D]/40 hover:bg-[#2A398D]/5 active:scale-95'
       )}
     >
       <TeamFlag flagCode={team.flag_code} name={team.name} size={24} />
@@ -455,14 +480,10 @@ function PoolSide({
     <div
       className={cn(
         'flex-1 rounded-xl border p-2 transition-all',
-        hasPick
-          ? 'border-[#2A398D] bg-[#2A398D]/5'
-          : 'border-gray-200 dark:border-white/[0.08]'
+        hasPick ? 'border-[#2A398D] bg-[#2A398D]/5' : 'border-gray-200 dark:border-white/[0.08]'
       )}
     >
-      <p className="text-[9px] font-body text-gray-400 text-center mb-1.5 leading-tight">
-        {label}
-      </p>
+      <p className="text-[9px] font-body text-gray-400 text-center mb-1.5 leading-tight">{label}</p>
       <div className="flex flex-col gap-1">
         {teams.map((team) => (
           <button
@@ -478,8 +499,19 @@ function PoolSide({
           >
             <TeamFlag flagCode={team.flag_code} name={team.name} size={16} />
             <span className="flex-1 text-left truncate">{team.name}</span>
-            <span className={cn('text-[9px] font-mono', pick === team.id ? 'text-white/70' : 'text-gray-400')}>#{team.fifa_ranking}</span>
-            <WCBadge teamId={team.id} size="xs" className={pick === team.id ? '!text-white/70' : ''} />
+            <span
+              className={cn(
+                'text-[9px] font-mono',
+                pick === team.id ? 'text-white/70' : 'text-gray-400'
+              )}
+            >
+              #{team.fifa_ranking}
+            </span>
+            <WCBadge
+              teamId={team.id}
+              size="xs"
+              className={pick === team.id ? '!text-white/70' : ''}
+            />
           </button>
         ))}
       </div>

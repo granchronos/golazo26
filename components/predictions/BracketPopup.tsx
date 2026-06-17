@@ -15,9 +15,7 @@ import {
 } from '@/lib/constants/bracket'
 import type { TeamData } from '@/lib/constants/teams'
 
-const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(
-  TEAMS.map((t) => [t.id, t])
-)
+const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
 
 // ─── Layout constants ──────────────────────────────────────────────
 const MATCH_W = 132
@@ -91,8 +89,10 @@ function getMatchTeams(
   if (!matchDef) return { home: null, away: null }
 
   const resolveSource = (source: SlotSource): TeamData | null => {
-    if (source.kind === '1st') return TEAMS_BY_ID[groupSelections[source.group]?.first ?? ''] ?? null
-    if (source.kind === '2nd') return TEAMS_BY_ID[groupSelections[source.group]?.second ?? ''] ?? null
+    if (source.kind === '1st')
+      return TEAMS_BY_ID[groupSelections[source.group]?.first ?? ''] ?? null
+    if (source.kind === '2nd')
+      return TEAMS_BY_ID[groupSelections[source.group]?.second ?? ''] ?? null
     if (source.kind === 'winner') {
       const parentTeams = getMatchTeams(source.matchNumber, groupSelections, predictions)
       const pickId = predictions[source.matchNumber]
@@ -218,18 +218,23 @@ function TeamSlot({
     >
       {team ? (
         <>
-          <TeamFlag flagCode={team.flag_code} name={team.name} size={12} className="flex-shrink-0" />
+          <TeamFlag
+            flagCode={team.flag_code}
+            name={team.name}
+            size={12}
+            className="flex-shrink-0"
+          />
           <span
             className={cn(
               'text-[10px] font-body leading-none flex-shrink-0',
-              isWinner
-                ? 'font-bold text-[#3CAC3B]'
-                : 'text-gray-700 dark:text-gray-300'
+              isWinner ? 'font-bold text-[#3CAC3B]' : 'text-gray-700 dark:text-gray-300'
             )}
           >
             {team.code}
           </span>
-          <span className="text-[7px] font-mono text-gray-400 ml-0.5 flex-shrink-0">#{team.fifa_ranking}</span>
+          <span className="text-[7px] font-mono text-gray-400 ml-0.5 flex-shrink-0">
+            #{team.fifa_ranking}
+          </span>
           <span className="flex-1" />
           {/* WC history badge */}
           {history && history.titles > 0 ? (
@@ -300,12 +305,7 @@ function Connector({
   }
 
   return (
-    <svg
-      width={w}
-      height={MATCH_AREA_H}
-      className="flex-shrink-0"
-      style={{ minWidth: w }}
-    >
+    <svg width={w} height={MATCH_AREA_H} className="flex-shrink-0" style={{ minWidth: w }}>
       {paths.map((d, i) => (
         <path
           key={i}
@@ -371,13 +371,15 @@ function RoundColumn({
 
 // ─── Main Export ────────────────────────────────────────────────────
 
-export function BracketPopup({ groupSelections, knockoutPredictions, userName }: BracketPopupProps) {
+export function BracketPopup({
+  groupSelections,
+  knockoutPredictions,
+  userName,
+}: BracketPopupProps) {
   const bracketRef = useRef<HTMLDivElement>(null)
   const [exporting, setExporting] = useState(false)
 
-  const champion = knockoutPredictions[103]
-    ? TEAMS_BY_ID[knockoutPredictions[103]]
-    : null
+  const champion = knockoutPredictions[103] ? TEAMS_BY_ID[knockoutPredictions[103]] : null
   const championHistory = champion ? WC_HISTORY[champion.id] : null
   const finalMatch = FINAL_BRACKET[0]
   const hasAnyPicks = Object.keys(knockoutPredictions).length > 0
@@ -473,11 +475,7 @@ export function BracketPopup({ groupSelections, knockoutPredictions, userName }:
           disabled={exporting || !hasAnyPicks}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-body font-medium bg-[#2A398D]/10 text-[#2A398D] hover:bg-[#2A398D]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          {exporting ? (
-            <Loader2 size={12} className="animate-spin" />
-          ) : (
-            <Share2 size={12} />
-          )}
+          {exporting ? <Loader2 size={12} className="animate-spin" /> : <Share2 size={12} />}
           {exporting ? 'Generando...' : 'Compartir'}
         </button>
       </div>
@@ -498,16 +496,21 @@ export function BracketPopup({ groupSelections, knockoutPredictions, userName }:
                 <TeamFlag flagCode={champion.flag_code} name={champion.name} size={24} />
                 <span className="text-xs font-display text-[#C9A84C] tracking-wide flex items-center gap-1">
                   {champion.name}
-                  <span className="text-[9px] font-mono text-gray-400 font-normal">#{champion.fifa_ranking}</span>
+                  <span className="text-[9px] font-mono text-gray-400 font-normal">
+                    #{champion.fifa_ranking}
+                  </span>
                 </span>
                 {championHistory && championHistory.titles > 0 ? (
                   <span className="text-[9px] font-bold text-[#C9A84C]">
-                    {'★'.repeat(Math.min(championHistory.titles, 5))}{championHistory.titles > 5 ? `+${championHistory.titles - 5}` : ''}
+                    {'★'.repeat(Math.min(championHistory.titles, 5))}
+                    {championHistory.titles > 5 ? `+${championHistory.titles - 5}` : ''}
                   </span>
                 ) : championHistory?.best ? (
                   <span className="text-[8px] font-mono text-gray-400">
                     Máx: {BEST_LABELS[championHistory.best]}
-                    {championHistory.bestYear ? ` '${String(championHistory.bestYear).slice(2)}` : ''}
+                    {championHistory.bestYear
+                      ? ` '${String(championHistory.bestYear).slice(2)}`
+                      : ''}
                   </span>
                 ) : null}
                 <span className="text-[7px] font-mono text-gray-400 uppercase tracking-widest">
@@ -519,9 +522,7 @@ export function BracketPopup({ groupSelections, knockoutPredictions, userName }:
                 <div className="w-10 h-10 rounded-full border-2 border-dashed border-gray-200 dark:border-white/10 flex items-center justify-center">
                   <Trophy size={14} className="text-gray-300 dark:text-gray-600" />
                 </div>
-                <span className="text-[8px] font-mono text-gray-400 uppercase">
-                  Campeón
-                </span>
+                <span className="text-[8px] font-mono text-gray-400 uppercase">Campeón</span>
               </>
             )}
           </div>
@@ -628,14 +629,10 @@ export function BracketPopup({ groupSelections, knockoutPredictions, userName }:
               <div className="w-5 h-5 rounded bg-[#2A398D] flex items-center justify-center">
                 <span className="font-display text-white text-[8px]">26</span>
               </div>
-              <span className="text-[10px] font-display text-gray-400">
-                Golazo 2026
-              </span>
+              <span className="text-[10px] font-display text-gray-400">Golazo 2026</span>
             </div>
             {userName && (
-              <span className="text-[10px] font-mono text-gray-400">
-                @{userName.split(' ')[0]}
-              </span>
+              <span className="text-[10px] font-mono text-gray-400">@{userName.split(' ')[0]}</span>
             )}
           </div>
         </div>

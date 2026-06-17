@@ -23,28 +23,33 @@ const STEPS: TourStep[] = [
   {
     target: '#group-A',
     title: '🏴 Elige 1° y 2° lugar',
-    description: 'Toca un equipo para elegirlo como 1° (dorado). Toca otro para el 2° (azul). Luego presiona "Guardar grupo".',
+    description:
+      'Toca un equipo para elegirlo como 1° (dorado). Toca otro para el 2° (azul). Luego presiona "Guardar grupo".',
   },
   {
     target: '#tour-save-all',
     title: '💾 Guarda todo de una vez',
-    description: 'Cuando llenes varios grupos sin guardar, aparece este botón flotante para guardarlos todos juntos.',
+    description:
+      'Cuando llenes varios grupos sin guardar, aparece este botón flotante para guardarlos todos juntos.',
     fallbackPosition: { top: '70vh', left: '50%' },
   },
   {
     target: '#knockout-section',
     title: '⚔️ Fase eliminatoria',
-    description: 'Después de los grupos, desplázate hasta aquí. Se abren las rondas desde 32avos hasta la Final.',
+    description:
+      'Después de los grupos, desplázate hasta aquí. Se abren las rondas desde 32avos hasta la Final.',
   },
   {
     target: '#knockout-round-0',
     title: '🏟️ Ronda de 32',
-    description: 'Elige el ganador de cada partido. Los equipos se llenan automáticamente según lo que elegiste en los grupos.',
+    description:
+      'Elige el ganador de cada partido. Los equipos se llenan automáticamente según lo que elegiste en los grupos.',
   },
   {
     target: '#knockout-round-4',
     title: '🏆 Camino al Campeón',
-    description: 'Sigue eligiendo ganadores ronda tras ronda: Octavos → Cuartos → Semis → ¡Final! Tu campeón se mostrará al terminar.',
+    description:
+      'Sigue eligiendo ganadores ronda tras ronda: Octavos → Cuartos → Semis → ¡Final! Tu campeón se mostrará al terminar.',
     fallbackPosition: { top: '40vh', left: '50%' },
   },
 ]
@@ -175,7 +180,9 @@ export function PredictionsTour() {
                       )}
                     >
                       {step < STEPS.length - 1 ? (
-                        <>Siguiente <ChevronRight size={14} /></>
+                        <>
+                          Siguiente <ChevronRight size={14} />
+                        </>
                       ) : (
                         '¡Empezar!'
                       )}

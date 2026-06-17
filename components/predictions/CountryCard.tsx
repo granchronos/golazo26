@@ -27,17 +27,22 @@ export function CountryCard({ team, state, points, rank, onClick }: CountryCardP
       disabled={isLocked}
       className={cn(
         'relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 w-full text-left',
-        state === 'available' && 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-[#2A398D]/50 hover:shadow-md',
-        state === 'selected' && 'border-[#2A398D] bg-[#2A398D]/8 dark:bg-[#2A398D]/20 shadow-md shadow-[#2A398D]/20',
-        state === 'locked' && 'border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/2 opacity-50 cursor-not-allowed',
+        state === 'available' &&
+          'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-[#2A398D]/50 hover:shadow-md',
+        state === 'selected' &&
+          'border-[#2A398D] bg-[#2A398D]/8 dark:bg-[#2A398D]/20 shadow-md shadow-[#2A398D]/20',
+        state === 'locked' &&
+          'border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/2 opacity-50 cursor-not-allowed'
       )}
     >
       {/* Rank badge */}
       {rank && isSelected && (
-        <div className={cn(
-          'absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold',
-          rank === '1st' ? 'bg-[#C9A84C]' : 'bg-[#2A398D]'
-        )}>
+        <div
+          className={cn(
+            'absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold',
+            rank === '1st' ? 'bg-[#C9A84C]' : 'bg-[#2A398D]'
+          )}
+        >
           {rank === '1st' ? '1' : '2'}
         </div>
       )}
@@ -63,10 +68,14 @@ export function CountryCard({ team, state, points, rank, onClick }: CountryCardP
 
       {/* Name */}
       <div className="flex flex-col items-center gap-0.5">
-        <span className={cn(
-          'text-xs font-body font-medium text-center leading-tight',
-          isSelected ? 'text-[#2A398D] dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-300'
-        )}>
+        <span
+          className={cn(
+            'text-xs font-body font-medium text-center leading-tight',
+            isSelected
+              ? 'text-[#2A398D] dark:text-blue-400 font-semibold'
+              : 'text-gray-700 dark:text-gray-300'
+          )}
+        >
           {team.code}
         </span>
         <span className="text-[8px] font-mono text-gray-400">FIFA #{team.fifa_ranking}</span>
@@ -77,9 +86,7 @@ export function CountryCard({ team, state, points, rank, onClick }: CountryCardP
 
       {/* Points */}
       {points !== undefined && isSelected && (
-        <span className="font-mono text-xs font-bold text-[#C9A84C]">
-          +{points}pts
-        </span>
+        <span className="font-mono text-xs font-bold text-[#C9A84C]">+{points}pts</span>
       )}
     </motion.button>
   )

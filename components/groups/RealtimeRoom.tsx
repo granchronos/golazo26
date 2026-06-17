@@ -46,7 +46,9 @@ export function RealtimeRoom({ roomId, currentUserId }: RealtimeRoomProps) {
         }
       })
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [roomId, currentUserId, router])
 
   return null

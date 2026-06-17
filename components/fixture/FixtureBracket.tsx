@@ -107,12 +107,14 @@ export function FixtureBracket() {
       <div className="flex flex-wrap items-center gap-1.5">
         {rounds.map((r, i) => (
           <div key={r.label} className="flex items-center gap-1.5">
-            <span className={cn(
-              'text-[10px] font-body px-2 py-1 rounded-lg',
-              i === rounds.length - 1
-                ? 'bg-[#C9A84C]/10 text-[#C9A84C] font-semibold'
-                : 'bg-gray-100 dark:bg-white/[0.06] text-gray-500'
-            )}>
+            <span
+              className={cn(
+                'text-[10px] font-body px-2 py-1 rounded-lg',
+                i === rounds.length - 1
+                  ? 'bg-[#C9A84C]/10 text-[#C9A84C] font-semibold'
+                  : 'bg-gray-100 dark:bg-white/[0.06] text-gray-500'
+              )}
+            >
               {r.label} ({r.matches.length})
             </span>
             {i < rounds.length - 1 && (

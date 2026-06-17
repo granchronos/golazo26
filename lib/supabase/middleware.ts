@@ -31,13 +31,19 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Auth routes — redirect to dashboard if already logged in
-  const isAuthRoute = pathname.startsWith('/(auth)') || pathname === '/login' || pathname === '/register'
+  const isAuthRoute =
+    pathname.startsWith('/(auth)') || pathname === '/login' || pathname === '/register'
   if (isAuthRoute && user) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
   // Protected routes — redirect to login if not logged in
-  const isPublicRoute = pathname === '/login' || pathname === '/register' || pathname.startsWith('/auth') || pathname.startsWith('/join') || pathname.startsWith('/api/')
+  const isPublicRoute =
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/join') ||
+    pathname.startsWith('/api/')
   if (!isPublicRoute && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }

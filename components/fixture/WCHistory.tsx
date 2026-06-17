@@ -14,28 +14,138 @@ interface Season {
 }
 
 const WC_SEASONS: Season[] = [
-  { year: 2022, host: 'Catar', winner: { name: 'Argentina', flag: '🇦🇷' }, runnerUp: { name: 'Francia', flag: '🇫🇷' } },
-  { year: 2018, host: 'Rusia', winner: { name: 'Francia', flag: '🇫🇷' }, runnerUp: { name: 'Croacia', flag: '🇭🇷' } },
-  { year: 2014, host: 'Brasil', winner: { name: 'Alemania', flag: '🇩🇪' }, runnerUp: { name: 'Argentina', flag: '🇦🇷' } },
-  { year: 2010, host: 'Sudáfrica', winner: { name: 'España', flag: '🇪🇸' }, runnerUp: { name: 'Países Bajos', flag: '🇳🇱' } },
-  { year: 2006, host: 'Alemania', winner: { name: 'Italia', flag: '🇮🇹' }, runnerUp: { name: 'Francia', flag: '🇫🇷' } },
-  { year: 2002, host: 'Corea/Japón', winner: { name: 'Brasil', flag: '🇧🇷' }, runnerUp: { name: 'Alemania', flag: '🇩🇪' } },
-  { year: 1998, host: 'Francia', winner: { name: 'Francia', flag: '🇫🇷' }, runnerUp: { name: 'Brasil', flag: '🇧🇷' } },
-  { year: 1994, host: 'EE.UU.', winner: { name: 'Brasil', flag: '🇧🇷' }, runnerUp: { name: 'Italia', flag: '🇮🇹' } },
-  { year: 1990, host: 'Italia', winner: { name: 'Alemania', flag: '🇩🇪' }, runnerUp: { name: 'Argentina', flag: '🇦🇷' } },
-  { year: 1986, host: 'México', winner: { name: 'Argentina', flag: '🇦🇷' }, runnerUp: { name: 'Alemania', flag: '🇩🇪' } },
-  { year: 1982, host: 'España', winner: { name: 'Italia', flag: '🇮🇹' }, runnerUp: { name: 'Alemania', flag: '🇩🇪' } },
-  { year: 1978, host: 'Argentina', winner: { name: 'Argentina', flag: '🇦🇷' }, runnerUp: { name: 'Países Bajos', flag: '🇳🇱' } },
-  { year: 1974, host: 'Alemania', winner: { name: 'Alemania', flag: '🇩🇪' }, runnerUp: { name: 'Países Bajos', flag: '🇳🇱' } },
-  { year: 1970, host: 'México', winner: { name: 'Brasil', flag: '🇧🇷' }, runnerUp: { name: 'Italia', flag: '🇮🇹' } },
-  { year: 1966, host: 'Inglaterra', winner: { name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' }, runnerUp: { name: 'Alemania', flag: '🇩🇪' } },
-  { year: 1962, host: 'Chile', winner: { name: 'Brasil', flag: '🇧🇷' }, runnerUp: { name: 'Checoslov.', flag: '🇨🇿' } },
-  { year: 1958, host: 'Suecia', winner: { name: 'Brasil', flag: '🇧🇷' }, runnerUp: { name: 'Suecia', flag: '🇸🇪' } },
-  { year: 1954, host: 'Suiza', winner: { name: 'Alemania', flag: '🇩🇪' }, runnerUp: { name: 'Hungría', flag: '🇭🇺' } },
-  { year: 1950, host: 'Brasil', winner: { name: 'Uruguay', flag: '🇺🇾' }, runnerUp: { name: 'Brasil', flag: '🇧🇷' } },
-  { year: 1938, host: 'Francia', winner: { name: 'Italia', flag: '🇮🇹' }, runnerUp: { name: 'Hungría', flag: '🇭🇺' } },
-  { year: 1934, host: 'Italia', winner: { name: 'Italia', flag: '🇮🇹' }, runnerUp: { name: 'Checoslov.', flag: '🇨🇿' } },
-  { year: 1930, host: 'Uruguay', winner: { name: 'Uruguay', flag: '🇺🇾' }, runnerUp: { name: 'Argentina', flag: '🇦🇷' } },
+  {
+    year: 2022,
+    host: 'Catar',
+    winner: { name: 'Argentina', flag: '🇦🇷' },
+    runnerUp: { name: 'Francia', flag: '🇫🇷' },
+  },
+  {
+    year: 2018,
+    host: 'Rusia',
+    winner: { name: 'Francia', flag: '🇫🇷' },
+    runnerUp: { name: 'Croacia', flag: '🇭🇷' },
+  },
+  {
+    year: 2014,
+    host: 'Brasil',
+    winner: { name: 'Alemania', flag: '🇩🇪' },
+    runnerUp: { name: 'Argentina', flag: '🇦🇷' },
+  },
+  {
+    year: 2010,
+    host: 'Sudáfrica',
+    winner: { name: 'España', flag: '🇪🇸' },
+    runnerUp: { name: 'Países Bajos', flag: '🇳🇱' },
+  },
+  {
+    year: 2006,
+    host: 'Alemania',
+    winner: { name: 'Italia', flag: '🇮🇹' },
+    runnerUp: { name: 'Francia', flag: '🇫🇷' },
+  },
+  {
+    year: 2002,
+    host: 'Corea/Japón',
+    winner: { name: 'Brasil', flag: '🇧🇷' },
+    runnerUp: { name: 'Alemania', flag: '🇩🇪' },
+  },
+  {
+    year: 1998,
+    host: 'Francia',
+    winner: { name: 'Francia', flag: '🇫🇷' },
+    runnerUp: { name: 'Brasil', flag: '🇧🇷' },
+  },
+  {
+    year: 1994,
+    host: 'EE.UU.',
+    winner: { name: 'Brasil', flag: '🇧🇷' },
+    runnerUp: { name: 'Italia', flag: '🇮🇹' },
+  },
+  {
+    year: 1990,
+    host: 'Italia',
+    winner: { name: 'Alemania', flag: '🇩🇪' },
+    runnerUp: { name: 'Argentina', flag: '🇦🇷' },
+  },
+  {
+    year: 1986,
+    host: 'México',
+    winner: { name: 'Argentina', flag: '🇦🇷' },
+    runnerUp: { name: 'Alemania', flag: '🇩🇪' },
+  },
+  {
+    year: 1982,
+    host: 'España',
+    winner: { name: 'Italia', flag: '🇮🇹' },
+    runnerUp: { name: 'Alemania', flag: '🇩🇪' },
+  },
+  {
+    year: 1978,
+    host: 'Argentina',
+    winner: { name: 'Argentina', flag: '🇦🇷' },
+    runnerUp: { name: 'Países Bajos', flag: '🇳🇱' },
+  },
+  {
+    year: 1974,
+    host: 'Alemania',
+    winner: { name: 'Alemania', flag: '🇩🇪' },
+    runnerUp: { name: 'Países Bajos', flag: '🇳🇱' },
+  },
+  {
+    year: 1970,
+    host: 'México',
+    winner: { name: 'Brasil', flag: '🇧🇷' },
+    runnerUp: { name: 'Italia', flag: '🇮🇹' },
+  },
+  {
+    year: 1966,
+    host: 'Inglaterra',
+    winner: { name: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+    runnerUp: { name: 'Alemania', flag: '🇩🇪' },
+  },
+  {
+    year: 1962,
+    host: 'Chile',
+    winner: { name: 'Brasil', flag: '🇧🇷' },
+    runnerUp: { name: 'Checoslov.', flag: '🇨🇿' },
+  },
+  {
+    year: 1958,
+    host: 'Suecia',
+    winner: { name: 'Brasil', flag: '🇧🇷' },
+    runnerUp: { name: 'Suecia', flag: '🇸🇪' },
+  },
+  {
+    year: 1954,
+    host: 'Suiza',
+    winner: { name: 'Alemania', flag: '🇩🇪' },
+    runnerUp: { name: 'Hungría', flag: '🇭🇺' },
+  },
+  {
+    year: 1950,
+    host: 'Brasil',
+    winner: { name: 'Uruguay', flag: '🇺🇾' },
+    runnerUp: { name: 'Brasil', flag: '🇧🇷' },
+  },
+  {
+    year: 1938,
+    host: 'Francia',
+    winner: { name: 'Italia', flag: '🇮🇹' },
+    runnerUp: { name: 'Hungría', flag: '🇭🇺' },
+  },
+  {
+    year: 1934,
+    host: 'Italia',
+    winner: { name: 'Italia', flag: '🇮🇹' },
+    runnerUp: { name: 'Checoslov.', flag: '🇨🇿' },
+  },
+  {
+    year: 1930,
+    host: 'Uruguay',
+    winner: { name: 'Uruguay', flag: '🇺🇾' },
+    runnerUp: { name: 'Argentina', flag: '🇦🇷' },
+  },
 ]
 
 export function WCHistory() {
@@ -49,10 +159,15 @@ export function WCHistory() {
 
       <div className="divide-y divide-gray-50 dark:divide-white/[0.04] max-h-[420px] overflow-y-auto scrollbar-hide">
         {WC_SEASONS.map((s) => (
-          <div key={s.year} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors">
+          <div
+            key={s.year}
+            className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors"
+          >
             {/* Year + host */}
             <div className="w-20 flex-shrink-0">
-              <span className="font-mono text-sm font-bold text-gray-800 dark:text-white">{s.year}</span>
+              <span className="font-mono text-sm font-bold text-gray-800 dark:text-white">
+                {s.year}
+              </span>
               <p className="text-[9px] font-body text-gray-400 leading-tight truncate">{s.host}</p>
             </div>
 

@@ -63,16 +63,16 @@ CREATE OR REPLACE TRIGGER check_payment_fields_protection
 -- =============================================
 -- CRON JOB SETUP GUIDE (FOR PRODUCTION SUPABASE)
 -- =============================================
--- Execute the following SQL in your Supabase SQL Editor to schedule the score syncing:
+-- Execute the following SQL in your Supabase SQL Editor to schedule the score syncing every minute:
 --
 -- -- Enable the extensions (requires superuser access, usually enabled via dashboard)
 -- CREATE EXTENSION IF NOT EXISTS pg_cron;
 -- CREATE EXTENSION IF NOT EXISTS pg_net;
 --
--- -- Schedule the cron job to call the API route every 10 minutes:
+-- -- Schedule the cron job to call the API route every minute:
 -- SELECT cron.schedule(
---   'sync-world-cup-scores',
---   '*/10 * * * *',
+--   'sync-world-cup-scores-every-minute',
+--   '* * * * *',
 --   $$
 --   SELECT net.http_get(
 --     'https://<YOUR_APP_DOMAIN>/api/cron/sync?secret=<YOUR_CRON_SECRET>'

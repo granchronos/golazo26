@@ -27,7 +27,9 @@ export function WCBadge({ teamId, size = 'xs', className }: WCBadgeProps) {
 
   if (h.titles > 0) {
     return (
-      <span className={cn(text, 'font-bold text-[#C9A84C] leading-none whitespace-nowrap', className)}>
+      <span
+        className={cn(text, 'font-bold text-[#C9A84C] leading-none whitespace-nowrap', className)}
+      >
         {'★'.repeat(Math.min(h.titles, 5))}
       </span>
     )

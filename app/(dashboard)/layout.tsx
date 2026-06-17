@@ -6,7 +6,9 @@ import type { Profile } from '@/types/database'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
 
@@ -21,25 +23,31 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const hasRooms = (roomCount ?? 0) > 0
 
   if (!profile || !profile.name) {
-    const fallbackName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Usuario'
+    const fallbackName =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.email?.split('@')[0] ||
+      'Usuario'
     const { data: newProfile } = await admin
       .from('profiles')
-      .upsert({
-        user_id: user.id,
-        name: fallbackName,
-        avatar_url: user.user_metadata?.avatar_url || null,
-      }, { onConflict: 'user_id' })
+      .upsert(
+        {
+          user_id: user.id,
+          name: fallbackName,
+          avatar_url: user.user_metadata?.avatar_url || null,
+        },
+        { onConflict: 'user_id' }
+      )
       .select()
       .single()
 
-    const safeProfile = newProfile || { user_id: user.id, name: fallbackName, avatar_url: null } as Profile
+    const safeProfile =
+      newProfile || ({ user_id: user.id, name: fallbackName, avatar_url: null } as Profile)
 
     return (
       <div className="min-h-screen">
         <Sidebar profile={safeProfile as Profile} hasRooms={hasRooms} />
-        <DashboardShell>
-          {children}
-        </DashboardShell>
+        <DashboardShell>{children}</DashboardShell>
         <MobileNav profile={safeProfile as Profile} hasRooms={hasRooms} />
       </div>
     )
@@ -48,9 +56,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen">
       <Sidebar profile={profile as Profile} hasRooms={hasRooms} />
-      <DashboardShell>
-        {children}
-      </DashboardShell>
+      <DashboardShell>{children}</DashboardShell>
       <MobileNav profile={profile as Profile} hasRooms={hasRooms} />
     </div>
   )

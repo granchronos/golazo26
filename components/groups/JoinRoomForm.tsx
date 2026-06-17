@@ -28,7 +28,10 @@ export function JoinRoomForm({ variant = 'default' }: { variant?: 'default' | 'c
           maxLength={6}
           className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-mono uppercase font-bold focus:outline-none focus:ring-2 focus:ring-[#2A398D] dark:text-white placeholder:text-gray-400 placeholder:normal-case transition-all tracking-wider min-w-0"
         />
-        <button type="submit" className="flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/10 text-xs font-body font-medium text-gray-600 dark:text-gray-300 transition-colors flex-shrink-0">
+        <button
+          type="submit"
+          className="flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/10 text-xs font-body font-medium text-gray-600 dark:text-gray-300 transition-colors flex-shrink-0"
+        >
           <LogIn size={14} />
           Unirse
         </button>
@@ -42,9 +45,7 @@ export function JoinRoomForm({ variant = 'default' }: { variant?: 'default' | 'c
         <p className="font-body font-semibold text-sm dark:text-white mb-1">Unirse a sala</p>
         <p className="text-xs text-gray-400 font-body">Introduce el código de 6 caracteres</p>
       </div>
-      {state?.error && (
-        <p className="text-xs text-red-500 font-body">{state.error}</p>
-      )}
+      {state?.error && <p className="text-xs text-red-500 font-body">{state.error}</p>}
       <div className="flex gap-2">
         <input
           name="code"

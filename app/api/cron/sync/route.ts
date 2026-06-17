@@ -2,84 +2,89 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { getWorldCupFixtures, mapApiStatus, getMatchEvents, getMatchesTrends } from '@/lib/api/football'
+import {
+  getWorldCupFixtures,
+  mapApiStatus,
+  getMatchEvents,
+  getMatchesTrends,
+} from '@/lib/api/football'
 import { recalculateAllScores } from '@/app/actions/predictions'
 import { getOddsForTeams } from '@/lib/constants/teams'
 
 // Comprehensive English to DB ID team name mapping
 const TEAM_NAME_MAP: Record<string, string> = {
-  'Mexico': 'mex',
+  Mexico: 'mex',
   'South Africa': 'rsa',
   'Korea Republic': 'kor',
   'South Korea': 'kor',
   'Czech Republic': 'cze',
-  'Czechia': 'cze',
-  'Canada': 'can',
+  Czechia: 'cze',
+  Canada: 'can',
   'Bosnia & Herzegovina': 'bih',
   'Bosnia and Herzegovina': 'bih',
-  'Qatar': 'qat',
-  'Switzerland': 'sui',
-  'Brazil': 'bra',
-  'Morocco': 'mar',
-  'Haiti': 'hai',
-  'Scotland': 'sco',
-  'USA': 'usa',
+  Qatar: 'qat',
+  Switzerland: 'sui',
+  Brazil: 'bra',
+  Morocco: 'mar',
+  Haiti: 'hai',
+  Scotland: 'sco',
+  USA: 'usa',
   'United States': 'usa',
-  'Paraguay': 'pry',
-  'Australia': 'aus',
-  'Turkey': 'tur',
-  'Germany': 'ger',
-  'Curaçao': 'cuw',
-  'Curacao': 'cuw',
-  'Cote d\'Ivoire': 'civ',
+  Paraguay: 'pry',
+  Australia: 'aus',
+  Turkey: 'tur',
+  Germany: 'ger',
+  Curaçao: 'cuw',
+  Curacao: 'cuw',
+  "Cote d'Ivoire": 'civ',
   'Ivory Coast': 'civ',
-  'Ecuador': 'ecu',
-  'Netherlands': 'ned',
-  'Japan': 'jpn',
-  'Sweden': 'swe',
-  'Tunisia': 'tun',
-  'Belgium': 'bel',
-  'Egypt': 'egy',
-  'Iran': 'irn',
+  Ecuador: 'ecu',
+  Netherlands: 'ned',
+  Japan: 'jpn',
+  Sweden: 'swe',
+  Tunisia: 'tun',
+  Belgium: 'bel',
+  Egypt: 'egy',
+  Iran: 'irn',
   'New Zealand': 'nzl',
-  'Spain': 'esp',
+  Spain: 'esp',
   'Cabo Verde': 'cpv',
   'Cape Verde': 'cpv',
   'Saudi Arabia': 'ksa',
-  'Uruguay': 'uru',
-  'France': 'fra',
-  'Senegal': 'sen',
-  'Iraq': 'irq',
-  'Norway': 'nor',
-  'Argentina': 'arg',
-  'Algeria': 'alg',
-  'Austria': 'aut',
-  'Jordan': 'jor',
-  'Portugal': 'por',
+  Uruguay: 'uru',
+  France: 'fra',
+  Senegal: 'sen',
+  Iraq: 'irq',
+  Norway: 'nor',
+  Argentina: 'arg',
+  Algeria: 'alg',
+  Austria: 'aut',
+  Jordan: 'jor',
+  Portugal: 'por',
   'DR Congo': 'cod',
   'Congo DR': 'cod',
-  'Uzbekistan': 'uzb',
-  'Colombia': 'col',
-  'England': 'eng',
-  'Croatia': 'cro',
-  'Ghana': 'gha',
-  'Panama': 'pan',
+  Uzbekistan: 'uzb',
+  Colombia: 'col',
+  England: 'eng',
+  Croatia: 'cro',
+  Ghana: 'gha',
+  Panama: 'pan',
   // Lowercase TLAs for mapping football-data.org team IDs & simulation codes
-  'par': 'pry',
-  'ury': 'uru',
-  'cur': 'cuw',
-  'sou': 'rsa',
-  'bos': 'bih',
-  'swi': 'sui',
-  'mor': 'mar',
-  'ivo': 'civ',
-  'net': 'ned',
-  'jap': 'jpn',
-  'new': 'nzl',
-  'cap': 'cpv',
-  'sau': 'ksa',
-  'ira': 'irn',
-  'spa': 'esp'
+  par: 'pry',
+  ury: 'uru',
+  cur: 'cuw',
+  sou: 'rsa',
+  bos: 'bih',
+  swi: 'sui',
+  mor: 'mar',
+  ivo: 'civ',
+  net: 'ned',
+  jap: 'jpn',
+  new: 'nzl',
+  cap: 'cpv',
+  sau: 'ksa',
+  ira: 'irn',
+  spa: 'esp',
 }
 
 export async function GET(request: Request) {
@@ -91,11 +96,14 @@ export async function GET(request: Request) {
 
   if (!isAuthorized) {
     console.error(`Sync unauthorized. Received: "${secret}", Expected: "${expectedSecret}"`)
-    return NextResponse.json({ 
-      error: 'No autorizado', 
-      received: secret || 'empty', 
-      expected: expectedSecret 
-    }, { status: 401 })
+    return NextResponse.json(
+      {
+        error: 'No autorizado',
+        received: secret || 'empty',
+        expected: expectedSecret,
+      },
+      { status: 401 }
+    )
   }
 
   try {
@@ -115,10 +123,15 @@ export async function GET(request: Request) {
     // Fetch all current matches from DB
     const { data: dbMatches, error: dbError } = await admin
       .from('matches')
-      .select('id, match_number, home_team_id, away_team_id, status, home_score, away_score, events, match_date, odds')
+      .select(
+        'id, match_number, home_team_id, away_team_id, status, home_score, away_score, events, match_date, odds, elapsed'
+      )
 
     if (dbError || !dbMatches) {
-      return NextResponse.json({ error: 'Error al consultar partidos en la BD', details: dbError }, { status: 500 })
+      return NextResponse.json(
+        { error: 'Error al consultar partidos en la BD', details: dbError },
+        { status: 500 }
+      )
     }
 
     let updatedCount = 0
@@ -126,22 +139,27 @@ export async function GET(request: Request) {
 
     for (const apiMatch of apiMatches) {
       const apiStatus = mapApiStatus(apiMatch.statusShort)
-      
+
       // Map home/away team names or TLAs from API to our DB IDs
-      const homeDbId = TEAM_NAME_MAP[apiMatch.homeTeam] || 
+      const homeDbId =
+        TEAM_NAME_MAP[apiMatch.homeTeam] ||
         (apiMatch.homeTla
-          ? (TEAM_NAME_MAP[apiMatch.homeTla.toLowerCase()] || apiMatch.homeTla.toLowerCase())
-          : (TEAM_NAME_MAP[apiMatch.homeTeam.toLowerCase().substring(0, 3)] || apiMatch.homeTeam.toLowerCase().substring(0, 3)))
-      const awayDbId = TEAM_NAME_MAP[apiMatch.awayTeam] || 
+          ? TEAM_NAME_MAP[apiMatch.homeTla.toLowerCase()] || apiMatch.homeTla.toLowerCase()
+          : TEAM_NAME_MAP[apiMatch.homeTeam.toLowerCase().substring(0, 3)] ||
+            apiMatch.homeTeam.toLowerCase().substring(0, 3))
+      const awayDbId =
+        TEAM_NAME_MAP[apiMatch.awayTeam] ||
         (apiMatch.awayTla
-          ? (TEAM_NAME_MAP[apiMatch.awayTla.toLowerCase()] || apiMatch.awayTla.toLowerCase())
-          : (TEAM_NAME_MAP[apiMatch.awayTeam.toLowerCase().substring(0, 3)] || apiMatch.awayTeam.toLowerCase().substring(0, 3)))
+          ? TEAM_NAME_MAP[apiMatch.awayTla.toLowerCase()] || apiMatch.awayTla.toLowerCase()
+          : TEAM_NAME_MAP[apiMatch.awayTeam.toLowerCase().substring(0, 3)] ||
+            apiMatch.awayTeam.toLowerCase().substring(0, 3))
 
       // Find the match in our DB by team IDs
-      const matchedDb = dbMatches.find(dbm => 
-        (dbm.home_team_id === homeDbId && dbm.away_team_id === awayDbId) ||
-        // Sometimes APIs swap home/away, check that too just in case
-        (dbm.home_team_id === awayDbId && dbm.away_team_id === homeDbId)
+      const matchedDb = dbMatches.find(
+        (dbm) =>
+          (dbm.home_team_id === homeDbId && dbm.away_team_id === awayDbId) ||
+          // Sometimes APIs swap home/away, check that too just in case
+          (dbm.home_team_id === awayDbId && dbm.away_team_id === homeDbId)
       )
 
       if (!matchedDb) continue
@@ -161,10 +179,15 @@ export async function GET(request: Request) {
       // If the database has a status like 'live' or 'finished', but the API says 'scheduled':
       // We should only reset the match back to scheduled if the match is scheduled in the future (to correct stuck future matches).
       // If the match is in the past, we should NOT reset it to scheduled as the API might be lagging.
-      const datesMatch = new Date(matchedDb.match_date).getTime() === new Date(apiMatch.date).getTime()
+      const datesMatch =
+        new Date(matchedDb.match_date).getTime() === new Date(apiMatch.date).getTime()
       if (apiStatus === 'scheduled' && matchedDb.odds === matchOdds && datesMatch) {
         const isFutureMatch = new Date(matchedDb.match_date).getTime() > Date.now()
-        if (matchedDb.status === 'scheduled' || matchedDb.status === 'postponed' || !isFutureMatch) {
+        if (
+          matchedDb.status === 'scheduled' ||
+          matchedDb.status === 'postponed' ||
+          !isFutureMatch
+        ) {
           continue
         }
       }
@@ -172,7 +195,7 @@ export async function GET(request: Request) {
       if (matchedDb) {
         const homeScore = apiMatch.homeGoals ?? null
         const awayScore = apiMatch.awayGoals ?? null
-        
+
         // Let's determine the winner ID
         let winnerId: string | null = null
         if (apiStatus === 'finished') {
@@ -186,7 +209,8 @@ export async function GET(request: Request) {
         }
 
         // Fetch events if the match is live, OR if it is finished and has no events in DB yet
-        const hasDbEvents = matchedDb.events && Array.isArray(matchedDb.events) && matchedDb.events.length > 0
+        const hasDbEvents =
+          matchedDb.events && Array.isArray(matchedDb.events) && matchedDb.events.length > 0
         let eventsPayload = matchedDb.events
         let fetchedEvents = false
 
@@ -198,33 +222,38 @@ export async function GET(request: Request) {
               const apiEvents = await getMatchEvents(apiMatch.apiFixtureId)
               if (apiEvents && apiEvents.length > 0) {
                 eventsPayload = apiEvents
-                  .filter(ev => ev.type === 'Goal' || ev.type === 'Card')
-                  .map(ev => ({
+                  .filter((ev) => ev.type === 'Goal' || ev.type === 'Card')
+                  .map((ev) => ({
                     time: ev.time.elapsed,
                     extra: ev.time.extra,
                     team_id: ev.team.name === apiMatch.homeTeam ? homeDbId : awayDbId,
                     player: ev.player.name,
                     type: ev.type,
                     detail: ev.detail,
-                    comments: ev.comments
+                    comments: ev.comments,
                   }))
                 fetchedEvents = true
               }
             } catch (eventErr) {
-              console.error(`Error fetching events for apiFixtureId ${apiMatch.apiFixtureId}:`, eventErr)
+              console.error(
+                `Error fetching events for apiFixtureId ${apiMatch.apiFixtureId}:`,
+                eventErr
+              )
             }
           }
         }
 
-        // Only update if there is a change in status, scores, odds, date, or if new events were fetched/cleared
-        const dateChanged = new Date(matchedDb.match_date).getTime() !== new Date(apiMatch.date).getTime()
-        const hasChanges = 
+        // Only update if there is a change in status, scores, odds, date, elapsed, or if new events were fetched/cleared
+        const dateChanged =
+          new Date(matchedDb.match_date).getTime() !== new Date(apiMatch.date).getTime()
+        const hasChanges =
           matchedDb.status !== apiStatus ||
           matchedDb.home_score !== homeScore ||
           matchedDb.away_score !== awayScore ||
           fetchedEvents ||
           (apiStatus === 'scheduled' && matchedDb.events !== null) ||
           matchedDb.odds !== matchOdds ||
+          matchedDb.elapsed !== apiMatch.elapsed ||
           dateChanged
 
         if (hasChanges) {
@@ -237,7 +266,8 @@ export async function GET(request: Request) {
               winner_id: winnerId,
               events: eventsPayload,
               odds: matchOdds,
-              match_date: apiMatch.date
+              match_date: apiMatch.date,
+              elapsed: apiMatch.elapsed,
             })
             .eq('id', matchedDb.id)
 
@@ -245,7 +275,9 @@ export async function GET(request: Request) {
             console.error(`Error updating match #${matchedDb.match_number}:`, updateError)
           } else {
             updatedCount++
-            updatedMatchesLog.push(`Match #${matchedDb.match_number} (${homeDbId} vs ${awayDbId}) updated to ${homeScore ?? 'null'}-${awayScore ?? 'null'} [${apiStatus}] (events: ${apiStatus === 'scheduled' ? 'reset to null' : (fetchedEvents ? 'updated' : 'unchanged')})`)
+            updatedMatchesLog.push(
+              `Match #${matchedDb.match_number} (${homeDbId} vs ${awayDbId}) updated to ${homeScore ?? 'null'}-${awayScore ?? 'null'} [${apiStatus}] (events: ${apiStatus === 'scheduled' ? 'reset to null' : fetchedEvents ? 'updated' : 'unchanged'})`
+            )
           }
         }
       }
@@ -261,9 +293,11 @@ export async function GET(request: Request) {
       updated_count: updatedCount,
       log: updatedMatchesLog,
     })
-
   } catch (error: any) {
     console.error('Error during cron score sync:', error)
-    return NextResponse.json({ error: error.message || 'Error interno del servidor' }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || 'Error interno del servidor' },
+      { status: 500 }
+    )
   }
 }

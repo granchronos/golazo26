@@ -26,16 +26,40 @@ const CURRENCY_OPTIONS = [
 ]
 
 const SPLIT_PRESETS: { label: string; split: PoolSplit[] }[] = [
-  { label: 'Top 3 (70/20/10)', split: [{ place: 1, pct: 70 }, { place: 2, pct: 20 }, { place: 3, pct: 10 }] },
-  { label: 'Top 3 (60/25/15)', split: [{ place: 1, pct: 60 }, { place: 2, pct: 25 }, { place: 3, pct: 15 }] },
-  { label: 'Top 2 (80/20)', split: [{ place: 1, pct: 80 }, { place: 2, pct: 20 }] },
+  {
+    label: 'Top 3 (70/20/10)',
+    split: [
+      { place: 1, pct: 70 },
+      { place: 2, pct: 20 },
+      { place: 3, pct: 10 },
+    ],
+  },
+  {
+    label: 'Top 3 (60/25/15)',
+    split: [
+      { place: 1, pct: 60 },
+      { place: 2, pct: 25 },
+      { place: 3, pct: 15 },
+    ],
+  },
+  {
+    label: 'Top 2 (80/20)',
+    split: [
+      { place: 1, pct: 80 },
+      { place: 2, pct: 20 },
+    ],
+  },
   { label: 'Winner takes all', split: [{ place: 1, pct: 100 }] },
 ]
 
 export function PoolConfigPanel({ room, onClose, open }: PoolConfigPanelProps) {
   const poolSplit = Array.isArray(room.pool_split)
     ? (room.pool_split as unknown as PoolSplit[])
-    : [{ place: 1, pct: 70 }, { place: 2, pct: 20 }, { place: 3, pct: 10 }]
+    : [
+        { place: 1, pct: 70 },
+        { place: 2, pct: 20 },
+        { place: 3, pct: 10 },
+      ]
 
   const [enabled, setEnabled] = useState(room.pool_enabled)
   const [buyIn, setBuyIn] = useState(room.pool_buy_in || 100)
@@ -132,7 +156,9 @@ export function PoolConfigPanel({ room, onClose, open }: PoolConfigPanelProps) {
               </label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-mono">{currencySymbol}</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-mono">
+                    {currencySymbol}
+                  </span>
                   <input
                     type="number"
                     min={0}
@@ -148,7 +174,9 @@ export function PoolConfigPanel({ room, onClose, open }: PoolConfigPanelProps) {
                   className="px-3 py-2 text-sm font-body bg-gray-50 dark:bg-white/[0.06] border border-gray-200 dark:border-white/10 rounded-lg outline-none"
                 >
                   {CURRENCY_OPTIONS.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -183,13 +211,17 @@ export function PoolConfigPanel({ room, onClose, open }: PoolConfigPanelProps) {
               <div className="space-y-2">
                 {split.map((s, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-gray-400 w-8 text-right">{s.place}°</span>
+                    <span className="text-xs font-mono text-gray-400 w-8 text-right">
+                      {s.place}°
+                    </span>
                     <input
                       type="number"
                       min={1}
                       max={100}
                       value={s.pct}
-                      onChange={(e) => updateSplitPct(idx, Math.max(0, parseInt(e.target.value) || 0))}
+                      onChange={(e) =>
+                        updateSplitPct(idx, Math.max(0, parseInt(e.target.value) || 0))
+                      }
                       className="w-20 px-2 py-1.5 text-sm font-mono bg-gray-50 dark:bg-white/[0.06] border border-gray-200 dark:border-white/10 rounded-lg outline-none text-center"
                     />
                     <span className="text-xs text-gray-400">%</span>
@@ -217,10 +249,12 @@ export function PoolConfigPanel({ room, onClose, open }: PoolConfigPanelProps) {
                     + Agregar lugar
                   </button>
                 )}
-                <div className={cn(
-                  'text-xs font-mono text-right',
-                  splitTotal === 100 ? 'text-[#3CAC3B]' : 'text-[#E61D25]'
-                )}>
+                <div
+                  className={cn(
+                    'text-xs font-mono text-right',
+                    splitTotal === 100 ? 'text-[#3CAC3B]' : 'text-[#E61D25]'
+                  )}
+                >
                   Total: {splitTotal}%
                 </div>
               </div>
@@ -233,13 +267,23 @@ export function PoolConfigPanel({ room, onClose, open }: PoolConfigPanelProps) {
                   <Zap size={12} /> Vista previa (10 miembros)
                 </div>
                 <p className="text-sm font-body text-gray-600 dark:text-gray-300">
-                  Pozo total: <span className="font-mono font-bold">{currencySymbol}{(buyIn * 10).toLocaleString()}</span>
+                  Pozo total:{' '}
+                  <span className="font-mono font-bold">
+                    {currencySymbol}
+                    {(buyIn * 10).toLocaleString()}
+                  </span>
                 </p>
                 {split.map((s) => (
-                  <div key={s.place} className="flex items-center justify-between text-sm font-body">
-                    <span className="text-gray-500 dark:text-gray-400">{s.place}° lugar ({s.pct}%)</span>
+                  <div
+                    key={s.place}
+                    className="flex items-center justify-between text-sm font-body"
+                  >
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {s.place}° lugar ({s.pct}%)
+                    </span>
                     <span className="font-mono font-bold text-gray-700 dark:text-gray-200">
-                      {currencySymbol}{Math.round(buyIn * 10 * s.pct / 100).toLocaleString()}
+                      {currencySymbol}
+                      {Math.round((buyIn * 10 * s.pct) / 100).toLocaleString()}
                     </span>
                   </div>
                 ))}

@@ -9,17 +9,21 @@ const updateProfileSchema = z.object({
   name: z.string().min(2, 'Nombre muy corto').max(50, 'Nombre muy largo'),
 })
 
-const changePasswordSchema = z.object({
-  newPassword: z.string().min(6, 'Mínimo 6 caracteres'),
-  confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'Las contraseñas no coinciden',
-  path: ['confirmPassword'],
-})
+const changePasswordSchema = z
+  .object({
+    newPassword: z.string().min(6, 'Mínimo 6 caracteres'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmPassword'],
+  })
 
 export async function updateProfile(_prevState: unknown, formData: FormData) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
   const parsed = updateProfileSchema.safeParse({
@@ -45,7 +49,9 @@ export async function updateProfile(_prevState: unknown, formData: FormData) {
 
 export async function changePassword(_prevState: unknown, formData: FormData) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
   const parsed = changePasswordSchema.safeParse({
@@ -69,16 +75,15 @@ export async function changePassword(_prevState: unknown, formData: FormData) {
 
 export async function deleteAccount() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
   const admin = await createAdminClient()
 
   // Find rooms where this user is the admin
-  const { data: adminRooms } = await admin
-    .from('rooms')
-    .select('id')
-    .eq('admin_id', user.id)
+  const { data: adminRooms } = await admin.from('rooms').select('id').eq('admin_id', user.id)
 
   if (adminRooms && adminRooms.length > 0) {
     for (const room of adminRooms) {
@@ -101,10 +106,7 @@ export async function deleteAccount() {
           .single()
 
         if (nextAdmin) {
-          await admin
-            .from('rooms')
-            .update({ admin_id: nextAdmin.user_id })
-            .eq('id', room.id)
+          await admin.from('rooms').update({ admin_id: nextAdmin.user_id }).eq('id', room.id)
         }
       }
       // If no other members, the room will be deleted by ON DELETE CASCADE

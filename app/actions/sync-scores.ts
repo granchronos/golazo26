@@ -11,7 +11,9 @@ import { getWorldCupFixtures, mapApiStatus, type LiveMatch } from '@/lib/api/foo
  */
 export async function syncLiveScores() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
   // Simple admin check — you can refine this

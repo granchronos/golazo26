@@ -28,7 +28,8 @@ const config: Config = {
         'fwc-gradient': 'linear-gradient(135deg, #2A398D 0%, #E61D25 100%)',
         'fwc-gradient-r': 'linear-gradient(to right, #2A398D, #E61D25)',
         'fwc-dark': 'linear-gradient(135deg, #1A1A1A 0%, #2A398D 100%)',
-        'pattern-26': "url(\"data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='5' y='45' font-family='Arial' font-size='40' font-weight='900' fill='rgba(42,57,141,0.05)'%3E26%3C/text%3E%3C/svg%3E\")",
+        'pattern-26':
+          "url(\"data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='5' y='45' font-family='Arial' font-size='40' font-weight='900' fill='rgba(42,57,141,0.05)'%3E26%3C/text%3E%3C/svg%3E\")",
       },
       animation: {
         shimmer: 'shimmer 2s infinite',

@@ -37,7 +37,13 @@ export function StaggerContainer({
   )
 }
 
-export function StaggerItem({ children, className }: { children: React.ReactNode; className?: string }) {
+export function StaggerItem({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
   return (
     <motion.div
       variants={{
@@ -51,7 +57,13 @@ export function StaggerItem({ children, className }: { children: React.ReactNode
   )
 }
 
-export function ScaleOnHover({ children, className }: { children: React.ReactNode; className?: string }) {
+export function ScaleOnHover({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}

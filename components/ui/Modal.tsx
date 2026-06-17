@@ -20,7 +20,9 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
     } else {
       document.body.style.overflow = ''
     }
-    return () => { document.body.style.overflow = '' }
+    return () => {
+      document.body.style.overflow = ''
+    }
   }, [open])
 
   return (
@@ -47,7 +49,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
               size === 'sm' && 'max-w-sm',
               size === 'md' && 'max-w-md',
               size === 'lg' && 'max-w-2xl',
-              size === 'xl' && 'max-w-5xl',
+              size === 'xl' && 'max-w-5xl'
             )}
           >
             {title && (

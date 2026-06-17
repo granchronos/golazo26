@@ -10,7 +10,11 @@ import { CountdownTimer } from './CountdownTimer'
 import { PredictionsTour } from './PredictionsTour'
 import { KnockoutPredictions } from './KnockoutPredictions'
 import { triggerWinConfetti } from '@/components/animations/ConfettiEffect'
-import { saveGroupPrediction, saveAllGroupPredictions, saveAgnosticPredictions } from '@/app/actions/predictions'
+import {
+  saveGroupPrediction,
+  saveAllGroupPredictions,
+  saveAgnosticPredictions,
+} from '@/app/actions/predictions'
 import { GROUP_STAGE_DEADLINE, CHAMPION_GOLEADOR_DEADLINE } from '@/lib/constants/points'
 import { TeamFlag } from '@/components/ui/TeamFlag'
 import { GROUP_LETTERS, TEAMS } from '@/lib/constants/teams'
@@ -84,10 +88,28 @@ export function PredictionMatrix({
 
   // Goleador combobox state
   const [goleadorSearch, setGoleadorSearch] = useState(initialGoleador)
-  const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string; position: string; teamId: string; teamName: string; flagEmoji: string }>>([])
+  const [searchResults, setSearchResults] = useState<
+    Array<{
+      id: string
+      name: string
+      position: string
+      teamId: string
+      teamName: string
+      flagEmoji: string
+    }>
+  >([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [loadingPlayers, setLoadingPlayers] = useState(false)
-  const [stars, setStars] = useState<Array<{ id: string; name: string; position: string; teamId: string; teamName: string; flagEmoji: string }>>([])
+  const [stars, setStars] = useState<
+    Array<{
+      id: string
+      name: string
+      position: string
+      teamId: string
+      teamName: string
+      flagEmoji: string
+    }>
+  >([])
   const [selectedGoleadorTeamId, setSelectedGoleadorTeamId] = useState<string>('')
   const goleadorComboboxRef = useRef<HTMLDivElement>(null)
 
@@ -122,7 +144,7 @@ export function PredictionMatrix({
       }
     }
     fetchStars()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Also try to find goleador flag from search results
@@ -206,7 +228,7 @@ export function PredictionMatrix({
     }, 1500)
 
     return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [predictedChampionId, predictedGoleador, roomId, isChampGoleadorOpen])
 
   // Keep a ref to saved so the auto-save effect doesn't need it in deps
@@ -256,26 +278,32 @@ export function PredictionMatrix({
     }, 1500)
 
     return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selections, roomId, isOpen])
 
-  const handleChange = useCallback((letter: GroupLetter, first: string | null, second: string | null) => {
-    setSelections((prev) => ({ ...prev, [letter]: { first, second } }))
-  }, [])
+  const handleChange = useCallback(
+    (letter: GroupLetter, first: string | null, second: string | null) => {
+      setSelections((prev) => ({ ...prev, [letter]: { first, second } }))
+    },
+    []
+  )
 
-  const handleSaveSingle = useCallback((letter: GroupLetter) => {
-    const sel = selections[letter]
-    if (!sel.first || !sel.second) return
-    startTransition(async () => {
-      const result = await saveGroupPrediction(roomId, letter, sel.first!, sel.second!)
-      if (result?.error) {
-        toast.error(result.error)
-      } else {
-        setSaved((prev) => ({ ...prev, [letter]: { first: sel.first, second: sel.second } }))
-        toast.success(`Grupo ${letter} guardado`)
-      }
-    })
-  }, [roomId, selections])
+  const handleSaveSingle = useCallback(
+    (letter: GroupLetter) => {
+      const sel = selections[letter]
+      if (!sel.first || !sel.second) return
+      startTransition(async () => {
+        const result = await saveGroupPrediction(roomId, letter, sel.first!, sel.second!)
+        if (result?.error) {
+          toast.error(result.error)
+        } else {
+          setSaved((prev) => ({ ...prev, [letter]: { first: sel.first, second: sel.second } }))
+          toast.success(`Grupo ${letter} guardado`)
+        }
+      })
+    },
+    [roomId, selections]
+  )
 
   const handleSaveAll = () => {
     if (changedGroups.length === 0) return
@@ -295,18 +323,22 @@ export function PredictionMatrix({
         }
         setSaved(newSaved)
         triggerWinConfetti()
-        toast.success(`${changedGroups.length} grupo${changedGroups.length > 1 ? 's' : ''} guardado${changedGroups.length > 1 ? 's' : ''}`)
+        toast.success(
+          `${changedGroups.length} grupo${changedGroups.length > 1 ? 's' : ''} guardado${changedGroups.length > 1 ? 's' : ''}`
+        )
       }
     })
   }
 
   // Filtered teams for champion search
-  const filteredTeams = championSearch.trim().length > 0
-    ? TEAMS.filter((t) =>
-        t.name.toLowerCase().includes(championSearch.toLowerCase()) ||
-        t.code.toLowerCase().includes(championSearch.toLowerCase())
-      )
-    : TEAMS
+  const filteredTeams =
+    championSearch.trim().length > 0
+      ? TEAMS.filter(
+          (t) =>
+            t.name.toLowerCase().includes(championSearch.toLowerCase()) ||
+            t.code.toLowerCase().includes(championSearch.toLowerCase())
+        )
+      : TEAMS
 
   const selectedChampionTeam = predictedChampionId ? findTeam(predictedChampionId) : null
 
@@ -317,7 +349,7 @@ export function PredictionMatrix({
       {/* ── Special Predictions Card ── */}
       <div className="glass-card p-4 sm:p-5 border-l-4 border-l-[#C9A84C] relative bg-gradient-to-r from-amber-50/50 to-white dark:from-amber-950/20 dark:to-zinc-900/50">
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#C9A84C]/10 rounded-full blur-2xl pointer-events-none" />
-        
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="font-display text-sm sm:text-base text-gray-900 dark:text-white flex items-center gap-2">
@@ -325,14 +357,21 @@ export function PredictionMatrix({
             </h3>
             <p className="text-[11px] sm:text-xs font-body text-gray-500 mt-1">
               Elige al Campeón y al Goleador del Mundial, independiente de tu bracket.
-              <span className="font-bold text-amber-600 dark:text-amber-400"> ¡Suma 15 y 10 puntos extra!</span>
+              <span className="font-bold text-amber-600 dark:text-amber-400">
+                {' '}
+                ¡Suma 15 y 10 puntos extra!
+              </span>
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {agnosticAutoSaving && (
               <span className="text-[10px] font-body text-amber-500 animate-pulse">Guardando…</span>
             )}
-            <CountdownTimer deadline={CHAMPION_GOLEADOR_DEADLINE} label="Cierre elecciones" variant="compact" />
+            <CountdownTimer
+              deadline={CHAMPION_GOLEADOR_DEADLINE}
+              label="Cierre elecciones"
+              variant="compact"
+            />
           </div>
         </div>
 
@@ -356,17 +395,28 @@ export function PredictionMatrix({
                   disabled={!isChampGoleadorOpen}
                   className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm hover:border-[#C9A84C]/50 disabled:opacity-75 transition-colors text-left"
                 >
-                  <TeamFlag flagCode={selectedChampionTeam.flag_code} name={selectedChampionTeam.name} size={18} />
+                  <TeamFlag
+                    flagCode={selectedChampionTeam.flag_code}
+                    name={selectedChampionTeam.name}
+                    size={18}
+                  />
                   <span className="font-semibold">{selectedChampionTeam.name}</span>
-                  <span className="text-[10px] text-gray-400 font-mono">({selectedChampionTeam.code})</span>
-                  <span className="text-[10px] text-gray-400 font-mono">FIFA #{selectedChampionTeam.fifa_ranking}</span>
+                  <span className="text-[10px] text-gray-400 font-mono">
+                    ({selectedChampionTeam.code})
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-mono">
+                    FIFA #{selectedChampionTeam.fifa_ranking}
+                  </span>
                   {isChampGoleadorOpen && (
                     <ChevronDown size={12} className="ml-auto text-gray-400" />
                   )}
                 </button>
               ) : (
                 <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Search
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
                   <input
                     type="text"
                     value={championSearch}
@@ -428,10 +478,19 @@ export function PredictionMatrix({
                                 : 'text-gray-900 dark:text-white'
                             )}
                           >
-                            <TeamFlag flagCode={team.flag_code} name={team.name} size={18} className="flex-shrink-0" />
+                            <TeamFlag
+                              flagCode={team.flag_code}
+                              name={team.name}
+                              size={18}
+                              className="flex-shrink-0"
+                            />
                             <span className="font-semibold">{team.name}</span>
-                            <span className="text-[10px] text-gray-400 font-mono">#{team.fifa_ranking}</span>
-                            <span className="text-[10px] text-gray-400 font-mono ml-auto">{team.code} · {team.group_letter}</span>
+                            <span className="text-[10px] text-gray-400 font-mono">
+                              #{team.fifa_ranking}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-mono ml-auto">
+                              {team.code} · {team.group_letter}
+                            </span>
                           </button>
                         ))
                       )}
@@ -463,7 +522,11 @@ export function PredictionMatrix({
                 >
                   {(() => {
                     const t = TEAMS_BY_ID[selectedGoleadorTeamId]
-                    return t ? <TeamFlag flagCode={t.flag_code} name={t.name} size={18} /> : <span className="text-base">⚽</span>
+                    return t ? (
+                      <TeamFlag flagCode={t.flag_code} name={t.name} size={18} />
+                    ) : (
+                      <span className="text-base">⚽</span>
+                    )
                   })()}
                   <span className="font-semibold">{predictedGoleador}</span>
                   {isChampGoleadorOpen && (
@@ -482,7 +545,10 @@ export function PredictionMatrix({
                 </button>
               ) : (
                 <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <Search
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
                   <input
                     type="text"
                     value={goleadorSearch}
@@ -518,45 +584,57 @@ export function PredictionMatrix({
                         Buscando jugadores...
                       </div>
                     )}
-                    
-                    {!loadingPlayers && searchResults.length === 0 && goleadorSearch.trim().length >= 2 && (
-                      <div className="px-4 py-3 text-xs font-body text-gray-500">
-                        No se encontraron coincidencias. Se guardará &quot;{goleadorSearch}&quot;.
-                      </div>
-                    )}
 
-                    {!loadingPlayers && (searchResults.length > 0 || (goleadorSearch.trim().length < 2 && stars.length > 0)) && (
-                      <div className="py-1.5 divide-y divide-gray-100 dark:divide-white/[0.04]">
-                        <div className="px-3 py-1 text-[9px] font-semibold font-body text-amber-600 uppercase tracking-wider bg-amber-50/50 dark:bg-amber-950/10">
-                          {searchResults.length > 0 ? 'Resultados de búsqueda' : 'Estrellas Recomendadas'}
+                    {!loadingPlayers &&
+                      searchResults.length === 0 &&
+                      goleadorSearch.trim().length >= 2 && (
+                        <div className="px-4 py-3 text-xs font-body text-gray-500">
+                          No se encontraron coincidencias. Se guardará &quot;{goleadorSearch}&quot;.
                         </div>
-                        {(searchResults.length > 0 ? searchResults : stars).map((player) => (
-                          <button
-                            key={player.id}
-                            type="button"
-                            onClick={() => {
-                              setGoleadorSearch(player.name)
-                              setPredictedGoleador(player.name)
-                              setSelectedGoleadorTeamId(player.teamId)
-                              setShowDropdown(false)
-                            }}
-                            className="w-full text-left px-4 py-2 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors flex items-center justify-between text-xs sm:text-sm font-body text-gray-900 dark:text-white"
-                          >
-                            <div className="flex items-center gap-2">
-                              {(() => {
-                                const t = TEAMS_BY_ID[player.teamId]
-                                return t ? <TeamFlag flagCode={t.flag_code} name={t.name} size={16} /> : <span className="text-sm">⚽</span>
-                              })()}
-                              <span className="font-semibold">{player.name}</span>
-                              <span className="text-[10px] text-gray-400 font-mono">({player.teamId.toUpperCase()})</span>
-                            </div>
-                            <span className="text-[9px] bg-gray-100 dark:bg-white/10 text-gray-500 px-1.5 py-0.5 rounded">
-                              {player.position}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                      )}
+
+                    {!loadingPlayers &&
+                      (searchResults.length > 0 ||
+                        (goleadorSearch.trim().length < 2 && stars.length > 0)) && (
+                        <div className="py-1.5 divide-y divide-gray-100 dark:divide-white/[0.04]">
+                          <div className="px-3 py-1 text-[9px] font-semibold font-body text-amber-600 uppercase tracking-wider bg-amber-50/50 dark:bg-amber-950/10">
+                            {searchResults.length > 0
+                              ? 'Resultados de búsqueda'
+                              : 'Estrellas Recomendadas'}
+                          </div>
+                          {(searchResults.length > 0 ? searchResults : stars).map((player) => (
+                            <button
+                              key={player.id}
+                              type="button"
+                              onClick={() => {
+                                setGoleadorSearch(player.name)
+                                setPredictedGoleador(player.name)
+                                setSelectedGoleadorTeamId(player.teamId)
+                                setShowDropdown(false)
+                              }}
+                              className="w-full text-left px-4 py-2 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors flex items-center justify-between text-xs sm:text-sm font-body text-gray-900 dark:text-white"
+                            >
+                              <div className="flex items-center gap-2">
+                                {(() => {
+                                  const t = TEAMS_BY_ID[player.teamId]
+                                  return t ? (
+                                    <TeamFlag flagCode={t.flag_code} name={t.name} size={16} />
+                                  ) : (
+                                    <span className="text-sm">⚽</span>
+                                  )
+                                })()}
+                                <span className="font-semibold">{player.name}</span>
+                                <span className="text-[10px] text-gray-400 font-mono">
+                                  ({player.teamId.toUpperCase()})
+                                </span>
+                              </div>
+                              <span className="text-[9px] bg-gray-100 dark:bg-white/10 text-gray-500 px-1.5 py-0.5 rounded">
+                                {player.position}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -566,15 +644,23 @@ export function PredictionMatrix({
       </div>
 
       {/* Progress + Countdown */}
-      <div id="tour-progress" className="glass-card p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+      <div
+        id="tour-progress"
+        className="glass-card p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
+      >
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-body text-gray-500">
-              <span className="font-mono font-bold text-gray-900 dark:text-white">{savedCount}</span>/12 grupos guardados
+              <span className="font-mono font-bold text-gray-900 dark:text-white">
+                {savedCount}
+              </span>
+              /12 grupos guardados
             </p>
             <div className="flex items-center gap-2">
               {autoSaving && (
-                <span className="text-[10px] font-body text-gray-400 animate-pulse">Guardando…</span>
+                <span className="text-[10px] font-body text-gray-400 animate-pulse">
+                  Guardando…
+                </span>
               )}
               <span className="text-xs font-mono text-gray-400">{pct}%</span>
             </div>

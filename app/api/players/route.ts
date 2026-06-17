@@ -8,9 +8,7 @@ export async function GET(request: Request) {
   try {
     const admin = await createAdminClient()
 
-    let query = admin
-      .from('players')
-      .select(`
+    let query = admin.from('players').select(`
         id,
         name,
         position,
@@ -41,7 +39,7 @@ export async function GET(request: Request) {
       position: p.position,
       teamId: p.team_id,
       teamName: p.teams?.name || '',
-      flagEmoji: p.teams?.flag_emoji || '⚽'
+      flagEmoji: p.teams?.flag_emoji || '⚽',
     }))
 
     return NextResponse.json({ players })

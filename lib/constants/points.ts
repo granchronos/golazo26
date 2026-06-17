@@ -17,7 +17,7 @@ export const POINTS_SYSTEM = {
   agnostic: {
     champion: 15,
     goleador: 10,
-  }
+  },
 } as const
 
 export const ROUND_POINTS: Record<MatchRound, number> = {
@@ -66,7 +66,8 @@ export const MAX_POSSIBLE_POINTS =
   // Final: 100pts
   100 +
   // Champion and Goleador agnostic choices: 15pts + 10pts
-  15 + 10
+  15 +
+  10
 
 // Deadlines:
 // Group Stage & overall winner/goleador closes: Jun 18 at 15:00 local (13:00 UTC)
@@ -75,4 +76,3 @@ export const CHAMPION_GOLEADOR_DEADLINE = new Date('2026-06-18T13:00:00Z')
 
 // First Matchday (Jornada 1) score prediction closes: Jun 12 at 20:55 local (18:55 UTC)
 export const FIRST_JORNADA_DEADLINE = new Date('2026-06-12T18:55:00Z')
-

@@ -55,7 +55,9 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
       {/* Header */}
       <div className="px-3 py-1.5 bg-gradient-to-r from-[#2A398D] to-[#2A398D]/80">
         <div className="flex items-center gap-2">
-          <span className="font-display text-lg text-white tracking-wider">Grupo {groupLetter}</span>
+          <span className="font-display text-lg text-white tracking-wider">
+            Grupo {groupLetter}
+          </span>
         </div>
       </div>
 
@@ -92,10 +94,12 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
                 )}
               >
                 <td className="px-3 py-1.5">
-                  <span className={cn(
-                    'w-4 h-4 rounded-full inline-flex items-center justify-center text-[10px] font-bold',
-                    idx < 2 ? 'bg-[#3CAC3B] text-white' : 'text-gray-400'
-                  )}>
+                  <span
+                    className={cn(
+                      'w-4 h-4 rounded-full inline-flex items-center justify-center text-[10px] font-bold',
+                      idx < 2 ? 'bg-[#3CAC3B] text-white' : 'text-gray-400'
+                    )}
+                  >
                     {idx + 1}
                   </span>
                 </td>
@@ -110,21 +114,36 @@ export function GroupTable({ groupLetter, teams, standings, compact = false }: G
                 </td>
                 {!compact && (
                   <>
-                    <td className="text-center px-1 py-1.5 text-gray-400 font-mono text-[10px]">#{row.team.fifa_ranking}</td>
-                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">{row.played}</td>
-                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">{row.won}</td>
-                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">{row.drawn}</td>
-                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">{row.lost}</td>
+                    <td className="text-center px-1 py-1.5 text-gray-400 font-mono text-[10px]">
+                      #{row.team.fifa_ranking}
+                    </td>
                     <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">
-                      {row.gf - row.ga > 0 ? '+' : ''}{row.gf - row.ga}
+                      {row.played}
+                    </td>
+                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">
+                      {row.won}
+                    </td>
+                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">
+                      {row.drawn}
+                    </td>
+                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">
+                      {row.lost}
+                    </td>
+                    <td className="text-center px-1 py-1.5 text-gray-600 dark:text-gray-400">
+                      {row.gf - row.ga > 0 ? '+' : ''}
+                      {row.gf - row.ga}
                     </td>
                   </>
                 )}
                 <td className="text-center px-3 py-1.5">
-                  <span className={cn(
-                    'font-mono font-bold text-sm',
-                    idx < 2 ? 'text-[#2A398D] dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'
-                  )}>
+                  <span
+                    className={cn(
+                      'font-mono font-bold text-sm',
+                      idx < 2
+                        ? 'text-[#2A398D] dark:text-blue-400'
+                        : 'text-gray-600 dark:text-gray-400'
+                    )}
+                  >
                     {row.points}
                   </span>
                 </td>

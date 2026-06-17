@@ -55,7 +55,9 @@ export function GroupPredictionCard({
     <div className="glass-card overflow-hidden">
       {/* Header */}
       <div className="px-4 py-2.5 border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
-        <span className="font-display text-sm text-gray-900 dark:text-white">Grupo {groupLetter}</span>
+        <span className="font-display text-sm text-gray-900 dark:text-white">
+          Grupo {groupLetter}
+        </span>
         {!isOpen && (
           <span className="flex items-center gap-1 text-[10px] font-body text-gray-400">
             <Lock size={10} /> Cerrado
@@ -72,7 +74,10 @@ export function GroupPredictionCard({
       </div>
 
       {/* Team list */}
-      <div id={groupLetter === 'A' ? 'tour-team-list' : undefined} className="divide-y divide-gray-50 dark:divide-white/[0.04]">
+      <div
+        id={groupLetter === 'A' ? 'tour-team-list' : undefined}
+        className="divide-y divide-gray-50 dark:divide-white/[0.04]"
+      >
         {teams.map((team) => {
           const isFirst = first === team.id
           const isSecond = second === team.id
@@ -98,7 +103,9 @@ export function GroupPredictionCard({
                 <span className="text-sm font-body text-gray-800 dark:text-gray-200 truncate">
                   {team.name}
                 </span>
-                <span className="text-[9px] font-mono text-gray-400">FIFA #{team.fifa_ranking}</span>
+                <span className="text-[9px] font-mono text-gray-400">
+                  FIFA #{team.fifa_ranking}
+                </span>
               </div>
               <WCBadge teamId={team.id} size="xs" />
               {isFirst && (
@@ -119,11 +126,7 @@ export function GroupPredictionCard({
       {/* Per-group save button */}
       {isOpen && first && second && hasChanged && (
         <div className="px-4 py-3 border-t border-gray-100 dark:border-white/[0.06]">
-          <button
-            onClick={onSave}
-            disabled={isSaving}
-            className="w-full btn-fwc text-xs py-2"
-          >
+          <button onClick={onSave} disabled={isSaving} className="w-full btn-fwc text-xs py-2">
             {isSaving ? 'Guardando...' : 'Guardar grupo'}
           </button>
         </div>

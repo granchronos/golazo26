@@ -8,17 +8,17 @@
     --font-noto: 'Noto Sans', sans-serif;
     --font-jetbrains: 'JetBrains Mono', monospace;
 
-    --bg-primary: #FAFAFA;
+    --bg-primary: #fafafa;
     --text-primary: #111111;
-    --fwc-blue: #2A398D;
-    --fwc-red: #E61D25;
-    --fwc-green: #3CAC3B;
-    --fwc-gold: #C9A84C;
+    --fwc-blue: #2a398d;
+    --fwc-red: #e61d25;
+    --fwc-green: #3cac3b;
+    --fwc-gold: #c9a84c;
   }
 
   .dark {
     --bg-primary: #0a0a0f;
-    --text-primary: #F5F5F5;
+    --text-primary: #f5f5f5;
   }
 
   * {
@@ -29,7 +29,9 @@
     @apply bg-[var(--bg-primary)] text-[var(--text-primary)] font-body antialiased;
   }
 
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     @apply font-display tracking-wide;
   }
 }
@@ -62,8 +64,10 @@
     inset: 0;
     border-radius: 1rem;
     padding: 1.5px;
-    background: linear-gradient(135deg, #2A398D, #E61D25);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    background: linear-gradient(135deg, #2a398d, #e61d25);
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;

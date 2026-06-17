@@ -2,7 +2,11 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { PageTransition, StaggerContainer, StaggerItem } from '@/components/animations/PageTransition'
+import {
+  PageTransition,
+  StaggerContainer,
+  StaggerItem,
+} from '@/components/animations/PageTransition'
 import { GROUP_LETTERS, TEAMS_BY_GROUP, TEAMS_BY_ID } from '@/lib/constants/teams'
 import { GROUP_STAGE_MATCHES } from '@/lib/constants/fixture'
 import { cn } from '@/lib/utils/cn'
@@ -45,7 +49,12 @@ function formatMatchTime(iso: string) {
 
 function formatGroupDateLabel(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  return d.toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
 }
 
 function groupMatchesByDate(matches: typeof GROUP_STAGE_MATCHES) {
@@ -96,8 +105,12 @@ function computeGroupStandings(
 
   // Filter to group matches: both teams must belong to this group + finished with scores
   const groupMatches = dbMatches.filter(
-    (m) => teamIds.has(m.home_team_id) && teamIds.has(m.away_team_id) &&
-           m.status === 'finished' && m.home_score != null && m.away_score != null
+    (m) =>
+      teamIds.has(m.home_team_id) &&
+      teamIds.has(m.away_team_id) &&
+      m.status === 'finished' &&
+      m.home_score != null &&
+      m.away_score != null
   )
 
   for (const m of groupMatches) {
@@ -175,10 +188,13 @@ export default function FixturePage() {
   }, [dbMatches])
 
   const filteredMatches = useMemo(() => {
-    const matches = groupFilter === 'all'
-      ? GROUP_STAGE_MATCHES
-      : GROUP_STAGE_MATCHES.filter(m => m.group_letter === groupFilter)
-    return [...matches].sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+    const matches =
+      groupFilter === 'all'
+        ? GROUP_STAGE_MATCHES
+        : GROUP_STAGE_MATCHES.filter((m) => m.group_letter === groupFilter)
+    return [...matches].sort(
+      (a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+    )
   }, [groupFilter])
 
   const matchesByDate = useMemo(() => {
@@ -247,9 +263,7 @@ export default function FixturePage() {
       )}
 
       {/* Bracket tab */}
-      {activeTab === 'bracket' && (
-        <FixtureBracket />
-      )}
+      {activeTab === 'bracket' && <FixtureBracket />}
 
       {/* Calendar tab */}
       {activeTab === 'calendar' && (
@@ -285,136 +299,174 @@ export default function FixturePage() {
 
           {/* Matches grouped by date */}
           <div className="space-y-6">
-            {mounted && Object.entries(matchesByDate).map(([dateLabel, matches]) => (
-              <div key={dateLabel}>
-                <p className="text-xs font-body font-medium text-gray-400 uppercase tracking-wider mb-2 sticky top-0 bg-[var(--bg-primary)] py-1 z-10">
-                  {dateLabel}
-                </p>
-                <div className="space-y-1.5">
-                  {matches.map((m) => {
-                    const home = m.home_team_id ? TEAMS_BY_ID[m.home_team_id] : null
-                    const away = m.away_team_id ? TEAMS_BY_ID[m.away_team_id] : null
-                    const dbMatch = dbMatchMap[m.match_number]
-                    const isLive = dbMatch?.status === 'live'
-                    const isFinished = dbMatch?.status === 'finished'
-                    const hasScore = dbMatch && dbMatch.home_score != null && dbMatch.away_score != null
-                    
-                    return (
-                      <button
-                        key={m.match_number}
-                        onClick={() => home && away ? setSelectedMatch(m) : undefined}
-                        className={cn(
-                          'glass-card flex items-center gap-3 px-4 py-3 w-full text-left transition-colors',
-                          home && away && 'hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer',
-                          isLive && 'ring-1 ring-red-500/30 bg-red-50/30 dark:bg-red-950/10'
-                        )}
-                      >
-                        {/* Time or Status */}
-                        <span className={cn(
-                          'font-mono text-xs w-10 flex-shrink-0 text-center',
-                          isLive ? 'text-red-500 font-bold' : isFinished ? 'text-gray-400' : 'text-gray-400'
-                        )}>
-                          {isLive ? (
-                            <span className="flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                              <span className="text-[10px]">LIVE</span>
-                            </span>
-                          ) : isFinished ? (
-                            <span className="text-[10px] text-gray-400">FIN</span>
-                          ) : (
-                            formatMatchTime(m.match_date)
+            {mounted &&
+              Object.entries(matchesByDate).map(([dateLabel, matches]) => (
+                <div key={dateLabel}>
+                  <p className="text-xs font-body font-medium text-gray-400 uppercase tracking-wider mb-2 sticky top-0 bg-[var(--bg-primary)] py-1 z-10">
+                    {dateLabel}
+                  </p>
+                  <div className="space-y-1.5">
+                    {matches.map((m) => {
+                      const home = m.home_team_id ? TEAMS_BY_ID[m.home_team_id] : null
+                      const away = m.away_team_id ? TEAMS_BY_ID[m.away_team_id] : null
+                      const dbMatch = dbMatchMap[m.match_number]
+                      const isLive = dbMatch?.status === 'live'
+                      const isFinished = dbMatch?.status === 'finished'
+                      const hasScore =
+                        dbMatch && dbMatch.home_score != null && dbMatch.away_score != null
+
+                      return (
+                        <button
+                          key={m.match_number}
+                          onClick={() => (home && away ? setSelectedMatch(m) : undefined)}
+                          className={cn(
+                            'glass-card flex items-center gap-3 px-4 py-3 w-full text-left transition-colors',
+                            home &&
+                              away &&
+                              'hover:bg-gray-50 dark:hover:bg-white/[0.03] cursor-pointer',
+                            isLive && 'ring-1 ring-red-500/30 bg-red-50/30 dark:bg-red-950/10'
                           )}
-                        </span>
-                        {/* Group badge */}
-                        <span className="text-[10px] font-body font-semibold text-[#2A398D] dark:text-blue-400 bg-[#2A398D]/[0.08] dark:bg-[#2A398D]/20 px-1.5 py-0.5 rounded flex-shrink-0">
-                          {m.group_letter}
-                        </span>
-                        {/* Teams + Score */}
-                        {(() => {
-                          const redCards = dbMatch?.events && Array.isArray(dbMatch.events)
-                            ? dbMatch.events.reduce((acc: { home: number; away: number }, ev: any) => {
-                                const isRed = ev.type === 'Card' && (ev.detail?.toLowerCase().includes('red') || ev.detail === 'Yellow-Red Card')
-                                if (isRed) {
-                                  if (ev.team_id === m.home_team_id) acc.home++
-                                  else if (ev.team_id === m.away_team_id) acc.away++
-                                }
-                                return acc
-                              }, { home: 0, away: 0 })
-                            : { home: 0, away: 0 }
+                        >
+                          {/* Time or Status */}
+                          <span
+                            className={cn(
+                              'font-mono text-xs w-10 flex-shrink-0 text-center',
+                              isLive
+                                ? 'text-red-500 font-bold'
+                                : isFinished
+                                  ? 'text-gray-400'
+                                  : 'text-gray-400'
+                            )}
+                          >
+                            {isLive ? (
+                              <span className="flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                <span className="text-[10px]">LIVE</span>
+                              </span>
+                            ) : isFinished ? (
+                              <span className="text-[10px] text-gray-400">FIN</span>
+                            ) : (
+                              formatMatchTime(m.match_date)
+                            )}
+                          </span>
+                          {/* Group badge */}
+                          <span className="text-[10px] font-body font-semibold text-[#2A398D] dark:text-blue-400 bg-[#2A398D]/[0.08] dark:bg-[#2A398D]/20 px-1.5 py-0.5 rounded flex-shrink-0">
+                            {m.group_letter}
+                          </span>
+                          {/* Teams + Score */}
+                          {(() => {
+                            const redCards =
+                              dbMatch?.events && Array.isArray(dbMatch.events)
+                                ? dbMatch.events.reduce(
+                                    (acc: { home: number; away: number }, ev: any) => {
+                                      const isRed =
+                                        ev.type === 'Card' &&
+                                        (ev.detail?.toLowerCase().includes('red') ||
+                                          ev.detail === 'Yellow-Red Card')
+                                      if (isRed) {
+                                        if (ev.team_id === m.home_team_id) acc.home++
+                                        else if (ev.team_id === m.away_team_id) acc.away++
+                                      }
+                                      return acc
+                                    },
+                                    { home: 0, away: 0 }
+                                  )
+                                : { home: 0, away: 0 }
 
-                          return (
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              {home && <TeamFlag flagCode={home.flag_code} name={home.name} size={18} />}
-                              <div className="flex items-center gap-1">
-                                <span className={cn(
-                                  'text-sm font-body font-medium',
-                                  isFinished && dbMatch?.home_score != null && dbMatch?.away_score != null && dbMatch.home_score > dbMatch.away_score
-                                    ? 'text-[#2A398D] dark:text-blue-400 font-bold'
-                                    : 'text-gray-800 dark:text-gray-200'
-                                )}>
-                                  {home?.code}
-                                </span>
-                                {redCards.home > 0 && (
-                                  <span className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse" />
+                            return (
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                {home && (
+                                  <TeamFlag flagCode={home.flag_code} name={home.name} size={18} />
+                                )}
+                                <div className="flex items-center gap-1">
+                                  <span
+                                    className={cn(
+                                      'text-sm font-body font-medium',
+                                      isFinished &&
+                                        dbMatch?.home_score != null &&
+                                        dbMatch?.away_score != null &&
+                                        dbMatch.home_score > dbMatch.away_score
+                                        ? 'text-[#2A398D] dark:text-blue-400 font-bold'
+                                        : 'text-gray-800 dark:text-gray-200'
+                                    )}
+                                  >
+                                    {home?.code}
+                                  </span>
+                                  {redCards.home > 0 && (
+                                    <span className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse" />
+                                  )}
+                                </div>
+
+                                {/* Score or VS */}
+                                {hasScore ? (
+                                  <span
+                                    className={cn(
+                                      'font-mono text-sm font-bold px-1.5',
+                                      isLive ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'
+                                    )}
+                                  >
+                                    {dbMatch.home_score} - {dbMatch.away_score}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-gray-300 dark:text-gray-600 mx-1">
+                                    vs
+                                  </span>
+                                )}
+
+                                <div className="flex items-center gap-1 flex-row-reverse">
+                                  <span
+                                    className={cn(
+                                      'text-sm font-body font-medium',
+                                      isFinished &&
+                                        dbMatch?.home_score != null &&
+                                        dbMatch?.away_score != null &&
+                                        dbMatch.away_score > dbMatch.home_score
+                                        ? 'text-[#2A398D] dark:text-blue-400 font-bold'
+                                        : 'text-gray-800 dark:text-gray-200'
+                                    )}
+                                  >
+                                    {away?.code}
+                                  </span>
+                                  {redCards.away > 0 && (
+                                    <span className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse" />
+                                  )}
+                                </div>
+                                {away && (
+                                  <TeamFlag flagCode={away.flag_code} name={away.name} size={18} />
                                 )}
                               </div>
-                              
-                              {/* Score or VS */}
-                              {hasScore ? (
-                                <span className={cn(
-                                  'font-mono text-sm font-bold px-1.5',
-                                  isLive ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'
-                                )}>
-                                  {dbMatch.home_score} - {dbMatch.away_score}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-gray-300 dark:text-gray-600 mx-1">vs</span>
-                              )}
-
-                              <div className="flex items-center gap-1 flex-row-reverse">
-                                <span className={cn(
-                                  'text-sm font-body font-medium',
-                                  isFinished && dbMatch?.home_score != null && dbMatch?.away_score != null && dbMatch.away_score > dbMatch.home_score
-                                    ? 'text-[#2A398D] dark:text-blue-400 font-bold'
-                                    : 'text-gray-800 dark:text-gray-200'
-                                )}>
-                                  {away?.code}
-                                </span>
-                                {redCards.away > 0 && (
-                                  <span className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse" />
-                                )}
-                              </div>
-                              {away && <TeamFlag flagCode={away.flag_code} name={away.name} size={18} />}
-                            </div>
-                          )
-                        })()}
-                        {/* Odds */}
-                        {dbMatch?.odds && (
-                          <span className="hidden sm:inline-block font-mono text-[10px] text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.04] px-1.5 py-0.5 rounded flex-shrink-0">
-                            {dbMatch.odds}
-                          </span>
-                        )}
-                        {/* Time (show when finished/live) */}
-                        {(isLive || isFinished) && (
-                          <span className="hidden sm:block text-[10px] font-mono text-gray-400 flex-shrink-0">
-                            {formatMatchTime(m.match_date)}
-                          </span>
-                        )}
-                        {/* Venue */}
-                        <div className="hidden sm:flex items-center gap-1 text-xs text-gray-400 font-body flex-shrink-0">
-                          <MapPin size={10} />
-                          <span className="truncate max-w-[140px]">{m.city}</span>
-                        </div>
-                        {/* Arrow hint */}
-                        {home && away && (
-                          <ChevronRight size={14} className="text-gray-300 dark:text-gray-600 flex-shrink-0" />
-                        )}
-                      </button>
-                    )
-                  })}
+                            )
+                          })()}
+                          {/* Odds */}
+                          {dbMatch?.odds && (
+                            <span className="hidden sm:inline-block font-mono text-[10px] text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.04] px-1.5 py-0.5 rounded flex-shrink-0">
+                              {dbMatch.odds}
+                            </span>
+                          )}
+                          {/* Time (show when finished/live) */}
+                          {(isLive || isFinished) && (
+                            <span className="hidden sm:block text-[10px] font-mono text-gray-400 flex-shrink-0">
+                              {formatMatchTime(m.match_date)}
+                            </span>
+                          )}
+                          {/* Venue */}
+                          <div className="hidden sm:flex items-center gap-1 text-xs text-gray-400 font-body flex-shrink-0">
+                            <MapPin size={10} />
+                            <span className="truncate max-w-[140px]">{m.city}</span>
+                          </div>
+                          {/* Arrow hint */}
+                          {home && away && (
+                            <ChevronRight
+                              size={14}
+                              className="text-gray-300 dark:text-gray-600 flex-shrink-0"
+                            />
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
 
           {/* Match detail modal */}

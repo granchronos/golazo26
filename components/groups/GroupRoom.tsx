@@ -2,7 +2,22 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Share2, Copy, Check, ArrowLeft, Trophy, BarChart2, CalendarDays, GitCompareArrows, Network, Users, ChevronDown, X, MessageCircle, Coins } from 'lucide-react'
+import {
+  Share2,
+  Copy,
+  Check,
+  ArrowLeft,
+  Trophy,
+  BarChart2,
+  CalendarDays,
+  GitCompareArrows,
+  Network,
+  Users,
+  ChevronDown,
+  X,
+  MessageCircle,
+  Coins,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -18,10 +33,22 @@ import { PaymentManager } from '@/components/pool/PaymentManager'
 import { PrizeBreakdown } from '@/components/pool/PrizeBreakdown'
 import { ProgressSidebar } from '@/components/predictions/ProgressSidebar'
 import { Modal } from '@/components/ui/Modal'
-import { getWhatsAppShareUrl, getFacebookShareUrl, getTwitterShareUrl, getRoomShareUrl } from '@/lib/utils/rooms'
+import {
+  getWhatsAppShareUrl,
+  getFacebookShareUrl,
+  getTwitterShareUrl,
+  getRoomShareUrl,
+} from '@/lib/utils/rooms'
 import { cn } from '@/lib/utils/cn'
 import { GROUP_LETTERS } from '@/lib/constants/teams'
-import type { Room, Profile, Match, GroupLetter, GroupPrediction, PaymentStatus } from '@/types/database'
+import type {
+  Room,
+  Profile,
+  Match,
+  GroupLetter,
+  GroupPrediction,
+  PaymentStatus,
+} from '@/types/database'
 
 interface RoomMemberWithProfile {
   user_id: string
@@ -37,6 +64,7 @@ interface MemberPredictions {
   name: string
   groupPredictions: Record<GroupLetter, GroupPrediction | null>
   knockoutPredictions: Record<number, string>
+  scorePredictions: Record<number, { home: number; away: number }>
 }
 
 interface GroupRoomProps {
@@ -82,7 +110,13 @@ export function GroupRoom({
   const initialChampionId = currentUserMember?.predicted_champion_id || null
   const initialGoleador = currentUserMember?.predicted_goleador || ''
 
-  console.log('[DEBUG Pool]', { admin_id: room.admin_id, currentUserId, isAdmin: room.admin_id === currentUserId, pool_enabled: room.pool_enabled, roomKeys: Object.keys(room) })
+  console.log('[DEBUG Pool]', {
+    admin_id: room.admin_id,
+    currentUserId,
+    isAdmin: room.admin_id === currentUserId,
+    pool_enabled: room.pool_enabled,
+    roomKeys: Object.keys(room),
+  })
 
   const TABS = useMemo(() => {
     const tabs = [...BASE_TABS]
@@ -106,11 +140,11 @@ export function GroupRoom({
 
   const router = useRouter()
 
-  // Auto refresh room data every 30 seconds to fetch new members/scores
+  // Auto refresh room data every minute to fetch new members/scores
   useEffect(() => {
     const interval = setInterval(() => {
       router.refresh()
-    }, 30000)
+    }, 60000)
     return () => clearInterval(interval)
   }, [router])
 
@@ -139,7 +173,10 @@ export function GroupRoom({
 
   // BetSummary: all members' champion picks
   const allMembersChampions = useMemo(() => {
-    const result: Record<string, { name: string; champion: string | null; runnerUp: string | null }> = {}
+    const result: Record<
+      string,
+      { name: string; champion: string | null; runnerUp: string | null }
+    > = {}
     for (const m of allMembersPredictions) {
       const champ = m.knockoutPredictions[103] ?? null
       const sf1 = m.knockoutPredictions[101] ?? null
@@ -155,7 +192,20 @@ export function GroupRoom({
 
   // ComparisonView data
   const comparisonMembers = useMemo(() => {
-    const GROUP_LETTERS_ARR: GroupLetter[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
+    const GROUP_LETTERS_ARR: GroupLetter[] = [
+      'A',
+      'B',
+      'C',
+      'D',
+      'E',
+      'F',
+      'G',
+      'H',
+      'I',
+      'J',
+      'K',
+      'L',
+    ]
     return allMembersPredictions.map((m) => {
       const hasAllGroups = GROUP_LETTERS_ARR.every((l) => m.groupPredictions[l] != null)
       const hasChampion = !!m.knockoutPredictions[103]
@@ -187,7 +237,10 @@ export function GroupRoom({
 
       {/* Back + Room header */}
       <div>
-        <Link href="/groups" className="inline-flex items-center gap-1 text-xs font-body text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mb-3">
+        <Link
+          href="/groups"
+          className="inline-flex items-center gap-1 text-xs font-body text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mb-3"
+        >
           <ArrowLeft size={12} /> Salas
         </Link>
         <div className="flex items-start justify-between">
@@ -197,14 +250,19 @@ export function GroupRoom({
               <p className="text-sm text-gray-400 font-body mt-0.5">{room.description}</p>
             )}
             <div className="flex items-center gap-3 mt-1.5">
-              <span className="text-[10px] font-mono text-gray-400 tracking-wider bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded">{room.code}</span>
+              <span className="text-[10px] font-mono text-gray-400 tracking-wider bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded">
+                {room.code}
+              </span>
               <button
                 onClick={() => setShowMembers((v) => !v)}
                 className="inline-flex items-center gap-1.5 text-xs font-body text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/10 px-2.5 py-1 rounded-full transition-colors"
               >
                 <Users size={12} />
                 <span className="font-medium">{members.length}</span>
-                <ChevronDown size={10} className={cn('transition-transform', showMembers && 'rotate-180')} />
+                <ChevronDown
+                  size={10}
+                  className={cn('transition-transform', showMembers && 'rotate-180')}
+                />
               </button>
             </div>
           </div>
@@ -251,7 +309,9 @@ export function GroupRoom({
                       className="flex items-center gap-3 px-3 py-2 text-sm font-body hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors"
                     >
                       <span className="w-7 h-7 rounded-full bg-[#1877F2]/10 flex items-center justify-center flex-shrink-0">
-                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-[#1877F2]"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-[#1877F2]">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                        </svg>
                       </span>
                       Facebook
                     </a>
@@ -262,17 +322,29 @@ export function GroupRoom({
                       className="flex items-center gap-3 px-3 py-2 text-sm font-body hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors"
                     >
                       <span className="w-7 h-7 rounded-full bg-black/[0.06] dark:bg-white/10 flex items-center justify-center flex-shrink-0">
-                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-gray-800 dark:fill-white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="w-3.5 h-3.5 fill-gray-800 dark:fill-white"
+                        >
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                        </svg>
                       </span>
                       X (Twitter)
                     </a>
                     <div className="border-t border-gray-100 dark:border-white/[0.06] my-1" />
                     <button
-                      onClick={() => { handleCopyLink(); setShowShareMenu(false) }}
+                      onClick={() => {
+                        handleCopyLink()
+                        setShowShareMenu(false)
+                      }}
                       className="flex items-center gap-3 px-3 py-2 text-sm font-body hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors w-full"
                     >
                       <span className="w-7 h-7 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
-                        {copied ? <Check size={14} className="text-[#3CAC3B]" /> : <Copy size={14} className="text-gray-400" />}
+                        {copied ? (
+                          <Check size={14} className="text-[#3CAC3B]" />
+                        ) : (
+                          <Copy size={14} className="text-gray-400" />
+                        )}
                       </span>
                       Copiar link
                     </button>
@@ -294,7 +366,9 @@ export function GroupRoom({
             className="glass-card overflow-hidden"
           >
             <div className="px-3 py-2 border-b border-gray-100 dark:border-white/[0.06]">
-              <span className="text-[10px] font-body font-medium text-gray-400 uppercase tracking-wider">Miembros ({members.length}/10)</span>
+              <span className="text-[10px] font-body font-medium text-gray-400 uppercase tracking-wider">
+                Miembros ({members.length}/10)
+              </span>
             </div>
             <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
               {members.map((member) => {
@@ -305,21 +379,29 @@ export function GroupRoom({
                 const isComplete = groupsDone === 12 && knockoutDone >= 31
                 return (
                   <div key={member.user_id} className="flex items-center gap-2.5 px-3 py-2.5">
-                    <div className={cn(
-                      'w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0',
-                      isMe ? 'bg-[#2A398D] text-white' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
-                    )}>
+                    <div
+                      className={cn(
+                        'w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0',
+                        isMe
+                          ? 'bg-[#2A398D] text-white'
+                          : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
+                      )}
+                    >
                       {member.profile?.name?.[0]?.toUpperCase() || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className={cn(
-                          'text-sm font-body truncate dark:text-white',
-                          isMe && 'font-medium text-[#2A398D] dark:text-blue-400'
-                        )}>
+                        <span
+                          className={cn(
+                            'text-sm font-body truncate dark:text-white',
+                            isMe && 'font-medium text-[#2A398D] dark:text-blue-400'
+                          )}
+                        >
                           {member.profile?.name || 'Anónimo'}
                         </span>
-                        {isMe && <span className="text-[10px] text-gray-400 flex-shrink-0">(tú)</span>}
+                        {isMe && (
+                          <span className="text-[10px] text-gray-400 flex-shrink-0">(tú)</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[10px] font-mono text-gray-400">
@@ -332,9 +414,13 @@ export function GroupRoom({
                       </div>
                     </div>
                     {isComplete ? (
-                      <span className="text-[10px] font-body font-medium text-[#3CAC3B] bg-[#3CAC3B]/10 px-2 py-0.5 rounded-full flex-shrink-0">Listo</span>
+                      <span className="text-[10px] font-body font-medium text-[#3CAC3B] bg-[#3CAC3B]/10 px-2 py-0.5 rounded-full flex-shrink-0">
+                        Listo
+                      </span>
                     ) : (
-                      <span className="text-[10px] font-body text-gray-400 bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded-full flex-shrink-0">Pendiente</span>
+                      <span className="text-[10px] font-body text-gray-400 bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded-full flex-shrink-0">
+                        Pendiente
+                      </span>
                     )}
                   </div>
                 )
@@ -358,7 +444,9 @@ export function GroupRoom({
           room={room}
           paidCount={members.filter((m) => m.payment_status === 'confirmed').length}
           totalMembers={members.length}
-          myPaymentStatus={members.find((m) => m.user_id === currentUserId)?.payment_status ?? 'pending'}
+          myPaymentStatus={
+            members.find((m) => m.user_id === currentUserId)?.payment_status ?? 'pending'
+          }
         />
       )}
 
@@ -414,6 +502,7 @@ export function GroupRoom({
           groupPredictions={groupPredictions}
           knockoutPredictions={knockoutPredictions}
           scorePredictions={scorePredictions}
+          allMembersPredictions={allMembersPredictions}
           isAdmin={isAdmin}
           actualGoleador={room.actual_goleador}
         />
@@ -422,7 +511,9 @@ export function GroupRoom({
       <div className={activeTab === 'leaderboard' ? '' : 'hidden'}>
         <div className="glass-card overflow-hidden">
           <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
-            <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">Ranking de la Sala</span>
+            <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Ranking de la Sala
+            </span>
           </div>
           {sortedMembers.length === 0 ? (
             <div className="px-4 py-8 text-center">
@@ -436,7 +527,8 @@ export function GroupRoom({
               const groupsDone = progress?.groups ?? 0
               const knockoutDone = progress?.knockout ?? 0
               const isComplete = groupsDone === 12 && knockoutDone >= 31
-              const champPick = allMembersPredictions.find((m) => m.userId === member.user_id)?.knockoutPredictions[103]
+              const champPick = allMembersPredictions.find((m) => m.userId === member.user_id)
+                ?.knockoutPredictions[103]
               return (
                 <div
                   key={member.user_id}
@@ -445,28 +537,47 @@ export function GroupRoom({
                     isMe && 'bg-[#2A398D]/[0.04] dark:bg-[#2A398D]/10'
                   )}
                 >
-                  <span className={cn(
-                    'font-mono text-xs w-5 text-center font-bold',
-                    idx === 0 ? 'text-[#C9A84C]' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-amber-700' : 'text-gray-400'
-                  )}>
+                  <span
+                    className={cn(
+                      'font-mono text-xs w-5 text-center font-bold',
+                      idx === 0
+                        ? 'text-[#C9A84C]'
+                        : idx === 1
+                          ? 'text-gray-400'
+                          : idx === 2
+                            ? 'text-amber-700'
+                            : 'text-gray-400'
+                    )}
+                  >
                     {idx + 1}
                   </span>
-                  <div className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0',
-                    isMe ? 'bg-[#2A398D]' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
-                  )}>
+                  <div
+                    className={cn(
+                      'w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0',
+                      isMe
+                        ? 'bg-[#2A398D]'
+                        : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
+                    )}
+                  >
                     {member.profile?.name?.[0]?.toUpperCase() || '?'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className={cn('text-sm font-body truncate dark:text-white', isMe && 'font-medium text-[#2A398D] dark:text-blue-400')}>
+                      <span
+                        className={cn(
+                          'text-sm font-body truncate dark:text-white',
+                          isMe && 'font-medium text-[#2A398D] dark:text-blue-400'
+                        )}
+                      >
                         {member.profile?.name || 'Anónimo'}
                       </span>
                       {isMe && <span className="text-[10px] text-gray-400">(tú)</span>}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       {isComplete ? (
-                        <span className="text-[10px] font-body text-[#3CAC3B]">Apuestas completas</span>
+                        <span className="text-[10px] font-body text-[#3CAC3B]">
+                          Apuestas completas
+                        </span>
                       ) : (
                         <span className="text-[10px] font-body text-gray-400">
                           {groupsDone}/12 grupos · {knockoutDone}/31 llaves
@@ -481,14 +592,19 @@ export function GroupRoom({
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <span className="font-mono text-sm font-bold text-gray-700 dark:text-gray-300">{member.total_points}</span>
+                    <span className="font-mono text-sm font-bold text-gray-700 dark:text-gray-300">
+                      {member.total_points}
+                    </span>
                     <span className="text-[10px] text-gray-400 ml-0.5">pts</span>
                     {room.pool_enabled && (
                       <div className="mt-0.5">
-                        {member.payment_status === 'confirmed'
-                          ? <span className="text-[9px] text-[#C9A84C]">💰</span>
-                          : <span className="text-[9px] text-gray-300 dark:text-gray-600">sin pago</span>
-                        }
+                        {member.payment_status === 'confirmed' ? (
+                          <span className="text-[9px] text-[#C9A84C]">💰</span>
+                        ) : (
+                          <span className="text-[9px] text-gray-300 dark:text-gray-600">
+                            sin pago
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -500,10 +616,7 @@ export function GroupRoom({
       </div>
 
       <div className={activeTab === 'comparison' ? '' : 'hidden'}>
-        <ComparisonView
-          currentUserId={currentUserId}
-          allMembers={comparisonMembers}
-        />
+        <ComparisonView currentUserId={currentUserId} allMembers={comparisonMembers} />
       </div>
 
       {room.pool_enabled && (
@@ -541,37 +654,90 @@ export function GroupRoom({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-body text-gray-600 dark:text-gray-300">
                 <div className="space-y-3">
                   <div>
-                    <p className="font-bold text-gray-900 dark:text-white mb-1">Predicción de Marcador (Por Partido):</p>
+                    <p className="font-bold text-gray-900 dark:text-white mb-1">
+                      Predicción de Marcador (Por Partido):
+                    </p>
                     <ul className="list-disc list-inside space-y-1 pl-1">
-                      <li><span className="font-bold text-green-600 dark:text-green-400">3 Puntos:</span> Resultado exacto (ej. predices 2-1 y queda 2-1).</li>
-                      <li><span className="font-bold text-blue-600 dark:text-blue-400">2 Puntos:</span> Ganador correcto y misma diferencia de goles (ej. predices 1-0 y queda 2-1).</li>
-                      <li><span className="font-bold text-yellow-600 dark:text-yellow-500">1 Punto:</span> Solo ganador/empate correcto (ej. predices 3-0 y queda 1-0).</li>
-                      <li><span className="font-bold text-red-500">0 Puntos:</span> Predicción incorrecta.</li>
+                      <li>
+                        <span className="font-bold text-green-600 dark:text-green-400">
+                          3 Puntos:
+                        </span>{' '}
+                        Resultado exacto (ej. predices 2-1 y queda 2-1).
+                      </li>
+                      <li>
+                        <span className="font-bold text-blue-600 dark:text-blue-400">
+                          2 Puntos:
+                        </span>{' '}
+                        Ganador correcto y misma diferencia de goles (ej. predices 1-0 y queda 2-1).
+                      </li>
+                      <li>
+                        <span className="font-bold text-yellow-600 dark:text-yellow-500">
+                          1 Punto:
+                        </span>{' '}
+                        Solo ganador/empate correcto (ej. predices 3-0 y queda 1-0).
+                      </li>
+                      <li>
+                        <span className="font-bold text-red-500">0 Puntos:</span> Predicción
+                        incorrecta.
+                      </li>
                     </ul>
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 dark:text-white mb-1">Clasificados de Grupos (Standings):</p>
+                    <p className="font-bold text-gray-900 dark:text-white mb-1">
+                      Clasificados de Grupos (Standings):
+                    </p>
                     <ul className="list-disc list-inside space-y-1 pl-1">
-                      <li><span className="font-bold text-[#2A398D] dark:text-blue-400">5 Puntos:</span> Por cada equipo que clasifique en la posición exacta (1.° o 2.°) que predijiste en tu grupo.</li>
+                      <li>
+                        <span className="font-bold text-[#2A398D] dark:text-blue-400">
+                          5 Puntos:
+                        </span>{' '}
+                        Por cada equipo que clasifique en la posición exacta (1.° o 2.°) que
+                        predijiste en tu grupo.
+                      </li>
                     </ul>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <p className="font-bold text-gray-900 dark:text-white mb-1">Rondas Eliminatorias (Clasificación en Llave):</p>
+                    <p className="font-bold text-gray-900 dark:text-white mb-1">
+                      Rondas Eliminatorias (Clasificación en Llave):
+                    </p>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-1">
-                      <div>• Ronda de 32: <span className="font-bold text-gray-900 dark:text-white">10 pts</span></div>
-                      <div>• Octavos de Final: <span className="font-bold text-gray-900 dark:text-white">15 pts</span></div>
-                      <div>• Cuartos de Final: <span className="font-bold text-gray-900 dark:text-white">20 pts</span></div>
-                      <div>• Semifinales: <span className="font-bold text-gray-900 dark:text-white">50 pts</span></div>
-                      <div className="col-span-2">• Campeón de Llave: <span className="font-bold text-gray-900 dark:text-white">100 pts</span></div>
+                      <div>
+                        • Ronda de 32:{' '}
+                        <span className="font-bold text-gray-900 dark:text-white">10 pts</span>
+                      </div>
+                      <div>
+                        • Octavos de Final:{' '}
+                        <span className="font-bold text-gray-900 dark:text-white">15 pts</span>
+                      </div>
+                      <div>
+                        • Cuartos de Final:{' '}
+                        <span className="font-bold text-gray-900 dark:text-white">20 pts</span>
+                      </div>
+                      <div>
+                        • Semifinales:{' '}
+                        <span className="font-bold text-gray-900 dark:text-white">50 pts</span>
+                      </div>
+                      <div className="col-span-2">
+                        • Campeón de Llave:{' '}
+                        <span className="font-bold text-gray-900 dark:text-white">100 pts</span>
+                      </div>
                     </div>
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 dark:text-white mb-1">Predicciones Especiales (Sección Extra):</p>
+                    <p className="font-bold text-gray-900 dark:text-white mb-1">
+                      Predicciones Especiales (Sección Extra):
+                    </p>
                     <ul className="list-disc list-inside space-y-1 pl-1">
-                      <li><span className="font-bold text-[#C9A84C]">15 Puntos:</span> Acierto al Campeón del Mundo.</li>
-                      <li><span className="font-bold text-[#C9A84C]">10 Puntos:</span> Acierto al Goleador del torneo.</li>
+                      <li>
+                        <span className="font-bold text-[#C9A84C]">15 Puntos:</span> Acierto al
+                        Campeón del Mundo.
+                      </li>
+                      <li>
+                        <span className="font-bold text-[#C9A84C]">10 Puntos:</span> Acierto al
+                        Goleador del torneo.
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -589,8 +755,6 @@ export function GroupRoom({
           userName={members.find((m) => m.user_id === currentUserId)?.profile?.name}
         />
       </Modal>
-
-
     </div>
   )
 }

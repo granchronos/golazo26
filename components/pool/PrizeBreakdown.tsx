@@ -19,7 +19,14 @@ interface PrizeBreakdownProps {
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
-  MXN: '$', USD: '$', EUR: '€', PEN: 'S/', COP: '$', ARS: '$', CLP: '$', BRL: 'R$',
+  MXN: '$',
+  USD: '$',
+  EUR: '€',
+  PEN: 'S/',
+  COP: '$',
+  ARS: '$',
+  CLP: '$',
+  BRL: 'R$',
 }
 
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -62,7 +69,8 @@ export function PrizeBreakdown({ room, rankedMembers, currentUserId }: PrizeBrea
             Estás en {myRank}° lugar — ganarías
           </p>
           <p className="text-xl font-mono font-bold text-[#C9A84C] mt-0.5">
-            {symbol}{myPrize.amount.toLocaleString()}
+            {symbol}
+            {myPrize.amount.toLocaleString()}
           </p>
         </div>
       )}
@@ -72,14 +80,16 @@ export function PrizeBreakdown({ room, rankedMembers, currentUserId }: PrizeBrea
         {poolSplit.map((s, idx) => {
           // Find all members at this place
           const membersAtPlace = prizes.filter((p) => p.place === s.place)
-          const prizeAmount = Math.round(potTotal * s.pct / 100)
+          const prizeAmount = Math.round((potTotal * s.pct) / 100)
 
           return (
             <div
               key={s.place}
               className={cn(
                 'flex items-center gap-3 p-2.5 rounded-xl border bg-gradient-to-r',
-                idx < 3 ? PODIUM_COLORS[idx] : 'from-gray-50 to-transparent dark:from-white/[0.04] border-gray-100 dark:border-white/[0.06]'
+                idx < 3
+                  ? PODIUM_COLORS[idx]
+                  : 'from-gray-50 to-transparent dark:from-white/[0.04] border-gray-100 dark:border-white/[0.06]'
               )}
             >
               <span className="text-lg w-8 text-center">{MEDALS[idx] || `${s.place}°`}</span>
@@ -95,7 +105,8 @@ export function PrizeBreakdown({ room, rankedMembers, currentUserId }: PrizeBrea
                 )}
               </div>
               <span className="font-mono font-bold text-sm dark:text-white flex-shrink-0">
-                {symbol}{prizeAmount.toLocaleString()}
+                {symbol}
+                {prizeAmount.toLocaleString()}
               </span>
             </div>
           )
@@ -103,7 +114,8 @@ export function PrizeBreakdown({ room, rankedMembers, currentUserId }: PrizeBrea
       </div>
 
       <p className="text-[10px] font-body text-gray-400 text-center">
-        Pozo total: {symbol}{potTotal.toLocaleString()} {room.pool_currency} · {paidMembers.length} pagos confirmados
+        Pozo total: {symbol}
+        {potTotal.toLocaleString()} {room.pool_currency} · {paidMembers.length} pagos confirmados
       </p>
     </div>
   )
@@ -138,7 +150,7 @@ function calculatePrizes(
     let totalPrize = 0
     for (let p = currentPlace; p < currentPlace + placesOccupied && p <= maxPlace; p++) {
       const splitEntry = split.find((s) => s.place === p)
-      if (splitEntry) totalPrize += Math.round(potTotal * splitEntry.pct / 100)
+      if (splitEntry) totalPrize += Math.round((potTotal * splitEntry.pct) / 100)
     }
 
     const perMember = Math.round(totalPrize / placesOccupied)

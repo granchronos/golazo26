@@ -22,7 +22,14 @@ interface PaymentManagerProps {
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
-  MXN: '$', USD: '$', EUR: '€', PEN: 'S/', COP: '$', ARS: '$', CLP: '$', BRL: 'R$',
+  MXN: '$',
+  USD: '$',
+  EUR: '€',
+  PEN: 'S/',
+  COP: '$',
+  ARS: '$',
+  CLP: '$',
+  BRL: 'R$',
 }
 
 export function PaymentManager({ room, members, currentUserId, isAdmin }: PaymentManagerProps) {
@@ -71,13 +78,15 @@ export function PaymentManager({ room, members, currentUserId, isAdmin }: Paymen
                 {paidCount}/{members.length} pagados
               </p>
               <p className="text-xs font-body text-gray-400">
-                Entrada: {symbol}{room.pool_buy_in.toLocaleString()} {room.pool_currency}
+                Entrada: {symbol}
+                {room.pool_buy_in.toLocaleString()} {room.pool_currency}
               </p>
             </div>
           </div>
           <div className="text-right">
             <p className="text-lg font-mono font-bold text-[#C9A84C]">
-              {symbol}{potTotal.toLocaleString()}
+              {symbol}
+              {potTotal.toLocaleString()}
             </p>
             <p className="text-[10px] font-body text-gray-400 uppercase tracking-wider">Pozo</p>
           </div>
@@ -88,11 +97,13 @@ export function PaymentManager({ room, members, currentUserId, isAdmin }: Paymen
       {paidCount >= 3 && room.pool_buy_in > 0 && (
         <div className="glass-card overflow-hidden">
           <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
-            <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">Premios</span>
+            <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Premios
+            </span>
           </div>
           <div className="p-3 space-y-1.5">
             {poolSplit.map((s) => {
-              const prize = Math.round(potTotal * s.pct / 100)
+              const prize = Math.round((potTotal * s.pct) / 100)
               const medals = ['🥇', '🥈', '🥉']
               return (
                 <div key={s.place} className="flex items-center justify-between py-1">
@@ -101,7 +112,8 @@ export function PaymentManager({ room, members, currentUserId, isAdmin }: Paymen
                     <span className="text-gray-400 ml-1">({s.pct}%)</span>
                   </span>
                   <span className="font-mono font-bold text-sm text-gray-700 dark:text-gray-200">
-                    {symbol}{prize.toLocaleString()}
+                    {symbol}
+                    {prize.toLocaleString()}
                   </span>
                 </div>
               )
@@ -119,7 +131,9 @@ export function PaymentManager({ room, members, currentUserId, isAdmin }: Paymen
       {/* Member list */}
       <div className="glass-card overflow-hidden">
         <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
-          <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">Pagos</span>
+          <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            Pagos
+          </span>
         </div>
         <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
           {sorted.map((member) => {
@@ -133,15 +147,24 @@ export function PaymentManager({ room, members, currentUserId, isAdmin }: Paymen
                   isMe && 'bg-[#2A398D]/[0.04] dark:bg-[#2A398D]/10'
                 )}
               >
-                <div className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0',
-                  isMe ? 'bg-[#2A398D] text-white' : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
-                )}>
+                <div
+                  className={cn(
+                    'w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0',
+                    isMe
+                      ? 'bg-[#2A398D] text-white'
+                      : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
+                  )}
+                >
                   {member.profile?.name?.[0]?.toUpperCase() || '?'}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className={cn('text-sm font-body truncate dark:text-white', isMe && 'font-medium text-[#2A398D] dark:text-blue-400')}>
+                    <span
+                      className={cn(
+                        'text-sm font-body truncate dark:text-white',
+                        isMe && 'font-medium text-[#2A398D] dark:text-blue-400'
+                      )}
+                    >
                       {member.profile?.name || 'Anónimo'}
                     </span>
                     {isMe && <span className="text-[10px] text-gray-400">(tú)</span>}

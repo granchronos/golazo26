@@ -26,19 +26,24 @@ No tests are configured yet. The build command also runs ESLint.
 ## Architecture
 
 ### Route Groups
+
 - `(auth)` — login, register, OAuth callback. No layout wrapper, dark gradient background.
 - `(dashboard)` — all protected pages. Layout at `app/(dashboard)/layout.tsx` fetches the user profile server-side and renders `<Sidebar>` + `<MobileNav>`.
 - `app/auth/callback/route.ts` re-exports from `app/(auth)/callback/route.ts` to handle the `/auth/callback` OAuth redirect URL.
 
 ### Supabase Client Pattern
+
 Two separate clients — never mix them:
+
 - `lib/supabase/client.ts` → `createBrowserClient` for Client Components (`'use client'`)
 - `lib/supabase/server.ts` → async `createClient()` for Server Components, layouts, and Server Actions
 
 Middleware at `middleware.ts` calls `updateSession` from `lib/supabase/middleware.ts` on every request to refresh the auth session cookie.
 
 ### Server Actions
+
 All mutations go through Server Actions in `app/actions/`. They:
+
 1. Call `await createClient()` from the server module
 2. Verify `supabase.auth.getUser()` — never trust client-passed user IDs
 3. Validate input with Zod
@@ -46,15 +51,18 @@ All mutations go through Server Actions in `app/actions/`. They:
 5. Return `{ error: string }` on failure or call `redirect()` on success
 
 ### Data Flow for Predictions
+
 - **Group stage predictions** → `group_predictions` table, one row per `(user_id, group_letter)`, upserted
 - **Knockout predictions** → `predictions` table, one row per `(user_id, match_id)`, upserted
 - **Deadlines**: All group picks close at `2026-06-11T17:50:00Z`. Each match closes 5 min before its own `match_date` (see `getMatchDeadline` in `lib/utils/date.ts`)
 - Scores are stored denormalized in the `scores` table and updated server-side when match results are entered
 
 ### Static Data
+
 The 48 teams and fixture are hardcoded in `lib/constants/`. These are the source of truth for the UI — the DB seeds from `supabase/migrations/002_seed_teams.sql` must match `lib/constants/teams.ts`. Team IDs like `'arg'`, `'bra'`, `'mex'` are used as primary keys.
 
 ### Realtime
+
 Only `room_messages`, `scores`, and `matches` tables are added to `supabase_realtime` publication (see migration). The chat in `GroupRoom.tsx` subscribes via `supabase.channel()` and unsubscribes on unmount.
 
 ## Styling Conventions
@@ -79,6 +87,7 @@ Max possible: 490 pts
 ## Supabase Setup
 
 Before running locally, apply migrations in order via Supabase Dashboard → SQL Editor:
+
 1. `supabase/migrations/001_initial_schema.sql` — all tables, RLS policies, triggers, leaderboard view
 2. `supabase/migrations/002_seed_teams.sql` — 48 teams
 
@@ -87,10 +96,13 @@ All tables have RLS enabled. Users can only read their own predictions unless th
 ## Animation Patterns
 
 Framer Motion stagger pattern used throughout:
+
 ```tsx
 // Use StaggerContainer + StaggerItem from components/animations/PageTransition.tsx
 <StaggerContainer className="grid ...">
-  {items.map(item => <StaggerItem key={item.id}>...</StaggerItem>)}
+  {items.map((item) => (
+    <StaggerItem key={item.id}>...</StaggerItem>
+  ))}
 </StaggerContainer>
 ```
 

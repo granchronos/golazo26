@@ -12,7 +12,14 @@ interface PoolBannerProps {
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
-  MXN: '$', USD: '$', EUR: '€', PEN: 'S/', COP: '$', ARS: '$', CLP: '$', BRL: 'R$',
+  MXN: '$',
+  USD: '$',
+  EUR: '€',
+  PEN: 'S/',
+  COP: '$',
+  ARS: '$',
+  CLP: '$',
+  BRL: 'R$',
 }
 
 export function PoolBanner({ room, paidCount, totalMembers, myPaymentStatus }: PoolBannerProps) {
@@ -34,11 +41,19 @@ export function PoolBanner({ room, paidCount, totalMembers, myPaymentStatus }: P
             <span className="font-medium dark:text-white">Porra activa</span>
             <span className="text-gray-400 mx-1.5">·</span>
             <span className="text-gray-500 dark:text-gray-400">
-              Entrada: <span className="font-mono">{symbol}{room.pool_buy_in.toLocaleString()}</span>
+              Entrada:{' '}
+              <span className="font-mono">
+                {symbol}
+                {room.pool_buy_in.toLocaleString()}
+              </span>
             </span>
             <span className="text-gray-400 mx-1.5 hidden sm:inline">·</span>
             <span className="text-gray-500 dark:text-gray-400 hidden sm:inline">
-              Pozo: <span className="font-mono font-bold text-[#C9A84C]">{symbol}{potTotal.toLocaleString()}</span>
+              Pozo:{' '}
+              <span className="font-mono font-bold text-[#C9A84C]">
+                {symbol}
+                {potTotal.toLocaleString()}
+              </span>
             </span>
           </div>
         </div>

@@ -1,6 +1,10 @@
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { PageTransition, StaggerContainer, StaggerItem } from '@/components/animations/PageTransition'
+import {
+  PageTransition,
+  StaggerContainer,
+  StaggerItem,
+} from '@/components/animations/PageTransition'
 import { Users, Crown, ChevronRight } from 'lucide-react'
 import { CreateRoomModal } from '@/components/groups/CreateRoomModal'
 import { JoinRoomForm } from '@/components/groups/JoinRoomForm'
@@ -10,31 +14,55 @@ import type { Room, Profile } from '@/types/database'
 
 export default async function HomePage() {
   const [supabase, admin] = await Promise.all([createClient(), createAdminClient()])
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   // Parallel fetch: profile, memberships, matches
   const [{ data: profile }, { data: memberships }, { data: rawMatches }] = await Promise.all([
     admin.from('profiles').select('name').eq('user_id', user!.id).single(),
-    admin.from('room_members').select(`
+    admin
+      .from('room_members')
+      .select(
+        `
       room_id,
       rooms!inner(id, name, description, code, admin_id, created_at)
-    `).eq('user_id', user!.id),
-    admin.from('matches').select('status, round, home_team_id, away_team_id, home_score, away_score').order('match_number', { ascending: true }),
+    `
+      )
+      .eq('user_id', user!.id),
+    admin
+      .from('matches')
+      .select('status, round, home_team_id, away_team_id, home_score, away_score')
+      .order('match_number', { ascending: true }),
   ])
 
   const rooms = memberships?.map((m) => m.rooms as unknown as Room) || []
-  const matches = (rawMatches || []) as { status: 'scheduled' | 'live' | 'finished' | 'postponed'; round: string; home_team_id: string | null; away_team_id: string | null; home_score: number | null; away_score: number | null }[]
+  const matches = (rawMatches || []) as {
+    status: 'scheduled' | 'live' | 'finished' | 'postponed'
+    round: string
+    home_team_id: string | null
+    away_team_id: string | null
+    home_score: number | null
+    away_score: number | null
+  }[]
 
   // Fetch room rankings: for each room, get members + scores + profiles
   const roomRankings = []
   for (const room of rooms) {
-    const { data: roomMembers } = await admin.from('room_members').select('user_id').eq('room_id', room.id)
+    const { data: roomMembers } = await admin
+      .from('room_members')
+      .select('user_id')
+      .eq('room_id', room.id)
     const memberIds = (roomMembers || []).map((m) => m.user_id)
     if (memberIds.length === 0) continue
 
     const [{ data: profiles }, { data: scores }] = await Promise.all([
       admin.from('profiles').select('user_id, name').in('user_id', memberIds),
-      admin.from('scores').select('user_id, total_points').eq('room_id', room.id).in('user_id', memberIds),
+      admin
+        .from('scores')
+        .select('user_id, total_points')
+        .eq('room_id', room.id)
+        .in('user_id', memberIds),
     ])
 
     const profilesMap = new Map((profiles || []).map((p) => [p.user_id, p.name]))
@@ -56,10 +84,13 @@ export default async function HomePage() {
   const now = new Date()
   const deadline = new Date(GROUP_STAGE_DEADLINE)
   const diff = deadline.getTime() - now.getTime()
-  const countdown = diff > 0 ? {
-    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-  } : null
+  const countdown =
+    diff > 0
+      ? {
+          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        }
+      : null
 
   return (
     <PageTransition>
@@ -78,8 +109,8 @@ export default async function HomePage() {
             <Users size={36} className="mx-auto mb-4 text-gray-300 dark:text-white/10" />
             <h2 className="font-display text-xl dark:text-white mb-2">¡Bienvenido!</h2>
             <p className="text-sm font-body text-gray-400 max-w-sm mx-auto mb-6">
-              Crea una sala para jugar con amigos o únete a una existente con un código de invitación.
-              Dentro de la sala podrás hacer tus apuestas y ver el ranking.
+              Crea una sala para jugar con amigos o únete a una existente con un código de
+              invitación. Dentro de la sala podrás hacer tus apuestas y ver el ranking.
             </p>
           </div>
 
@@ -113,13 +144,20 @@ export default async function HomePage() {
                           {room.admin_id === user!.id && (
                             <Crown size={12} className="text-[#C9A84C] flex-shrink-0" />
                           )}
-                          <h3 className="text-sm font-body font-semibold dark:text-white truncate">{room.name}</h3>
+                          <h3 className="text-sm font-body font-semibold dark:text-white truncate">
+                            {room.name}
+                          </h3>
                         </div>
                         {room.description && (
-                          <p className="text-xs font-body text-gray-400 truncate">{room.description}</p>
+                          <p className="text-xs font-body text-gray-400 truncate">
+                            {room.description}
+                          </p>
                         )}
                       </div>
-                      <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 group-hover:text-gray-400 transition-colors flex-shrink-0" />
+                      <ChevronRight
+                        size={16}
+                        className="text-gray-300 dark:text-gray-600 group-hover:text-gray-400 transition-colors flex-shrink-0"
+                      />
                     </div>
                   </Link>
                 </StaggerItem>

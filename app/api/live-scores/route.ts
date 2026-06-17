@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
-import { getLiveWorldCupFixtures, getWorldCupFixturesByDate, getWorldCupFixtures } from '@/lib/api/football'
+import {
+  getLiveWorldCupFixtures,
+  getWorldCupFixturesByDate,
+  getWorldCupFixtures,
+} from '@/lib/api/football'
 
 /**
  * GET /api/live-scores
@@ -26,9 +30,12 @@ export async function GET(request: Request) {
       data = await getWorldCupFixtures()
     }
 
-    return NextResponse.json({ matches: data }, {
-      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30' },
-    })
+    return NextResponse.json(
+      { matches: data },
+      {
+        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30' },
+      }
+    )
   } catch (error) {
     console.error('[live-scores]', error)
     return NextResponse.json({ matches: [], error: 'Failed to fetch live scores' }, { status: 500 })

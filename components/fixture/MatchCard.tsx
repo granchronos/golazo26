@@ -18,28 +18,42 @@ interface MatchCardProps {
   compact?: boolean
 }
 
-const statusConfig: Record<MatchStatus, { label: string; variant: 'blue' | 'red' | 'green' | 'gray' }> = {
+const statusConfig: Record<
+  MatchStatus,
+  { label: string; variant: 'blue' | 'red' | 'green' | 'gray' }
+> = {
   scheduled: { label: 'Programado', variant: 'blue' },
   live: { label: 'EN VIVO', variant: 'red' },
   finished: { label: 'Finalizado', variant: 'gray' },
   postponed: { label: 'Aplazado', variant: 'gray' as const },
 }
 
-export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compact = false }: MatchCardProps) {
+export function MatchCard({
+  match,
+  homeTeam,
+  awayTeam,
+  showRound = false,
+  compact = false,
+}: MatchCardProps) {
   const status = statusConfig[match.status]
   const isFinished = match.status === 'finished'
   const isLive = match.status === 'live'
 
   const redCards = useMemo(() => {
     if (!match.events || !Array.isArray(match.events)) return { home: 0, away: 0 }
-    return match.events.reduce((acc, ev) => {
-      const isRed = ev.type === 'Card' && (ev.detail?.toLowerCase().includes('red') || ev.detail === 'Yellow-Red Card')
-      if (isRed) {
-        if (ev.team_id === match.home_team_id) acc.home++
-        else if (ev.team_id === match.away_team_id) acc.away++
-      }
-      return acc
-    }, { home: 0, away: 0 })
+    return match.events.reduce(
+      (acc, ev) => {
+        const isRed =
+          ev.type === 'Card' &&
+          (ev.detail?.toLowerCase().includes('red') || ev.detail === 'Yellow-Red Card')
+        if (isRed) {
+          if (ev.team_id === match.home_team_id) acc.home++
+          else if (ev.team_id === match.away_team_id) acc.away++
+        }
+        return acc
+      },
+      { home: 0, away: 0 }
+    )
   }, [match.events, match.home_team_id, match.away_team_id])
 
   return (
@@ -68,7 +82,12 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
       {/* Teams & Score */}
       <div className="flex items-center gap-3">
         {/* Home Team */}
-        <div className={cn('flex-1 flex items-center gap-2', compact ? 'flex-row' : 'flex-col sm:flex-row')}>
+        <div
+          className={cn(
+            'flex-1 flex items-center gap-2',
+            compact ? 'flex-row' : 'flex-col sm:flex-row'
+          )}
+        >
           {homeTeam ? (
             <TeamFlag flagCode={homeTeam.flag_code} name={homeTeam.name} size={compact ? 18 : 24} />
           ) : (
@@ -76,19 +95,26 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
           )}
           <div className="flex flex-col">
             <div className="flex items-center gap-1">
-              <span className={cn(
-                'font-body font-semibold dark:text-white',
-                compact ? 'text-sm' : 'text-sm sm:text-base',
-                isFinished && match.winner_id === match.home_team_id && 'text-[#2A398D]'
-              )}>
-                {compact ? (homeTeam?.code || '???') : (homeTeam?.name || 'Por definir')}
+              <span
+                className={cn(
+                  'font-body font-semibold dark:text-white',
+                  compact ? 'text-sm' : 'text-sm sm:text-base',
+                  isFinished && match.winner_id === match.home_team_id && 'text-[#2A398D]'
+                )}
+              >
+                {compact ? homeTeam?.code || '???' : homeTeam?.name || 'Por definir'}
               </span>
               {redCards.home > 0 && (
-                <span className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse" title={`${redCards.home} expulsado(s)`} />
+                <span
+                  className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse"
+                  title={`${redCards.home} expulsado(s)`}
+                />
               )}
             </div>
             {homeTeam && !compact && (
-              <span className="text-[10px] text-gray-400 font-mono">FIFA #{homeTeam.fifa_ranking}</span>
+              <span className="text-[10px] text-gray-400 font-mono">
+                FIFA #{homeTeam.fifa_ranking}
+              </span>
             )}
           </div>
         </div>
@@ -97,17 +123,21 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
         <div className="flex items-center gap-1 flex-shrink-0">
           {isFinished || isLive ? (
             <div className="flex items-center gap-1">
-              <span className={cn(
-                'font-mono font-bold text-xl w-8 text-center',
-                isFinished && match.winner_id === match.home_team_id && 'text-[#2A398D]'
-              )}>
+              <span
+                className={cn(
+                  'font-mono font-bold text-xl w-8 text-center',
+                  isFinished && match.winner_id === match.home_team_id && 'text-[#2A398D]'
+                )}
+              >
                 {match.home_score ?? '-'}
               </span>
               <span className="text-gray-400 font-mono">:</span>
-              <span className={cn(
-                'font-mono font-bold text-xl w-8 text-center',
-                isFinished && match.winner_id === match.away_team_id && 'text-[#2A398D]'
-              )}>
+              <span
+                className={cn(
+                  'font-mono font-bold text-xl w-8 text-center',
+                  isFinished && match.winner_id === match.away_team_id && 'text-[#2A398D]'
+                )}
+              >
                 {match.away_score ?? '-'}
               </span>
             </div>
@@ -117,7 +147,12 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
         </div>
 
         {/* Away Team */}
-        <div className={cn('flex-1 flex items-center justify-end gap-2', compact ? 'flex-row-reverse' : 'flex-col-reverse sm:flex-row-reverse')}>
+        <div
+          className={cn(
+            'flex-1 flex items-center justify-end gap-2',
+            compact ? 'flex-row-reverse' : 'flex-col-reverse sm:flex-row-reverse'
+          )}
+        >
           {awayTeam ? (
             <TeamFlag flagCode={awayTeam.flag_code} name={awayTeam.name} size={compact ? 18 : 24} />
           ) : (
@@ -125,19 +160,26 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
           )}
           <div className="flex flex-col items-end">
             <div className="flex items-center gap-1 flex-row-reverse">
-              <span className={cn(
-                'font-body font-semibold dark:text-white text-right',
-                compact ? 'text-sm' : 'text-sm sm:text-base',
-                isFinished && match.winner_id === match.away_team_id && 'text-[#2A398D]'
-              )}>
-                {compact ? (awayTeam?.code || '???') : (awayTeam?.name || 'Por definir')}
+              <span
+                className={cn(
+                  'font-body font-semibold dark:text-white text-right',
+                  compact ? 'text-sm' : 'text-sm sm:text-base',
+                  isFinished && match.winner_id === match.away_team_id && 'text-[#2A398D]'
+                )}
+              >
+                {compact ? awayTeam?.code || '???' : awayTeam?.name || 'Por definir'}
               </span>
               {redCards.away > 0 && (
-                <span className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse" title={`${redCards.away} expulsado(s)`} />
+                <span
+                  className="inline-block w-1.5 h-2.5 bg-red-500 rounded-[1px] shadow-sm shrink-0 animate-pulse"
+                  title={`${redCards.away} expulsado(s)`}
+                />
               )}
             </div>
             {awayTeam && !compact && (
-              <span className="text-[10px] text-gray-400 font-mono text-right">FIFA #{awayTeam.fifa_ranking}</span>
+              <span className="text-[10px] text-gray-400 font-mono text-right">
+                FIFA #{awayTeam.fifa_ranking}
+              </span>
             )}
           </div>
         </div>
@@ -147,7 +189,9 @@ export function MatchCard({ match, homeTeam, awayTeam, showRound = false, compac
       {!compact && (
         <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-400 font-body">
           <MapPin size={11} className="flex-shrink-0" />
-          <span className="truncate">{match.city} — {match.venue}</span>
+          <span className="truncate">
+            {match.city} — {match.venue}
+          </span>
         </div>
       )}
     </motion.div>

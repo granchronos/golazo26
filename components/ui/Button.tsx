@@ -22,10 +22,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           size === 'lg' && 'px-7 py-3.5 text-base',
           // Variants
           variant === 'primary' && 'btn-fwc',
-          variant === 'secondary' && 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/20',
-          variant === 'ghost' && 'bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200',
+          variant === 'secondary' &&
+            'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/20',
+          variant === 'ghost' &&
+            'bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200',
           variant === 'danger' && 'bg-red-500 text-white hover:bg-red-600',
-          variant === 'outline' && 'border-2 border-[#2A398D] text-[#2A398D] hover:bg-[#2A398D] hover:text-white',
+          variant === 'outline' &&
+            'border-2 border-[#2A398D] text-[#2A398D] hover:bg-[#2A398D] hover:text-white',
           // Disabled
           (disabled || loading) && '!opacity-50 !cursor-not-allowed !transform-none !shadow-none',
           className

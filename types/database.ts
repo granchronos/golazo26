@@ -110,6 +110,7 @@ export interface Database {
           created_at: string
           events: any | null
           odds: string | null
+          elapsed: number | null
         }
         Insert: {
           id?: string
@@ -127,6 +128,7 @@ export interface Database {
           created_at?: string
           events?: any | null
           odds?: string | null
+          elapsed?: number | null
         }
         Update: {
           home_team_id?: string | null
@@ -137,6 +139,7 @@ export interface Database {
           status?: MatchStatus
           events?: any | null
           odds?: string | null
+          elapsed?: number | null
         }
         Relationships: []
       }
