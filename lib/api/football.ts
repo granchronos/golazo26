@@ -33,7 +33,7 @@ export interface LiveMatch {
   odds?: string
 }
 
-async function apiFetch<T>(endpoint: string): Promise<T | null> {
+async function apiFetch<T>(endpoint: string, retries = 3, delayMs = 1000): Promise<T | null> {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY || '055090bd908541a882109ab549be7adb'
   if (!apiKey) {
     console.warn('[football-api] FOOTBALL_DATA_API_KEY not set')
@@ -41,22 +41,40 @@ async function apiFetch<T>(endpoint: string): Promise<T | null> {
   }
 
   const url = `${API_BASE}${endpoint}`
-  try {
-    const res = await fetch(url, {
-      headers: { 'X-Auth-Token': apiKey },
-      cache: 'no-store',
-    })
 
-    if (!res.ok) {
-      console.error(`[football-api] ${res.status} ${res.statusText}`)
-      return null
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: { 'X-Auth-Token': apiKey },
+        cache: 'no-store',
+      })
+
+      if (!res.ok) {
+        if (res.status === 429 && attempt < retries) {
+          console.warn(
+            `[football-api] Rate limited (429) on attempt ${attempt}. Retrying in ${delayMs * attempt}ms...`
+          )
+          await new Promise((resolve) => setTimeout(resolve, delayMs * attempt))
+          continue
+        }
+        console.error(`[football-api] ${res.status} ${res.statusText} on ${endpoint}`)
+        return null
+      }
+
+      return await (res.json() as Promise<T>)
+    } catch (err: any) {
+      if (attempt < retries) {
+        console.warn(
+          `[football-api] Attempt ${attempt} failed for ${endpoint} (${err.message || err}). Retrying in ${delayMs * attempt}ms...`
+        )
+        await new Promise((resolve) => setTimeout(resolve, delayMs * attempt))
+      } else {
+        console.error(`[football-api] All ${retries} attempts failed for ${endpoint}:`, err)
+        return null
+      }
     }
-
-    return res.json() as Promise<T>
-  } catch (err) {
-    console.error(`[football-api] Fetch error for ${endpoint}:`, err)
-    return null
   }
+  return null
 }
 
 /**
