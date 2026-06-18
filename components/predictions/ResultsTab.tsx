@@ -399,22 +399,47 @@ function MatchRow({
 
   const canPredict = isScheduled && homeTeam && awayTeam
 
-  // Auto-save: called whenever either score changes, with 400ms debounce
+  // Save individual score with per-team toast
   const triggerSave = useCallback(
-    (h: string, a: string) => {
+    (newHome: string, newAway: string, changedSide: 'home' | 'away') => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-      const hNum = parseInt(h)
-      const aNum = parseInt(a)
-      if (isNaN(hNum) || isNaN(aNum) || hNum < 0 || aNum < 0) return
+
+      const hNum = newHome !== '' ? parseInt(newHome) : NaN
+      const aNum = newAway !== '' ? parseInt(newAway) : NaN
+
+      // Allow saving if at least one side has a valid number
+      const hValid = !isNaN(hNum) && hNum >= 0
+      const aValid = !isNaN(aNum) && aNum >= 0
+      if (!hValid && !aValid) return
+
+      // Show instant toast for the changed side
+      const changedTeam = changedSide === 'home' ? homeTeam : awayTeam
+      const changedValue = changedSide === 'home' ? newHome : newAway
+      if (changedTeam && changedValue !== '') {
+        toast(`${changedTeam.flag_emoji} ${changedTeam.name}: ${changedValue}`, {
+          duration: 1500,
+          id: `score-${match.match_number}-${changedSide}`,
+        })
+      }
+
+      // Only persist to server when both sides are filled
+      if (!hValid || !aValid) return
 
       saveTimerRef.current = setTimeout(() => {
         startTransition(async () => {
           const result = await saveMatchScorePrediction(roomId, match.match_number, hNum, aNum)
-          if (result?.error) toast.error(result.error)
+          if (result?.error) {
+            toast.error(result.error)
+          } else {
+            toast.success(
+              `${homeTeam?.flag_emoji ?? ''} ${hNum} - ${aNum} ${awayTeam?.flag_emoji ?? ''}  ✓`,
+              { duration: 2000, id: `score-saved-${match.match_number}` }
+            )
+          }
         })
-      }, 400)
+      }, 500)
     },
-    [roomId, match.match_number]
+    [roomId, match.match_number, homeTeam, awayTeam]
   )
 
   // Cleanup timer on unmount
@@ -424,12 +449,12 @@ function MatchRow({
     }
   }, [])
 
-  // Strict numeric handler: only allows single digits 0-9, strips anything else
+  // Strict numeric handler: only allows digits 0-9, max 2 chars
   const handleHomeChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 2)
       setHomeScore(raw)
-      triggerSave(raw, awayScore)
+      triggerSave(raw, awayScore, 'home')
     },
     [awayScore, triggerSave]
   )
@@ -438,7 +463,7 @@ function MatchRow({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 2)
       setAwayScore(raw)
-      triggerSave(homeScore, raw)
+      triggerSave(homeScore, raw, 'away')
     },
     [homeScore, triggerSave]
   )
@@ -502,7 +527,7 @@ function MatchRow({
       <div
         data-match-status={match.status}
         className={cn(
-          'flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-white/[0.04] last:border-0 transition-all duration-300 relative overflow-hidden',
+          'flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 border-b border-gray-100 dark:border-white/[0.04] last:border-0 transition-all duration-300 relative overflow-hidden',
           isLive && 'bg-[#E61D25]/[0.03] dark:bg-red-500/[0.02] shadow-[inset_3px_0_0_0_#E61D25]'
         )}
       >
@@ -510,38 +535,38 @@ function MatchRow({
         <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
           {homeTeam ? (
             <>
-              <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">
+              <span className="text-[11px] text-gray-400 font-mono flex-shrink-0 hidden sm:inline">
                 #{homeTeam.fifa_ranking}
               </span>
-              <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
+              <span className="text-sm font-body truncate max-w-[80px] sm:max-w-none text-gray-700 dark:text-gray-300">
                 {homeTeam.name}
               </span>
-              <TeamFlag flagCode={homeTeam.flag_code} name={homeTeam.name} size={16} />
+              <TeamFlag flagCode={homeTeam.flag_code} name={homeTeam.name} size={18} />
             </>
           ) : (
-            <span className="text-xs text-gray-400 font-body">TBD</span>
+            <span className="text-sm text-gray-400 font-body">TBD</span>
           )}
         </div>
 
         {/* Score / Time / Prediction */}
-        <div className="flex flex-col items-center w-28 flex-shrink-0 gap-0.5">
+        <div className="flex flex-col items-center w-[7.5rem] sm:w-32 flex-shrink-0 gap-0.5">
           {isFinished ? (
             <>
-              <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
+              <span className="font-mono text-base font-bold text-gray-900 dark:text-white">
                 {match.home_score} - {match.away_score}
               </span>
-              <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 FINALIZADO
               </span>
             </>
           ) : isLive ? (
             <>
-              <span className="font-mono text-sm font-bold text-[#E61D25] dark:text-red-500">
+              <span className="font-mono text-base font-bold text-[#E61D25] dark:text-red-500">
                 {match.home_score ?? 0} - {match.away_score ?? 0}
               </span>
               <div className="flex items-center gap-1.5 bg-[#E61D25]/10 dark:bg-red-500/15 px-2 py-0.5 rounded-full border border-[#E61D25]/20 dark:border-red-500/20">
                 <span className="w-1.5 h-1.5 bg-[#E61D25] rounded-full animate-pulse" />
-                <span className="font-mono text-[9px] font-bold text-[#E61D25] dark:text-red-400">
+                <span className="font-mono text-[10px] font-bold text-[#E61D25] dark:text-red-400">
                   {liveElapsed === 45 ? 'DT' : liveElapsed !== null ? `${liveElapsed}'` : 'EN VIVO'}
                 </span>
               </div>
@@ -550,13 +575,13 @@ function MatchRow({
             <LocalTime
               dateStr={match.match_date}
               mode="full"
-              className="font-mono text-xs text-gray-400"
+              className="font-mono text-sm text-gray-400"
             />
           )}
 
           {/* Score prediction inputs */}
           {canPredict && isBeforeDeadline && (
-            <div className="flex items-center gap-1 mt-1">
+            <div className="flex items-center gap-1.5 mt-1.5">
               <input
                 type="text"
                 inputMode="numeric"
@@ -564,10 +589,10 @@ function MatchRow({
                 maxLength={2}
                 value={homeScore}
                 onChange={handleHomeChange}
-                className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
-                placeholder="-"
+                className="w-10 h-8 text-center text-sm font-mono font-semibold rounded-lg border border-gray-200 dark:border-white/15 bg-white dark:bg-white/[0.06] dark:text-white focus:border-[#2A398D] focus:ring-1 focus:ring-[#2A398D]/30 focus:outline-none transition-colors"
+                placeholder="–"
               />
-              <span className="text-[9px] text-gray-300">-</span>
+              <span className="text-xs text-gray-300 font-bold">-</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -575,21 +600,21 @@ function MatchRow({
                 maxLength={2}
                 value={awayScore}
                 onChange={handleAwayChange}
-                className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
-                placeholder="-"
+                className="w-10 h-8 text-center text-sm font-mono font-semibold rounded-lg border border-gray-200 dark:border-white/15 bg-white dark:bg-white/[0.06] dark:text-white focus:border-[#2A398D] focus:ring-1 focus:ring-[#2A398D]/30 focus:outline-none transition-colors"
+                placeholder="–"
               />
-              {isPending && <Loader2 size={10} className="text-[#2A398D] animate-spin" />}
+              {isPending && <Loader2 size={12} className="text-[#2A398D] animate-spin" />}
             </div>
           )}
 
           {/* Saved prediction display (after deadline or finished) */}
           {savedScore && !canPredict && (
-            <span className="text-[10px] font-mono text-gray-400 mt-0.5">
+            <span className="text-[11px] font-mono text-gray-400 mt-0.5">
               mi apuesta: {savedScore.home}-{savedScore.away}
             </span>
           )}
           {savedScore && canPredict && !isBeforeDeadline && (
-            <span className="text-[10px] font-mono text-gray-400 mt-0.5">
+            <span className="text-[11px] font-mono text-gray-400 mt-0.5">
               {savedScore.home}-{savedScore.away}
             </span>
           )}
@@ -615,16 +640,16 @@ function MatchRow({
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {awayTeam ? (
             <>
-              <TeamFlag flagCode={awayTeam.flag_code} name={awayTeam.name} size={16} />
-              <span className="text-xs font-body truncate max-w-[70px] sm:max-w-none text-gray-700 dark:text-gray-300">
+              <TeamFlag flagCode={awayTeam.flag_code} name={awayTeam.name} size={18} />
+              <span className="text-sm font-body truncate max-w-[80px] sm:max-w-none text-gray-700 dark:text-gray-300">
                 {awayTeam.name}
               </span>
-              <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">
+              <span className="text-[11px] text-gray-400 font-mono flex-shrink-0 hidden sm:inline">
                 #{awayTeam.fifa_ranking}
               </span>
             </>
           ) : (
-            <span className="text-xs text-gray-400 font-body">TBD</span>
+            <span className="text-sm text-gray-400 font-body">TBD</span>
           )}
         </div>
 
