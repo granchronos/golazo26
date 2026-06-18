@@ -6,6 +6,7 @@ import { MapPin, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { Badge } from '@/components/ui/Badge'
 import { formatMatchDate } from '@/lib/utils/date'
+import { LocalTime } from '@/components/ui/LocalTime'
 import { TeamFlag } from '@/components/ui/TeamFlag'
 import type { Match, MatchStatus } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
@@ -65,7 +66,7 @@ export function MatchCard({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 text-xs text-gray-500 font-body">
           <Clock size={12} />
-          <span>{formatMatchDate(match.match_date)}</span>
+          <LocalTime dateStr={match.match_date} mode="full" />
         </div>
         <div className="flex items-center gap-2">
           {isLive && (

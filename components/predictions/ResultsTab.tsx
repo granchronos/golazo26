@@ -307,7 +307,7 @@ export function ResultsTab({
 
         const byDate = new Map<string, Match[]>()
         for (const m of roundMatches) {
-          const dateKey = formatShortDate(m.match_date)
+          const dateKey = m.match_date.split('T')[0]
           if (!byDate.has(dateKey)) byDate.set(dateKey, [])
           byDate.get(dateKey)!.push(m)
         }
