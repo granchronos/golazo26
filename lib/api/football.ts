@@ -747,3 +747,125 @@ export async function getMatchEvents(apiFixtureId: number): Promise<any[]> {
 
   return events
 }
+
+export interface Scorer {
+  player: {
+    id: number
+    name: string
+    nationality: string
+    position?: string
+  }
+  team: {
+    id: number
+    name: string
+    tla?: string
+  }
+  goals: number
+  assists: number | null
+  penalties: number | null
+}
+
+function getSimulatedScorers(): Scorer[] {
+  return [
+    {
+      player: { id: 16275, name: 'Kylian Mbappé', nationality: 'France', position: 'Attacker' },
+      team: { id: 773, name: 'France', tla: 'FRA' },
+      goals: 5,
+      assists: 2,
+      penalties: 1,
+    },
+    {
+      player: { id: 44, name: 'Lionel Messi', nationality: 'Argentina', position: 'Attacker' },
+      team: { id: 762, name: 'Argentina', tla: 'ARG' },
+      goals: 4,
+      assists: 3,
+      penalties: 2,
+    },
+    {
+      player: { id: 16276, name: 'Erling Haaland', nationality: 'Norway', position: 'Attacker' },
+      team: { id: 774, name: 'Norway', tla: 'NOR' },
+      goals: 4,
+      assists: 0,
+      penalties: 0,
+    },
+    {
+      player: { id: 45, name: 'Cristiano Ronaldo', nationality: 'Portugal', position: 'Attacker' },
+      team: { id: 765, name: 'Portugal', tla: 'POR' },
+      goals: 3,
+      assists: 1,
+      penalties: 1,
+    },
+    {
+      player: { id: 16277, name: 'Vinícius Júnior', nationality: 'Brazil', position: 'Attacker' },
+      team: { id: 764, name: 'Brazil', tla: 'BRA' },
+      goals: 3,
+      assists: 2,
+      penalties: 0,
+    },
+    {
+      player: { id: 16278, name: 'Harry Kane', nationality: 'England', position: 'Attacker' },
+      team: { id: 775, name: 'England', tla: 'ENG' },
+      goals: 3,
+      assists: 1,
+      penalties: 1,
+    },
+    {
+      player: { id: 16279, name: 'Patrik Schick', nationality: 'Czech Republic', position: 'Attacker' },
+      team: { id: 776, name: 'Czech Republic', tla: 'CZE' },
+      goals: 2,
+      assists: 0,
+      penalties: 0,
+    },
+    {
+      player: { id: 16280, name: 'Son Heung-min', nationality: 'Korea Republic', position: 'Attacker' },
+      team: { id: 777, name: 'Korea Republic', tla: 'KOR' },
+      goals: 2,
+      assists: 1,
+      penalties: 0,
+    },
+    {
+      player: { id: 16281, name: 'Jude Bellingham', nationality: 'England', position: 'Midfielder' },
+      team: { id: 775, name: 'England', tla: 'ENG' },
+      goals: 2,
+      assists: 2,
+      penalties: 0,
+    },
+    {
+      player: { id: 16282, name: 'Lamine Yamal', nationality: 'Spain', position: 'Attacker' },
+      team: { id: 778, name: 'Spain', tla: 'ESP' },
+      goals: 2,
+      assists: 3,
+      penalties: 0,
+    },
+  ]
+}
+
+export async function getWorldCupScorers(): Promise<Scorer[]> {
+  const data = await apiFetch<{ scorers: any[] }>('/competitions/WC/scorers')
+  if (!data || !data.scorers || data.scorers.length === 0) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        '[football-api] Returning simulated World Cup scorers (Free Plan limit/network fallback)'
+      )
+      return getSimulatedScorers()
+    }
+    return []
+  }
+  return data.scorers.map((s: any) => ({
+    player: {
+      id: s.player.id,
+      name: s.player.name,
+      nationality: s.player.nationality,
+      position: s.player.position,
+    },
+    team: {
+      id: s.team.id,
+      name: s.team.name,
+      tla: s.team.tla,
+    },
+    goals: s.goals,
+    assists: s.assists ?? null,
+    penalties: s.penalties ?? null,
+  }))
+}
+

@@ -43,116 +43,30 @@ export function BetSummary({
     return null
   }, [champion, semifinal1Winner, semifinal2Winner])
 
-  const predictedChampionTeam = predictedChampionId ? TEAMS_BY_ID[predictedChampionId] : null
+  // First try explicit champion pick, then fallback to bracket champion
+  const championTeam = predictedChampionId 
+    ? TEAMS_BY_ID[predictedChampionId] 
+    : champion;
 
-  if (!champion && !predictedChampionId && !predictedGoleador) return null
+  if (!championTeam && !predictedGoleador && (!allMembersPredictions || Object.keys(allMembersPredictions).length === 0)) return null
 
   return (
     <div className="glass-card overflow-hidden">
-      {/* ── Champion & Runner-up — podium style centered ── */}
-      {champion && (
-        <div className="relative bg-gradient-to-r from-[#C9A84C]/5 via-[#C9A84C]/10 to-[#C9A84C]/5 dark:from-[#C9A84C]/[0.06] dark:via-[#C9A84C]/10 dark:to-[#C9A84C]/[0.06]">
-          {/* Decorative shimmer */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-[#C9A84C]/10 rounded-full blur-3xl" />
-          </div>
-
-          <div className="relative flex items-center justify-center gap-6 sm:gap-10 py-5 px-4">
-            {/* Runner-up — left, slightly smaller */}
-            {runnerUp ? (
-              <div className="flex flex-col items-center gap-1 opacity-80">
-                <Medal size={14} className="text-gray-400 dark:text-gray-500" />
-                <TeamFlag flagCode={runnerUp.flag_code} name={runnerUp.name} size={36} />
-                <span className="text-xs font-body font-medium text-gray-500 dark:text-gray-400">
-                  {runnerUp.name}
-                </span>
-                <span className="text-[9px] font-mono text-gray-400">
-                  FIFA #{runnerUp.fifa_ranking}
-                </span>
-                <span className="text-[9px] font-mono text-gray-400 uppercase">Subcampeón</span>
-              </div>
-            ) : (
-              <div className="w-16" />
-            )}
-
-            {/* Champion — center, prominent */}
-            <div className="flex flex-col items-center gap-1.5 relative">
-              <div className="absolute -top-2 -left-4 -right-4 -bottom-2 bg-[#C9A84C]/[0.08] rounded-2xl blur-md" />
-              <Trophy size={20} className="text-[#C9A84C] relative z-10" />
-              <div className="relative z-10 my-1">
-                <TeamFlag flagCode={champion.flag_code} name={champion.name} size={54} />
-              </div>
-              <span className="text-sm sm:text-base font-display font-bold text-[#C9A84C] relative z-10">
-                {champion.name}
+      {(championTeam || predictedGoleador) && (
+        <div className="flex items-center gap-4 px-4 py-3 border-b border-gray-100 dark:border-white/[0.06]">
+          {championTeam && (
+            <div className="flex items-center gap-2">
+              <Award size={16} className="text-[#C9A84C]" />
+              <span className="text-xs font-medium text-gray-900 dark:text-white flex items-center gap-1.5">
+                <TeamFlag flagCode={championTeam.flag_code} name={championTeam.name} size={16} />
+                {championTeam.name}
               </span>
-              <span className="text-[10px] font-mono text-[#C9A84C] relative z-10">
-                FIFA #{champion.fifa_ranking}
-              </span>
-              <span className="text-[9px] font-mono text-[#C9A84C]/70 uppercase tracking-wider relative z-10">
-                Mi Campeón del Bracket
-              </span>
-            </div>
-
-            {/* Runner-up placeholder — right, mirror */}
-            {runnerUp ? (
-              <div className="flex flex-col items-center gap-1 opacity-0 pointer-events-none">
-                <Medal size={14} />
-                <TeamFlag flagCode={runnerUp.flag_code} name={runnerUp.name} size={36} />
-                <span className="text-xs font-body">{runnerUp.name}</span>
-                <span className="text-[9px] font-mono">FIFA #{runnerUp.fifa_ranking}</span>
-                <span className="text-[9px]">Subcampeón</span>
-              </div>
-            ) : (
-              <div className="w-16" />
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Special picks — Mi Campeón & Goleador ── */}
-      {(predictedChampionId || predictedGoleador) && (
-        <div
-          className={cn(
-            'flex flex-col sm:flex-row sm:items-stretch divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-white/[0.06]',
-            champion && 'border-t border-gray-100 dark:border-white/[0.06]'
-          )}
-        >
-          {predictedChampionTeam && (
-            <div className="flex items-center gap-3 px-4 py-3 flex-1">
-              <div className="w-8 h-8 rounded-full bg-[#C9A84C]/10 flex items-center justify-center flex-shrink-0">
-                <Award size={14} className="text-[#C9A84C]" />
-              </div>
-              <div>
-                <p className="text-[9px] uppercase font-mono text-gray-400 tracking-wider leading-none mb-0.5">
-                  Mi Campeón
-                </p>
-                <p className="text-sm font-body font-semibold text-gray-900 dark:text-white flex items-center gap-1.5">
-                  <TeamFlag
-                    flagCode={predictedChampionTeam.flag_code}
-                    name={predictedChampionTeam.name}
-                    size={18}
-                  />
-                  {predictedChampionTeam.name}
-                  <span className="text-[10px] font-mono text-gray-400 font-normal">
-                    FIFA #{predictedChampionTeam.fifa_ranking}
-                  </span>
-                </p>
-              </div>
             </div>
           )}
           {predictedGoleador && (
-            <div className="flex items-center gap-3 px-4 py-3 flex-1">
-              <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                <Zap size={14} className="text-amber-500" />
-              </div>
-              <div>
-                <p className="text-[9px] uppercase font-mono text-gray-400 tracking-wider leading-none mb-0.5">
-                  Mi Goleador
-                </p>
-                <p className="text-sm font-body font-semibold text-gray-900 dark:text-white">
-                  ⚽ {predictedGoleador}
-                </p>
-              </div>
+            <div className="flex items-center gap-2">
+              <Zap size={16} className="text-amber-500" />
+              <span className="text-xs font-medium text-gray-900 dark:text-white">{predictedGoleador}</span>
             </div>
           )}
         </div>
@@ -160,9 +74,9 @@ export function BetSummary({
 
       {/* ── All members' champions ── */}
       {allMembersPredictions && Object.keys(allMembersPredictions).length > 0 && (
-        <div className="border-t border-gray-100 dark:border-white/[0.06] px-4 py-3 bg-gray-50/50 dark:bg-white/[0.02]">
+        <div className="px-4 py-3 bg-gray-50/50 dark:bg-white/[0.02]">
           <p className="text-[9px] font-mono text-gray-400 uppercase tracking-wider mb-2">
-            Apuestas de la sala
+            Campeones de la sala
           </p>
           <div className="flex flex-wrap gap-1.5">
             {Object.entries(allMembersPredictions).map(([userId, { name, champion: champId }]) => {

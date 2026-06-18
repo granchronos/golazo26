@@ -28,6 +28,7 @@ interface PredictionMatrixProps {
   existingKnockoutPredictions: Record<number, string>
   initialChampionId: string | null
   initialGoleador: string
+  isReadOnly?: boolean
 }
 
 type Selections = Record<GroupLetter, { first: string | null; second: string | null }>
@@ -42,9 +43,10 @@ export function PredictionMatrix({
   existingKnockoutPredictions,
   initialChampionId,
   initialGoleador,
+  isReadOnly = false,
 }: PredictionMatrixProps) {
-  const isOpen = isBeforeDeadline(GROUP_STAGE_DEADLINE)
-  const isChampGoleadorOpen = isBeforeDeadline(CHAMPION_GOLEADOR_DEADLINE)
+  const isOpen = !isReadOnly && isBeforeDeadline(GROUP_STAGE_DEADLINE)
+  const isChampGoleadorOpen = !isReadOnly && isBeforeDeadline(CHAMPION_GOLEADOR_DEADLINE)
 
   const [selections, setSelections] = useState<Selections>(() => {
     const init = {} as Selections
@@ -72,6 +74,18 @@ export function PredictionMatrix({
   const [autoSaving, setAutoSaving] = useState(false)
   const [groupsCollapsed, setGroupsCollapsed] = useState(false)
 
+  useEffect(() => {
+    const init = {} as Selections
+    for (const letter of GROUP_LETTERS) {
+      init[letter] = {
+        first: existingPredictions[letter]?.team_1st_id ?? null,
+        second: existingPredictions[letter]?.team_2nd_id ?? null,
+      }
+    }
+    setSelections(init)
+    setSaved(init)
+  }, [existingPredictions])
+
   // Agnostic choices states
   const [predictedChampionId, setPredictedChampionId] = useState<string | null>(initialChampionId)
   const [predictedGoleador, setPredictedGoleador] = useState<string>(initialGoleador)
@@ -88,6 +102,17 @@ export function PredictionMatrix({
 
   // Goleador combobox state
   const [goleadorSearch, setGoleadorSearch] = useState(initialGoleador)
+
+  useEffect(() => {
+    setPredictedChampionId(initialChampionId)
+    setSavedChampionId(initialChampionId)
+  }, [initialChampionId])
+
+  useEffect(() => {
+    setPredictedGoleador(initialGoleador)
+    setSavedGoleador(initialGoleador)
+    setGoleadorSearch(initialGoleador)
+  }, [initialGoleador])
   const [searchResults, setSearchResults] = useState<
     Array<{
       id: string
@@ -733,12 +758,13 @@ export function PredictionMatrix({
           roomId={roomId}
           groupSelections={selections}
           existingPredictions={existingKnockoutPredictions}
+          isOpen={isOpen}
         />
       </div>
 
       {/* Floating global save button (manual fallback) */}
       <AnimatePresence>
-        {changedGroups.length > 0 && !autoSaving && (
+        {changedGroups.length > 0 && !autoSaving && !isReadOnly && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

@@ -21,12 +21,14 @@ interface KnockoutPredictionsProps {
   roomId: string
   groupSelections: Record<GroupLetter, { first: string | null; second: string | null }>
   existingPredictions: Record<number, string>
+  isOpen: boolean
 }
 
 export function KnockoutPredictions({
   roomId,
   groupSelections,
   existingPredictions,
+  isOpen,
 }: KnockoutPredictionsProps) {
   const [picks, setPicks] = useState<Record<number, string>>(existingPredictions)
   const [saving, setSaving] = useState<Record<number, boolean>>({})
@@ -230,6 +232,7 @@ export function KnockoutPredictions({
                         getPoolTeams={getPoolTeams}
                         onPick={handlePick}
                         isFinal={round.id === 'final'}
+                        isOpen={isOpen}
                       />
                     ))}
                   </div>
@@ -253,6 +256,7 @@ interface MatchCardProps {
   getPoolTeams: (groups: [GroupLetter, GroupLetter]) => TeamData[]
   onPick: (matchNumber: number, teamId: string) => void
   isFinal: boolean
+  isOpen: boolean
 }
 
 function MatchCard({
@@ -263,6 +267,7 @@ function MatchCard({
   getPoolTeams,
   onPick,
   isFinal,
+  isOpen,
 }: MatchCardProps) {
   const isPool =
     matchDef.home.source.kind === '3rd_pool' || matchDef.away.source.kind === '3rd_pool'
@@ -311,6 +316,7 @@ function MatchCard({
               pick={pick}
               isSaving={isSaving}
               onPick={(teamId) => onPick(matchDef.matchNumber, teamId)}
+              isOpen={isOpen}
             />
 
             <div className="flex items-center justify-center w-7 flex-shrink-0">
@@ -324,6 +330,7 @@ function MatchCard({
               pick={pick}
               isSaving={isSaving}
               onPick={(teamId) => onPick(matchDef.matchNumber, teamId)}
+              isOpen={isOpen}
             />
           </div>
         )}
@@ -365,7 +372,7 @@ function MatchCard({
           label={matchDef.home.label}
           isPicked={!!homeTeam && pick === homeTeam.id}
           isLoser={!!awayTeam && !!pick && pick === awayTeam.id}
-          disabled={!homeTeam || !awayTeam || isSaving}
+          disabled={!homeTeam || !awayTeam || isSaving || !isOpen}
           isFinal={isFinal}
           onClick={() => homeTeam && onPick(matchDef.matchNumber, homeTeam.id)}
         />
@@ -380,7 +387,7 @@ function MatchCard({
           label={matchDef.away.label}
           isPicked={!!awayTeam && pick === awayTeam.id}
           isLoser={!!homeTeam && !!pick && pick === homeTeam.id}
-          disabled={!homeTeam || !awayTeam || isSaving}
+          disabled={!homeTeam || !awayTeam || isSaving || !isOpen}
           isFinal={isFinal}
           onClick={() => awayTeam && onPick(matchDef.matchNumber, awayTeam.id)}
         />
@@ -468,12 +475,14 @@ function PoolSide({
   pick,
   isSaving,
   onPick,
+  isOpen,
 }: {
   label: string
   teams: TeamData[]
   pick: string | null
   isSaving: boolean
   onPick: (teamId: string) => void
+  isOpen: boolean
 }) {
   const hasPick = teams.some((t) => t.id === pick)
   return (
@@ -489,7 +498,7 @@ function PoolSide({
           <button
             key={team.id}
             onClick={() => onPick(team.id)}
-            disabled={isSaving}
+            disabled={isSaving || !isOpen}
             className={cn(
               'flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-body transition-all',
               pick === team.id

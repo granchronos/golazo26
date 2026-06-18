@@ -43,6 +43,7 @@ interface ResultsTabProps {
   allMembersPredictions?: MemberPredictions[]
   isAdmin?: boolean
   actualGoleador?: string | null
+  isReadOnly?: boolean
 }
 
 export function ResultsTab({
@@ -54,6 +55,7 @@ export function ResultsTab({
   allMembersPredictions = [],
   isAdmin = false,
   actualGoleador = null,
+  isReadOnly = false,
 }: ResultsTabProps) {
   const [actualGoleadorText, setActualGoleadorText] = useState(actualGoleador || '')
   const [isGoleadorSaving, startGoleadorSaving] = useTransition()
@@ -340,6 +342,7 @@ export function ResultsTab({
                     savedScore={scorePredictions[match.match_number] ?? null}
                     allMembersPredictions={allMembersPredictions}
                     isAdmin={isAdmin}
+                    isReadOnly={isReadOnly}
                   />
                 ))}
               </div>
@@ -360,6 +363,7 @@ interface MatchRowProps {
   savedScore: { home: number; away: number } | null
   allMembersPredictions?: MemberPredictions[]
   isAdmin?: boolean
+  isReadOnly?: boolean
 }
 
 function MatchRow({
@@ -369,6 +373,7 @@ function MatchRow({
   savedScore,
   allMembersPredictions = [],
   isAdmin = false,
+  isReadOnly = false,
 }: MatchRowProps) {
   const homeTeam = match.home_team_id ? TEAMS_BY_ID[match.home_team_id] : null
   const awayTeam = match.away_team_id ? TEAMS_BY_ID[match.away_team_id] : null
@@ -384,6 +389,11 @@ function MatchRow({
   const [isBeforeDeadline, setIsBeforeDeadline] = useState(true)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  useEffect(() => {
+    setHomeScore(savedScore?.home?.toString() ?? '')
+    setAwayScore(savedScore?.away?.toString() ?? '')
+  }, [savedScore?.home, savedScore?.away])
+
   // Admin result editing state
   const [isAdminEditing, setIsAdminEditing] = useState(false)
   const [actualHomeScore, setActualHomeScore] = useState(match.home_score?.toString() ?? '')
@@ -394,10 +404,10 @@ function MatchRow({
   useEffect(() => {
     const deadline = new Date(match.match_date)
     deadline.setMinutes(deadline.getMinutes() - 5)
-    setIsBeforeDeadline(new Date() < deadline)
-  }, [match.match_date])
+    setIsBeforeDeadline(new Date() < deadline && !isReadOnly)
+  }, [match.match_date, isReadOnly])
 
-  const canPredict = isScheduled && homeTeam && awayTeam
+  const canPredict = isScheduled && homeTeam && awayTeam && !isReadOnly
 
   // Save individual score with per-team toast
   const triggerSave = useCallback(

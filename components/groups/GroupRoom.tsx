@@ -40,7 +40,8 @@ import {
   getRoomShareUrl,
 } from '@/lib/utils/rooms'
 import { cn } from '@/lib/utils/cn'
-import { GROUP_LETTERS } from '@/lib/constants/teams'
+import { GROUP_LETTERS, TEAMS } from '@/lib/constants/teams'
+import { TeamFlag } from '@/components/ui/TeamFlag'
 import type {
   Room,
   Profile,
@@ -102,13 +103,140 @@ export function GroupRoom({
   const [showBracket, setShowBracket] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
   const [showShareMenu, setShowShareMenu] = useState(false)
+  const [showProgress, setShowProgress] = useState(false)
   const shareMenuRef = useRef<HTMLDivElement>(null)
+
+  const [viewingUserId, setViewingUserId] = useState<string>(currentUserId)
+
+  const [scorersData, setScorersData] = useState<{ scorers: any[]; players: any[] } | null>(null)
+
+  // Fetch scorers from API on mount
+  useEffect(() => {
+    async function loadScorers() {
+      try {
+        const res = await fetch('/api/live-scores/scorers')
+        if (res.ok) {
+          const data = await res.json()
+          setScorersData(data)
+        }
+      } catch (err) {
+        console.error('Failed to load scorers', err)
+      }
+    }
+    loadScorers()
+  }, [])
+
+  // Match member predictions to flags and goals
+  const matchedGoleadores = useMemo(() => {
+    if (!scorersData) return {}
+
+    const { scorers, players } = scorersData
+    const result: Record<
+      string,
+      {
+        flagCode: string
+        flagEmoji: string
+        teamName: string
+        goals: number
+      }
+    > = {}
+
+    // Helper to normalize strings for comparison
+    const normalize = (str: string) => {
+      if (!str) return ''
+      return str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+    }
+
+    // List of national teams to resolve API team names/TLAs
+    const findTeamByTlaOrName = (tlaOrName: string) => {
+      const norm = normalize(tlaOrName)
+      if (!norm) return null
+      return TEAMS.find(
+        (t) =>
+          normalize(t.code) === norm ||
+          normalize(t.name) === norm ||
+          normalize(t.id) === norm
+      )
+    }
+
+    for (const member of members) {
+      const pick = member.predicted_goleador
+      if (!pick) continue
+
+      const pickNorm = normalize(pick)
+
+      // 1. Try to find the player in our database players list
+      const dbPlayer = players.find((p: any) => {
+        const pNorm = normalize(p.name)
+        return pNorm.includes(pickNorm) || pickNorm.includes(pNorm)
+      })
+
+      // 2. Try to find the player in the API's top scorers list
+      const apiScorer = scorers.find((s: any) => {
+        const sNorm = normalize(s.player.name)
+        return sNorm.includes(pickNorm) || pickNorm.includes(sNorm)
+      })
+
+      // 3. Extract goals
+      const goals = apiScorer ? apiScorer.goals : 0
+
+      // 4. Resolve flag and team details
+      let flagCode = ''
+      let flagEmoji = '⚽'
+      let teamName = ''
+
+      if (dbPlayer) {
+        // Look up team details in our local TEAMS array using teamId
+        const teamObj = TEAMS.find((t) => t.id === dbPlayer.teamId)
+        if (teamObj) {
+          flagCode = teamObj.flag_code
+          flagEmoji = teamObj.flag_emoji
+          teamName = teamObj.name
+        }
+      } else if (apiScorer) {
+        // Fallback: resolve from API team details
+        const teamObj = findTeamByTlaOrName(apiScorer.team.tla || apiScorer.team.name)
+        if (teamObj) {
+          flagCode = teamObj.flag_code
+          flagEmoji = teamObj.flag_emoji
+          teamName = teamObj.name
+        }
+      }
+
+      result[pick] = {
+        flagCode,
+        flagEmoji,
+        teamName,
+        goals,
+      }
+    }
+
+    return result
+  }, [scorersData, members])
 
   const isAdmin = room.admin_id === currentUserId
 
-  const currentUserMember = members.find((m) => m.user_id === currentUserId)
-  const initialChampionId = currentUserMember?.predicted_champion_id || null
-  const initialGoleador = currentUserMember?.predicted_goleador || ''
+  const activeGroupPredictions = viewingUserId === currentUserId 
+    ? groupPredictions 
+    : (allMembersPredictions.find((m) => m.userId === viewingUserId)?.groupPredictions ?? ({} as any))
+
+  const activeKnockoutPredictions = viewingUserId === currentUserId 
+    ? knockoutPredictions 
+    : (allMembersPredictions.find((m) => m.userId === viewingUserId)?.knockoutPredictions ?? {})
+
+  const activeScorePredictions = viewingUserId === currentUserId
+    ? scorePredictions
+    : (allMembersPredictions.find((m) => m.userId === viewingUserId)?.scorePredictions ?? {})
+
+  const viewingMember = members.find((m) => m.user_id === viewingUserId)
+  const activeChampionId = viewingMember?.predicted_champion_id || null
+  const activeGoleador = viewingMember?.predicted_goleador || ''
+
+  const isViewingOther = viewingUserId !== currentUserId
 
   console.log('[DEBUG Pool]', {
     admin_id: room.admin_id,
@@ -434,8 +562,8 @@ export function GroupRoom({
       <BetSummary
         knockoutPredictions={knockoutPredictions}
         allMembersPredictions={allMembersChampions}
-        predictedChampionId={initialChampionId}
-        predictedGoleador={initialGoleador}
+        predictedChampionId={activeChampionId}
+        predictedGoleador={activeGoleador}
       />
 
       {/* Pool banner */}
@@ -450,13 +578,28 @@ export function GroupRoom({
         />
       )}
 
-      {/* Progress Tracker (inline) */}
-      <ProgressSidebar
-        groupPredictions={groupPredictions}
-        knockoutPredictions={knockoutPredictions}
-        predictedChampionId={initialChampionId}
-        predictedGoleador={initialGoleador}
-      />
+      {/* Progress Tracker Modal */}
+      <AnimatePresence>
+        {showProgress && (
+          <Modal open={showProgress} onClose={() => setShowProgress(false)}>
+            <div className="p-4 sm:p-6 bg-gray-50 dark:bg-zinc-900 rounded-2xl max-w-md w-full mx-auto relative">
+              <button
+                onClick={() => setShowProgress(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+              <h3 className="font-display text-lg mb-4 dark:text-white">Tu Progreso</h3>
+              <ProgressSidebar
+                groupPredictions={activeGroupPredictions}
+                knockoutPredictions={activeKnockoutPredictions}
+                predictedChampionId={activeChampionId}
+                predictedGoleador={activeGoleador}
+              />
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-gray-100 dark:bg-white/[0.04] rounded-xl">
@@ -486,12 +629,26 @@ export function GroupRoom({
 
       {/* Tab panels — all mounted, visibility toggled via CSS for speed */}
       <div className={activeTab === 'predictions' ? '' : 'hidden'}>
+        {isViewingOther && (
+          <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl flex items-center justify-between">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              Viendo predicciones de <strong>{viewingMember?.profile?.name}</strong> (Solo lectura)
+            </p>
+            <button
+              onClick={() => setViewingUserId(currentUserId)}
+              className="text-xs font-semibold px-3 py-1.5 bg-amber-200/50 hover:bg-amber-200 dark:bg-amber-500/20 dark:hover:bg-amber-500/40 rounded-lg transition-colors"
+            >
+              Volver a mi perfil
+            </button>
+          </div>
+        )}
         <PredictionMatrix
           roomId={room.id}
-          existingPredictions={groupPredictions}
-          existingKnockoutPredictions={knockoutPredictions}
-          initialChampionId={initialChampionId}
-          initialGoleador={initialGoleador}
+          existingPredictions={activeGroupPredictions}
+          existingKnockoutPredictions={activeKnockoutPredictions}
+          initialChampionId={activeChampionId}
+          initialGoleador={activeGoleador}
+          isReadOnly={isViewingOther}
         />
       </div>
 
@@ -499,12 +656,13 @@ export function GroupRoom({
         <ResultsTab
           roomId={room.id}
           matches={matches}
-          groupPredictions={groupPredictions}
-          knockoutPredictions={knockoutPredictions}
-          scorePredictions={scorePredictions}
+          groupPredictions={activeGroupPredictions}
+          knockoutPredictions={activeKnockoutPredictions}
+          scorePredictions={activeScorePredictions}
           allMembersPredictions={allMembersPredictions}
           isAdmin={isAdmin}
           actualGoleador={room.actual_goleador}
+          isReadOnly={isViewingOther}
         />
       </div>
 
@@ -532,8 +690,12 @@ export function GroupRoom({
               return (
                 <div
                   key={member.user_id}
+                  onClick={() => {
+                    setViewingUserId(member.user_id)
+                    setActiveTab('predictions')
+                  }}
                   className={cn(
-                    'flex items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-white/[0.04] last:border-0',
+                    'flex items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-white/[0.04] last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors',
                     isMe && 'bg-[#2A398D]/[0.04] dark:bg-[#2A398D]/10'
                   )}
                 >
@@ -612,6 +774,66 @@ export function GroupRoom({
               )
             })
           )}
+        </div>
+
+        {/* Goleadores Table */}
+        <div className="glass-card overflow-hidden mt-4">
+          <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
+            <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Goleadores Predichos
+            </span>
+          </div>
+          <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
+            {sortedMembers.map((member) => {
+              const goleadorPick = member.predicted_goleador
+              const matchInfo = goleadorPick ? matchedGoleadores[goleadorPick] : null
+              return (
+                <div key={member.user_id} className="flex items-center gap-3 px-4 py-3">
+                  <div
+                    className={cn(
+                      'w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0',
+                      member.user_id === currentUserId
+                        ? 'bg-[#2A398D]'
+                        : 'bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400'
+                    )}
+                  >
+                    {member.profile?.name?.[0]?.toUpperCase() || '?'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-body truncate dark:text-white">
+                      {member.profile?.name || 'Anónimo'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 justify-end ml-auto flex-shrink-0">
+                    {goleadorPick ? (
+                      <>
+                        {matchInfo?.flagCode ? (
+                          <TeamFlag
+                            flagCode={matchInfo.flagCode}
+                            name={matchInfo.teamName}
+                            size={16}
+                            className="flex-shrink-0"
+                          />
+                        ) : (
+                          <span className="text-xs">{matchInfo?.flagEmoji || '⚽'}</span>
+                        )}
+                        <span className="text-sm font-body font-medium text-gray-900 dark:text-white">
+                          {goleadorPick}
+                        </span>
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#2A398D]/10 text-[#2A398D] dark:bg-white/10 dark:text-white ml-1.5 font-mono">
+                          {matchInfo?.goals ?? 0} {(matchInfo?.goals ?? 0) === 1 ? 'gol' : 'goles'}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-xs font-body text-gray-400 dark:text-gray-500">
+                        Ninguno
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
 
@@ -778,6 +1000,21 @@ export function GroupRoom({
           userName={members.find((m) => m.user_id === currentUserId)?.profile?.name}
         />
       </Modal>
+
+      {/* Floating Progress Bubble */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setShowProgress(true)}
+        className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[45] w-14 h-14 bg-white dark:bg-zinc-800 rounded-full shadow-xl flex items-center justify-center border border-gray-100 dark:border-white/10"
+      >
+        <div className="relative">
+          <Trophy size={24} className="text-[#3CAC3B]" />
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-zinc-800" />
+        </div>
+      </motion.button>
     </div>
   )
 }
