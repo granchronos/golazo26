@@ -382,6 +382,7 @@ function MatchRow({
   const [awayScore, setAwayScore] = useState<string>(savedScore?.away?.toString() ?? '')
   const [isPending, startTransition] = useTransition()
   const [isBeforeDeadline, setIsBeforeDeadline] = useState(true)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Admin result editing state
   const [isAdminEditing, setIsAdminEditing] = useState(false)
@@ -398,16 +399,49 @@ function MatchRow({
 
   const canPredict = isScheduled && homeTeam && awayTeam
 
-  const handleScoreSave = () => {
-    const h = parseInt(homeScore)
-    const a = parseInt(awayScore)
-    if (isNaN(h) || isNaN(a) || h < 0 || a < 0) return
+  // Auto-save: called whenever either score changes, with 400ms debounce
+  const triggerSave = useCallback(
+    (h: string, a: string) => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      const hNum = parseInt(h)
+      const aNum = parseInt(a)
+      if (isNaN(hNum) || isNaN(aNum) || hNum < 0 || aNum < 0) return
 
-    startTransition(async () => {
-      const result = await saveMatchScorePrediction(roomId, match.match_number, h, a)
-      if (result?.error) toast.error(result.error)
-    })
-  }
+      saveTimerRef.current = setTimeout(() => {
+        startTransition(async () => {
+          const result = await saveMatchScorePrediction(roomId, match.match_number, hNum, aNum)
+          if (result?.error) toast.error(result.error)
+        })
+      }, 400)
+    },
+    [roomId, match.match_number]
+  )
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    }
+  }, [])
+
+  // Strict numeric handler: only allows single digits 0-9, strips anything else
+  const handleHomeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 2)
+      setHomeScore(raw)
+      triggerSave(raw, awayScore)
+    },
+    [awayScore, triggerSave]
+  )
+
+  const handleAwayChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 2)
+      setAwayScore(raw)
+      triggerSave(homeScore, raw)
+    },
+    [homeScore, triggerSave]
+  )
 
   const handleAdminSaveResult = () => {
     const h = parseInt(actualHomeScore)
@@ -524,23 +558,23 @@ function MatchRow({
           {canPredict && isBeforeDeadline && (
             <div className="flex items-center gap-1 mt-1">
               <input
-                type="number"
-                min={0}
-                max={20}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={2}
                 value={homeScore}
-                onChange={(e) => setHomeScore(e.target.value)}
-                onBlur={handleScoreSave}
+                onChange={handleHomeChange}
                 className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
                 placeholder="-"
               />
               <span className="text-[9px] text-gray-300">-</span>
               <input
-                type="number"
-                min={0}
-                max={20}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={2}
                 value={awayScore}
-                onChange={(e) => setAwayScore(e.target.value)}
-                onBlur={handleScoreSave}
+                onChange={handleAwayChange}
                 className="w-8 h-6 text-center text-xs font-mono rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] dark:text-white focus:border-[#2A398D] focus:outline-none"
                 placeholder="-"
               />
