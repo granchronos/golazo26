@@ -627,22 +627,24 @@ export function GroupRoom({
         })}
       </div>
 
+      {isViewingOther && (
+        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl flex items-center justify-between">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Viendo predicciones de <strong>{viewingMember?.profile?.name}</strong> (Solo lectura)
+          </p>
+          <button
+            onClick={() => setViewingUserId(currentUserId)}
+            className="text-xs font-semibold px-3 py-1.5 bg-amber-200/50 hover:bg-amber-200 dark:bg-amber-500/20 dark:hover:bg-amber-500/40 rounded-lg transition-colors"
+          >
+            Volver a mi perfil
+          </button>
+        </div>
+      )}
+
       {/* Tab panels — all mounted, visibility toggled via CSS for speed */}
       <div className={activeTab === 'predictions' ? '' : 'hidden'}>
-        {isViewingOther && (
-          <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl flex items-center justify-between">
-            <p className="text-sm text-amber-800 dark:text-amber-200">
-              Viendo predicciones de <strong>{viewingMember?.profile?.name}</strong> (Solo lectura)
-            </p>
-            <button
-              onClick={() => setViewingUserId(currentUserId)}
-              className="text-xs font-semibold px-3 py-1.5 bg-amber-200/50 hover:bg-amber-200 dark:bg-amber-500/20 dark:hover:bg-amber-500/40 rounded-lg transition-colors"
-            >
-              Volver a mi perfil
-            </button>
-          </div>
-        )}
         <PredictionMatrix
+          key={viewingUserId}
           roomId={room.id}
           existingPredictions={activeGroupPredictions}
           existingKnockoutPredictions={activeKnockoutPredictions}
@@ -654,6 +656,7 @@ export function GroupRoom({
 
       <div className={activeTab === 'results' ? '' : 'hidden'}>
         <ResultsTab
+          key={viewingUserId}
           roomId={room.id}
           matches={matches}
           groupPredictions={activeGroupPredictions}

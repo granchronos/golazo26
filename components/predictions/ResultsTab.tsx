@@ -620,7 +620,7 @@ function MatchRow({
           {/* Saved prediction display (after deadline or finished) */}
           {savedScore && !canPredict && (
             <span className="text-[11px] font-mono text-gray-400 mt-0.5">
-              mi apuesta: {savedScore.home}-{savedScore.away}
+              {isReadOnly ? 'apuesta' : 'mi apuesta'}: {savedScore.home}-{savedScore.away}
             </span>
           )}
           {savedScore && canPredict && !isBeforeDeadline && (
