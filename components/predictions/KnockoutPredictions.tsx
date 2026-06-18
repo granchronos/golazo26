@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils/cn'
 import { WCBadge } from '@/components/ui/WCBadge'
 import { TeamFlag } from '@/components/ui/TeamFlag'
+import { LocalTime } from '@/components/ui/LocalTime'
 import { saveKnockoutPrediction } from '@/app/actions/predictions'
 import { TEAMS, TEAMS_BY_GROUP } from '@/lib/constants/teams'
 import { BRACKET_ROUNDS, ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
@@ -272,15 +273,7 @@ function MatchCard({
   const isPool =
     matchDef.home.source.kind === '3rd_pool' || matchDef.away.source.kind === '3rd_pool'
 
-  const matchDate = new Date(matchDef.matchDate)
-  const dateLabel = matchDate.toLocaleDateString('es-ES', {
-    day: 'numeric',
-    month: 'short',
-  })
-  const timeLabel = matchDate.toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  // Rendered using LocalTime component to be timezone-safe and prevent hydration issues
 
   if (isPool) {
     // Pool match: split into two sides (home pool vs away pool)
@@ -296,8 +289,9 @@ function MatchCard({
       <div className="px-4 py-3 space-y-2.5">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-mono text-gray-400">
-              P{matchDef.matchNumber} · {dateLabel} · {timeLabel}
+            <p className="text-[10px] font-mono text-gray-400 flex items-center gap-1">
+              <span>P{matchDef.matchNumber} · </span>
+              <LocalTime dateStr={matchDef.matchDate} mode="full" />
             </p>
           </div>
           <SaveIndicator isSaving={isSaving} pick={pick} />
@@ -359,8 +353,9 @@ function MatchCard({
   return (
     <div className="px-4 py-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] font-mono text-gray-400">
-          P{matchDef.matchNumber} · {dateLabel} · {timeLabel}
+        <p className="text-[10px] font-mono text-gray-400 flex items-center gap-1">
+          <span>P{matchDef.matchNumber} · </span>
+          <LocalTime dateStr={matchDef.matchDate} mode="full" />
         </p>
         <SaveIndicator isSaving={isSaving} pick={pick} />
       </div>
