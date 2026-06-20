@@ -385,14 +385,12 @@ export function PredictionMatrix({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="font-display text-sm sm:text-base text-gray-900 dark:text-white flex items-center gap-2">
-              <Award className="text-[#C9A84C]" size={18} /> Mis Predicciones Especiales
+              <Award className="text-[#C9A84C]" size={18} /> {isReadOnly ? 'Predicciones Especiales' : 'Mis Predicciones Especiales'}
             </h3>
             <p className="text-[11px] sm:text-xs font-body text-gray-500 mt-1">
-              Elige al Campeón y al Goleador del Mundial, independiente de tu bracket.
-              <span className="font-bold text-amber-600 dark:text-amber-400">
-                {' '}
-                ¡Suma 15 y 10 puntos extra!
-              </span>
+              {isReadOnly 
+                ? 'Campeón y Goleador del Mundial elegidos por el usuario.' 
+                : 'Elige al Campeón y al Goleador del Mundial, independiente de tu bracket. ¡Suma 15 y 10 puntos extra!'}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -418,30 +416,66 @@ export function PredictionMatrix({
             <div className="relative">
               {/* Display selected champion or show search input */}
               {selectedChampionTeam && !showChampionDropdown ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isChampionOpen) {
-                      setShowChampionDropdown(true)
-                      setChampionSearch('')
+                isReadOnly ? (
+                  <div className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm">
+                    <TeamFlag
+                      flagCode={selectedChampionTeam.flag_code}
+                      name={selectedChampionTeam.name}
+                      size={18}
+                    />
+                    <span className="font-semibold">{selectedChampionTeam.name}</span>
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      ({selectedChampionTeam.code})
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isChampionOpen) {
+                        setShowChampionDropdown(true)
+                        setChampionSearch('')
+                      }
+                    }}
+                    disabled={!isChampionOpen}
+                    className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm hover:border-[#C9A84C]/50 disabled:opacity-75 transition-colors text-left"
+                  >
+                    <TeamFlag
+                      flagCode={selectedChampionTeam.flag_code}
+                      name={selectedChampionTeam.name}
+                      size={18}
+                    />
+                    <span className="font-semibold">{selectedChampionTeam.name}</span>
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      ({selectedChampionTeam.code})
+                    </span>
+                    {isChampionOpen && (
+                      <ChevronDown size={12} className="ml-auto text-gray-400" />
+                    )}
+                  </button>
+                )
+              ) : isReadOnly ? (
+                <div className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-zinc-800/50 text-xs sm:text-sm font-body text-gray-400 dark:text-zinc-500 shadow-sm">
+                  {(() => {
+                    const bracketChampId = existingKnockoutPredictions[103] || null
+                    const bracketTeam = bracketChampId ? findTeam(bracketChampId) : null
+                    if (bracketTeam) {
+                      return (
+                        <>
+                          <TeamFlag
+                            flagCode={bracketTeam.flag_code}
+                            name={bracketTeam.name}
+                            size={18}
+                          />
+                          <span className="font-semibold text-gray-700 dark:text-gray-300">{bracketTeam.name}</span>
+                          <span className="text-[10px] text-gray-400 font-mono">({bracketTeam.code})</span>
+                          <span className="text-[10px] bg-[#2A398D]/10 text-[#2A398D] dark:bg-white/10 dark:text-white px-1.5 py-0.5 rounded-md font-mono ml-auto">del bracket</span>
+                        </>
+                      )
                     }
-                  }}
-                  disabled={!isChampionOpen}
-                  className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm hover:border-[#C9A84C]/50 disabled:opacity-75 transition-colors text-left"
-                >
-                  <TeamFlag
-                    flagCode={selectedChampionTeam.flag_code}
-                    name={selectedChampionTeam.name}
-                    size={18}
-                  />
-                  <span className="font-semibold">{selectedChampionTeam.name}</span>
-                  <span className="text-[10px] text-gray-400 font-mono">
-                    ({selectedChampionTeam.code})
-                  </span>
-                  {isChampionOpen && (
-                    <ChevronDown size={12} className="ml-auto text-gray-400" />
-                  )}
-                </button>
+                    return <span>No seleccionado</span>
+                  })()}
+                </div>
               ) : (
                 <div className="relative">
                   <Search
@@ -547,40 +581,58 @@ export function PredictionMatrix({
             <div className="relative">
               {/* If a goleador is selected and dropdown is not open, show display mode */}
               {predictedGoleador && !showDropdown ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isGoleadorOpen) {
-                      setShowDropdown(true)
-                      setGoleadorSearch('')
-                    }
-                  }}
-                  disabled={!isGoleadorOpen}
-                  className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm hover:border-[#C9A84C]/50 disabled:opacity-75 transition-colors text-left"
-                >
-                  {(() => {
-                    const t = TEAMS_BY_ID[selectedGoleadorTeamId]
-                    return t ? (
-                      <TeamFlag flagCode={t.flag_code} name={t.name} size={18} />
-                    ) : (
-                      <span className="text-base">⚽</span>
-                    )
-                  })()}
-                  <span className="font-semibold">{predictedGoleador}</span>
-                  {isGoleadorOpen && (
-                    <X
-                      size={14}
-                      className="ml-auto text-gray-400 hover:text-gray-600"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setPredictedGoleador('')
-                        setGoleadorSearch('')
-                        setSelectedGoleadorTeamId('')
+                isReadOnly ? (
+                  <div className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm">
+                    {(() => {
+                      const t = TEAMS_BY_ID[selectedGoleadorTeamId]
+                      return t ? (
+                        <TeamFlag flagCode={t.flag_code} name={t.name} size={18} />
+                      ) : (
+                        <span className="text-base">⚽</span>
+                      )
+                    })()}
+                    <span className="font-semibold">{predictedGoleador}</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isGoleadorOpen) {
                         setShowDropdown(true)
-                      }}
-                    />
-                  )}
-                </button>
+                        setGoleadorSearch('')
+                      }
+                    }}
+                    disabled={!isGoleadorOpen}
+                    className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm hover:border-[#C9A84C]/50 disabled:opacity-75 transition-colors text-left"
+                  >
+                    {(() => {
+                      const t = TEAMS_BY_ID[selectedGoleadorTeamId]
+                      return t ? (
+                        <TeamFlag flagCode={t.flag_code} name={t.name} size={18} />
+                      ) : (
+                        <span className="text-base">⚽</span>
+                      )
+                    })()}
+                    <span className="font-semibold">{predictedGoleador}</span>
+                    {isGoleadorOpen && (
+                      <X
+                        size={14}
+                        className="ml-auto text-gray-400 hover:text-gray-600"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPredictedGoleador('')
+                          setGoleadorSearch('')
+                          setSelectedGoleadorTeamId('')
+                          setShowDropdown(true)
+                        }}
+                      />
+                    )}
+                  </button>
+                )
+              ) : isReadOnly ? (
+                <div className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-zinc-800/50 text-xs sm:text-sm font-body text-gray-400 dark:text-zinc-500 shadow-sm">
+                  <span>No seleccionado</span>
+                </div>
               ) : (
                 <div className="relative">
                   <Search

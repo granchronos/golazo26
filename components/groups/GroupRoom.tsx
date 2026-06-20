@@ -66,6 +66,8 @@ interface MemberPredictions {
   groupPredictions: Record<GroupLetter, GroupPrediction | null>
   knockoutPredictions: Record<number, string>
   scorePredictions: Record<number, { home: number; away: number }>
+  predictedChampionId: string | null
+  predictedGoleador: string | null
 }
 
 interface GroupRoomProps {
@@ -328,7 +330,9 @@ export function GroupRoom({
       { name: string; champion: string | null; runnerUp: string | null }
     > = {}
     for (const m of allMembersPredictions) {
-      const champ = m.knockoutPredictions[103] ?? null
+      const explicitChamp = m.predictedChampionId || null
+      const bracketChamp = m.knockoutPredictions[103] || null
+      const champ = explicitChamp || bracketChamp
       const sf1 = m.knockoutPredictions[101] ?? null
       const sf2 = m.knockoutPredictions[102] ?? null
       let runnerUp: string | null = null
@@ -582,7 +586,7 @@ export function GroupRoom({
 
       {/* Champion / Runner-up summary */}
       <BetSummary
-        knockoutPredictions={knockoutPredictions}
+        knockoutPredictions={activeKnockoutPredictions}
         allMembersPredictions={allMembersChampions}
         predictedChampionId={activeChampionId}
         predictedGoleador={activeGoleador}
@@ -710,8 +714,9 @@ export function GroupRoom({
               const groupsDone = progress?.groups ?? 0
               const knockoutDone = progress?.knockout ?? 0
               const isComplete = groupsDone === 12 && knockoutDone >= 31
-              const champPick = allMembersPredictions.find((m) => m.userId === member.user_id)
+              const bracketChamp = allMembersPredictions.find((m) => m.userId === member.user_id)
                 ?.knockoutPredictions[103]
+              const champPick = bracketChamp || member.predicted_champion_id
               return (
                 <div
                   key={member.user_id}

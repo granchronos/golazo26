@@ -153,6 +153,7 @@ export default async function GroupDetailPage({ params }: PageProps) {
         }
       }
     }
+    const memberObj = members.find((m) => m.user_id === uid)
 
     return {
       userId: uid,
@@ -160,6 +161,8 @@ export default async function GroupDetailPage({ params }: PageProps) {
       groupPredictions: memberGroupPreds,
       knockoutPredictions: memberKnockoutPreds,
       scorePredictions: memberScorePreds,
+      predictedChampionId: memberObj?.predicted_champion_id || null,
+      predictedGoleador: memberObj?.predicted_goleador || null,
     }
   })
 
