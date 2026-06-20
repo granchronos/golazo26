@@ -46,7 +46,7 @@ BEGIN
   FROM matches
   WHERE match_date >= DATE_TRUNC('day', NOW() AT TIME ZONE 'UTC')
     AND match_date <  DATE_TRUNC('day', NOW() AT TIME ZONE 'UTC') + INTERVAL '30 hours'
-    AND status != 'postponed';
+    AND status NOT IN ('postponed', 'finished');  -- ignore already-finished matches
 
   -- No matches today at all
   IF v_window_start IS NULL THEN
