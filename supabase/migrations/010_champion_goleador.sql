@@ -61,21 +61,12 @@ CREATE OR REPLACE TRIGGER check_payment_fields_protection
   FOR EACH ROW EXECUTE FUNCTION protect_payment_fields();
 
 -- =============================================
--- CRON JOB SETUP GUIDE (FOR PRODUCTION SUPABASE)
+-- CRON JOB SETUP (DEPRECATED — see 015_smart_cron.sql)
 -- =============================================
--- Execute the following SQL in your Supabase SQL Editor to schedule the score syncing every minute:
+-- The naive every-minute cron has been replaced by a smart cron
+-- that only syncs during active match windows.
+-- See: supabase/migrations/015_smart_cron.sql
 --
--- -- Enable the extensions (requires superuser access, usually enabled via dashboard)
--- CREATE EXTENSION IF NOT EXISTS pg_cron;
--- CREATE EXTENSION IF NOT EXISTS pg_net;
---
--- -- Schedule the cron job to call the API route every minute:
--- SELECT cron.schedule(
---   'sync-world-cup-scores-every-minute',
---   '* * * * *',
---   $$
---   SELECT net.http_get(
---     'https://<YOUR_APP_DOMAIN>/api/cron/sync?secret=<YOUR_CRON_SECRET>'
---   );
---   $$
--- );
+-- Prerequisites (enable via Supabase Dashboard):
+--   CREATE EXTENSION IF NOT EXISTS pg_cron;
+--   CREATE EXTENSION IF NOT EXISTS pg_net;
