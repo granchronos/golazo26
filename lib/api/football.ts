@@ -859,22 +859,17 @@ function getSimulatedScorers(): Scorer[] {
 }
 
 export async function getWorldCupScorers(): Promise<Scorer[]> {
-  const data = await apiFetch<{ scorers: any[] }>('/competitions/WC/scorers')
+  const data = await apiFetch<{ scorers: any[] }>('/competitions/WC/scorers?limit=50')
   if (!data || !data.scorers || data.scorers.length === 0) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        '[football-api] Returning simulated World Cup scorers (Free Plan limit/network fallback)'
-      )
-      return getSimulatedScorers()
-    }
-    return []
+    console.warn('[football-api] Scorers API returned no data, using simulated fallback')
+    return getSimulatedScorers()
   }
   return data.scorers.map((s: any) => ({
     player: {
       id: s.player.id,
       name: s.player.name,
       nationality: s.player.nationality,
-      position: s.player.position,
+      position: s.player.position || s.player.section,
     },
     team: {
       id: s.team.id,

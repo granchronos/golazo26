@@ -85,7 +85,7 @@ const BASE_TABS: { id: Tab; label: string; icon: typeof Trophy }[] = [
   { id: 'results', label: 'Resultados', icon: CalendarDays },
   { id: 'predictions', label: 'Apuestas', icon: Trophy },
   { id: 'leaderboard', label: 'Ranking', icon: BarChart2 },
-  { id: 'comparison', label: 'Comparar', icon: GitCompareArrows },
+  // { id: 'comparison', label: 'Comparar', icon: GitCompareArrows }, // Temporarily hidden
 ]
 
 export function GroupRoom({
@@ -773,11 +773,73 @@ export function GroupRoom({
           )}
         </div>
 
-        {/* Goleadores Table */}
+        {/* Top Goleadores del Mundial - Live from API */}
+        {scorersData && scorersData.scorers.length > 0 && (
+          <div className="glass-card overflow-hidden mt-4">
+            <div className="px-4 py-2.5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-b border-gray-100 dark:border-white/[0.06]">
+              <span className="text-xs font-display text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+                ⚽ Top Goleadores del Mundial 2026
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-green-500/15 text-green-600 dark:text-green-400 animate-pulse">EN VIVO</span>
+              </span>
+            </div>
+            <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
+              {scorersData.scorers.slice(0, 15).map((scorer: any, idx: number) => {
+                const teamObj = TEAMS.find(
+                  (t) =>
+                    t.code.toLowerCase() === (scorer.team?.tla || '').toLowerCase() ||
+                    t.name.toLowerCase() === (scorer.team?.name || '').toLowerCase()
+                )
+                return (
+                  <div key={scorer.player?.id || idx} className="flex items-center gap-3 px-4 py-2.5">
+                    <span className={cn(
+                      'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0',
+                      idx === 0 ? 'bg-amber-500 text-white' :
+                      idx === 1 ? 'bg-gray-300 dark:bg-gray-600 text-white' :
+                      idx === 2 ? 'bg-orange-400 text-white' :
+                      'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400'
+                    )}>
+                      {idx + 1}
+                    </span>
+                    {teamObj ? (
+                      <TeamFlag
+                        flagCode={teamObj.flag_code}
+                        name={teamObj.name}
+                        size={18}
+                        className="flex-shrink-0"
+                      />
+                    ) : (
+                      <span className="text-sm flex-shrink-0">🏳️</span>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-body font-medium text-gray-900 dark:text-white truncate block">
+                        {scorer.player?.name}
+                      </span>
+                      <span className="text-[10px] font-body text-gray-400">
+                        {teamObj?.name || scorer.team?.name || ''}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className={cn(
+                        'inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-bold font-mono',
+                        idx === 0
+                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                          : 'bg-[#2A398D]/10 text-[#2A398D] dark:bg-white/10 dark:text-white'
+                      )}>
+                        {scorer.goals} {scorer.goals === 1 ? 'gol' : 'goles'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Goleadores Predichos por la Sala */}
         <div className="glass-card overflow-hidden mt-4">
           <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
             <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Goleadores Predichos
+              🎯 Predicciones de Goleador
             </span>
           </div>
           <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
@@ -785,7 +847,7 @@ export function GroupRoom({
               const goleadorPick = member.predicted_goleador
               const matchInfo = goleadorPick ? matchedGoleadores[goleadorPick] : null
               return (
-                <div key={member.user_id} className="flex items-center gap-3 px-4 py-3">
+                <div key={member.user_id} className="flex items-center gap-3 px-4 py-2.5">
                   <div
                     className={cn(
                       'w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0',

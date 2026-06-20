@@ -138,9 +138,17 @@ export const MAX_POSSIBLE_POINTS =
   10
 
 // Deadlines:
-// Group Stage & overall winner/goleador closes: Jun 18 at 15:00 local (13:00 UTC)
-export const GROUP_STAGE_DEADLINE = new Date('2026-06-18T13:00:00Z')
-export const CHAMPION_GOLEADOR_DEADLINE = new Date('2026-06-18T13:00:00Z')
+// Group Stage & score predictions close: Tuesday Jun 24 at 23:59 local (21:59 UTC)
+export const GROUP_STAGE_DEADLINE = new Date('2026-06-24T21:59:00Z')
+
+// Champion closes: Monday Jun 23 at 23:59 local (21:59 UTC)
+export const CHAMPION_DEADLINE = new Date('2026-06-23T21:59:00Z')
+
+// Goleador closes: Monday Jun 23 at 23:59 local (21:59 UTC)
+export const GOLEADOR_DEADLINE = new Date('2026-06-23T21:59:00Z')
+
+// Keep for backward compatibility if needed
+export const CHAMPION_GOLEADOR_DEADLINE = CHAMPION_DEADLINE
 
 // First Matchday (Jornada 1) score prediction closes: Jun 12 at 20:55 local (18:55 UTC)
 export const FIRST_JORNADA_DEADLINE = new Date('2026-06-12T18:55:00Z')

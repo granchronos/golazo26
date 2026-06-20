@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import {
   GROUP_STAGE_DEADLINE,
+  CHAMPION_DEADLINE,
+  GOLEADOR_DEADLINE,
   CHAMPION_GOLEADOR_DEADLINE,
   POINTS_SYSTEM,
   ROUND_POINTS,
@@ -228,7 +230,11 @@ export async function saveAgnosticPredictions(
   championId: string | null,
   goleador: string
 ) {
-  if (new Date() > CHAMPION_GOLEADOR_DEADLINE) {
+  const now = new Date()
+  const isChampionOpen = now <= CHAMPION_DEADLINE
+  const isGoleadorOpen = now <= GOLEADOR_DEADLINE
+
+  if (!isChampionOpen && !isGoleadorOpen) {
     return { error: 'El tiempo para escoger campeón y goleador ha expirado' }
   }
 
@@ -240,13 +246,36 @@ export async function saveAgnosticPredictions(
 
   const admin = await createAdminClient()
 
+  // Fetch current choices to preserve the locked one if necessary
+  const { data: currentMember, error: fetchErr } = await admin
+    .from('room_members')
+    .select('predicted_champion_id, predicted_goleador')
+    .eq('room_id', roomId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (fetchErr) {
+    return { error: 'Error al verificar las predicciones actuales: ' + fetchErr.message }
+  }
+
+  const updatePayload: any = {}
+
+  if (isChampionOpen) {
+    updatePayload.predicted_champion_id = championId || null
+  } else {
+    updatePayload.predicted_champion_id = currentMember?.predicted_champion_id || null
+  }
+
+  if (isGoleadorOpen) {
+    updatePayload.predicted_goleador = goleador?.trim() || null
+  } else {
+    updatePayload.predicted_goleador = currentMember?.predicted_goleador || null
+  }
+
   // Update room_members
   const { error } = await admin
     .from('room_members')
-    .update({
-      predicted_champion_id: championId || null,
-      predicted_goleador: goleador?.trim() || null,
-    })
+    .update(updatePayload)
     .eq('room_id', roomId)
     .eq('user_id', user.id)
 

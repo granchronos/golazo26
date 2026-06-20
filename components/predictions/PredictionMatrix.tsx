@@ -15,7 +15,12 @@ import {
   saveAllGroupPredictions,
   saveAgnosticPredictions,
 } from '@/app/actions/predictions'
-import { GROUP_STAGE_DEADLINE, CHAMPION_GOLEADOR_DEADLINE } from '@/lib/constants/points'
+import {
+  GROUP_STAGE_DEADLINE,
+  CHAMPION_DEADLINE,
+  GOLEADOR_DEADLINE,
+  CHAMPION_GOLEADOR_DEADLINE,
+} from '@/lib/constants/points'
 import { TeamFlag } from '@/components/ui/TeamFlag'
 import { GROUP_LETTERS, TEAMS } from '@/lib/constants/teams'
 import { isBeforeDeadline } from '@/lib/utils/date'
@@ -46,7 +51,9 @@ export function PredictionMatrix({
   isReadOnly = false,
 }: PredictionMatrixProps) {
   const isOpen = !isReadOnly && isBeforeDeadline(GROUP_STAGE_DEADLINE)
-  const isChampGoleadorOpen = !isReadOnly && isBeforeDeadline(CHAMPION_GOLEADOR_DEADLINE)
+  const isChampionOpen = !isReadOnly && isBeforeDeadline(CHAMPION_DEADLINE)
+  const isGoleadorOpen = !isReadOnly && isBeforeDeadline(GOLEADOR_DEADLINE)
+  const isChampGoleadorOpen = isChampionOpen || isGoleadorOpen
 
   const [selections, setSelections] = useState<Selections>(() => {
     const init = {} as Selections
@@ -392,32 +399,34 @@ export function PredictionMatrix({
             {agnosticAutoSaving && (
               <span className="text-[10px] font-body text-amber-500 animate-pulse">Guardando…</span>
             )}
-            <CountdownTimer
-              deadline={CHAMPION_GOLEADOR_DEADLINE}
-              label="Cierre elecciones"
-              variant="compact"
-            />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {/* Champion Combobox Selector */}
           <div className="space-y-1.5" ref={championComboboxRef}>
-            <label className="block text-[11px] font-body font-semibold text-gray-700 dark:text-gray-300">
-              🏆 Campeón del Mundo
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-[11px] font-body font-semibold text-gray-700 dark:text-gray-300">
+                🏆 Campeón del Mundo
+              </label>
+              <CountdownTimer
+                deadline={CHAMPION_DEADLINE}
+                label="Cierre"
+                variant="compact"
+              />
+            </div>
             <div className="relative">
               {/* Display selected champion or show search input */}
               {selectedChampionTeam && !showChampionDropdown ? (
                 <button
                   type="button"
                   onClick={() => {
-                    if (isChampGoleadorOpen) {
+                    if (isChampionOpen) {
                       setShowChampionDropdown(true)
                       setChampionSearch('')
                     }
                   }}
-                  disabled={!isChampGoleadorOpen}
+                  disabled={!isChampionOpen}
                   className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm hover:border-[#C9A84C]/50 disabled:opacity-75 transition-colors text-left"
                 >
                   <TeamFlag
@@ -429,10 +438,7 @@ export function PredictionMatrix({
                   <span className="text-[10px] text-gray-400 font-mono">
                     ({selectedChampionTeam.code})
                   </span>
-                  <span className="text-[10px] text-gray-400 font-mono">
-                    FIFA #{selectedChampionTeam.fifa_ranking}
-                  </span>
-                  {isChampGoleadorOpen && (
+                  {isChampionOpen && (
                     <ChevronDown size={12} className="ml-auto text-gray-400" />
                   )}
                 </button>
@@ -450,10 +456,10 @@ export function PredictionMatrix({
                       setShowChampionDropdown(true)
                     }}
                     onFocus={() => {
-                      if (isChampGoleadorOpen) setShowChampionDropdown(true)
+                      if (isChampionOpen) setShowChampionDropdown(true)
                     }}
                     placeholder="Buscar selección..."
-                    disabled={!isChampGoleadorOpen}
+                    disabled={!isChampionOpen}
                     autoFocus={showChampionDropdown}
                     className="w-full pl-9 pr-8 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm focus:border-[#C9A84C] focus:ring-1 focus:ring-[#C9A84C] disabled:opacity-75 transition-colors"
                   />
@@ -474,7 +480,7 @@ export function PredictionMatrix({
 
               {/* Champion Autocomplete Dropdown */}
               <AnimatePresence>
-                {showChampionDropdown && isChampGoleadorOpen && (
+                {showChampionDropdown && isChampionOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -528,21 +534,28 @@ export function PredictionMatrix({
 
           {/* Goleador Selector (Combobox) */}
           <div className="space-y-1.5" ref={goleadorComboboxRef}>
-            <label className="block text-[11px] font-body font-semibold text-gray-700 dark:text-gray-300">
-              ⚽ Goleador del Torneo (Bota de Oro)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-[11px] font-body font-semibold text-gray-700 dark:text-gray-300">
+                ⚽ Goleador del Torneo (Bota de Oro)
+              </label>
+              <CountdownTimer
+                deadline={GOLEADOR_DEADLINE}
+                label="Cierre"
+                variant="compact"
+              />
+            </div>
             <div className="relative">
               {/* If a goleador is selected and dropdown is not open, show display mode */}
               {predictedGoleador && !showDropdown ? (
                 <button
                   type="button"
                   onClick={() => {
-                    if (isChampGoleadorOpen) {
+                    if (isGoleadorOpen) {
                       setShowDropdown(true)
                       setGoleadorSearch('')
                     }
                   }}
-                  disabled={!isChampGoleadorOpen}
+                  disabled={!isGoleadorOpen}
                   className="w-full flex items-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm hover:border-[#C9A84C]/50 disabled:opacity-75 transition-colors text-left"
                 >
                   {(() => {
@@ -554,7 +567,7 @@ export function PredictionMatrix({
                     )
                   })()}
                   <span className="font-semibold">{predictedGoleador}</span>
-                  {isChampGoleadorOpen && (
+                  {isGoleadorOpen && (
                     <X
                       size={14}
                       className="ml-auto text-gray-400 hover:text-gray-600"
@@ -578,17 +591,17 @@ export function PredictionMatrix({
                     type="text"
                     value={goleadorSearch}
                     onChange={(e) => {
-                      if (!isChampGoleadorOpen) return
+                      if (!isGoleadorOpen) return
                       setGoleadorSearch(e.target.value)
                       setPredictedGoleador(e.target.value)
                       setSelectedGoleadorTeamId('')
                       setShowDropdown(true)
                     }}
                     onFocus={() => {
-                      if (isChampGoleadorOpen) setShowDropdown(true)
+                      if (isGoleadorOpen) setShowDropdown(true)
                     }}
                     placeholder="Busca o escribe un jugador..."
-                    disabled={!isChampGoleadorOpen}
+                    disabled={!isGoleadorOpen}
                     autoFocus={showDropdown}
                     className="w-full pl-9 pr-3 py-2 sm:py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-xs sm:text-sm font-body text-gray-900 dark:text-white shadow-sm focus:border-[#C9A84C] focus:ring-1 focus:ring-[#C9A84C] disabled:opacity-75 transition-colors"
                   />
@@ -597,7 +610,7 @@ export function PredictionMatrix({
 
               {/* Autocomplete Dropdown */}
               <AnimatePresence>
-                {showDropdown && isChampGoleadorOpen && (
+                {showDropdown && isGoleadorOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
