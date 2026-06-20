@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Share2,
@@ -110,21 +110,49 @@ export function GroupRoom({
 
   const [scorersData, setScorersData] = useState<{ scorers: any[]; players: any[] } | null>(null)
 
-  // Fetch scorers from API on mount
-  useEffect(() => {
-    async function loadScorers() {
-      try {
-        const res = await fetch('/api/live-scores/scorers')
-        if (res.ok) {
-          const data = await res.json()
-          setScorersData(data)
-        }
-      } catch (err) {
-        console.error('Failed to load scorers', err)
+  // Track which match IDs have been seen as 'finished' to detect new completions
+  const prevFinishedRef = useRef<Set<string>>(
+    new Set(matches.filter((m) => m.status === 'finished').map((m) => m.id))
+  )
+
+  // Reusable scorers loader
+  const loadScorers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/live-scores/scorers')
+      if (res.ok) {
+        const data = await res.json()
+        setScorersData(data)
       }
+    } catch (err) {
+      console.error('Failed to load scorers', err)
     }
-    loadScorers()
   }, [])
+
+  // Fetch scorers on mount + poll every 2 minutes
+  useEffect(() => {
+    loadScorers()
+    const interval = setInterval(loadScorers, 120_000) // every 2 min
+    return () => clearInterval(interval)
+  }, [loadScorers])
+
+  // Immediately refetch scorers when a match transitions to 'finished'
+  useEffect(() => {
+    const currentFinished = new Set(
+      matches.filter((m) => m.status === 'finished').map((m) => m.id)
+    )
+    const prev = prevFinishedRef.current
+
+    // Check if there are newly finished matches
+    const hasNew = Array.from(currentFinished).some((id) => !prev.has(id))
+
+    prevFinishedRef.current = currentFinished
+
+    if (hasNew) {
+      // Small delay to give the API time to update scorer stats after the match ends
+      const timeout = setTimeout(loadScorers, 5_000)
+      return () => clearTimeout(timeout)
+    }
+  }, [matches, loadScorers])
 
   // Match member predictions to flags and goals
   const matchedGoleadores = useMemo(() => {
