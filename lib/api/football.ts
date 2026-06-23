@@ -35,6 +35,8 @@ export interface LiveMatch {
 
 let globalRequestsAvailable = 10
 let globalResetTime = Date.now()
+const fetchCache = new Map<string, { data: any; expiresAt: number }>()
+const CACHE_TTL = 30 * 1000 // 30 seconds cache
 
 async function apiFetch<T>(endpoint: string, retries = 3, delayMs = 1000): Promise<T | null> {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY || 'e203db181ff3498084907b213da91fe2'
@@ -43,17 +45,26 @@ async function apiFetch<T>(endpoint: string, retries = 3, delayMs = 1000): Promi
     return null
   }
 
+  const cacheKey = `${endpoint}`
+  const cached = fetchCache.get(cacheKey)
+  if (cached && Date.now() < cached.expiresAt) {
+    console.log(`[football-api] Returning cached data for ${endpoint}`)
+    return cached.data as T
+  }
+
   const url = `${API_BASE}${endpoint}`
 
   for (let attempt = 1; attempt <= retries; attempt++) {
-    // 1) Pre-fetch check: if we are near the rate limit, wait until reset time
-    const now = Date.now()
-    if (globalRequestsAvailable <= 1 && now < globalResetTime) {
-      const waitMs = globalResetTime - now + 500 // 500ms safety buffer
-      console.warn(
-        `[football-api] Rate limit low (${globalRequestsAvailable} requests left). Throttling request to ${endpoint} for ${waitMs}ms until reset...`
-      )
-      await new Promise((resolve) => setTimeout(resolve, waitMs))
+    // 1) Pre-fetch check: if we are near the rate limit, wait until reset time (only on the first attempt)
+    if (attempt === 1) {
+      const now = Date.now()
+      if (globalRequestsAvailable <= 1 && now < globalResetTime) {
+        const waitMs = globalResetTime - now + 500 // 500ms safety buffer
+        console.warn(
+          `[football-api] Rate limit low (${globalRequestsAvailable} requests left). Throttling request to ${endpoint} for ${waitMs}ms until reset...`
+        )
+        await new Promise((resolve) => setTimeout(resolve, waitMs))
+      }
     }
 
     try {
@@ -62,8 +73,8 @@ async function apiFetch<T>(endpoint: string, retries = 3, delayMs = 1000): Promi
         cache: 'no-store',
       })
 
-      // 2) Parse headers to update local rate limit tracker
-      const reqAvailable = res.headers.get('X-RequestsAvailable')
+      // 2) Parse headers to update local rate limit tracker (X-RequestsAvailable or X-Requests-Available-Minute)
+      const reqAvailable = res.headers.get('X-RequestsAvailable') || res.headers.get('X-Requests-Available-Minute')
       const reqReset = res.headers.get('X-RequestCounter-Reset')
       if (reqAvailable !== null) {
         globalRequestsAvailable = parseInt(reqAvailable, 10)
@@ -87,7 +98,15 @@ async function apiFetch<T>(endpoint: string, retries = 3, delayMs = 1000): Promi
         return null
       }
 
-      return await (res.json() as Promise<T>)
+      const json = await (res.json() as Promise<T>)
+      
+      // Cache successful response
+      fetchCache.set(cacheKey, {
+        data: json,
+        expiresAt: Date.now() + CACHE_TTL,
+      })
+
+      return json
     } catch (err: any) {
       if (attempt < retries) {
         console.warn(
