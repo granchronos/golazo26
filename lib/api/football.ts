@@ -33,8 +33,11 @@ export interface LiveMatch {
   odds?: string
 }
 
+let globalRequestsAvailable = 10
+let globalResetTime = Date.now()
+
 async function apiFetch<T>(endpoint: string, retries = 3, delayMs = 1000): Promise<T | null> {
-  const apiKey = process.env.FOOTBALL_DATA_API_KEY || '055090bd908541a882109ab549be7adb'
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY || 'e203db181ff3498084907b213da91fe2'
   if (!apiKey) {
     console.warn('[football-api] FOOTBALL_DATA_API_KEY not set')
     return null
@@ -43,18 +46,41 @@ async function apiFetch<T>(endpoint: string, retries = 3, delayMs = 1000): Promi
   const url = `${API_BASE}${endpoint}`
 
   for (let attempt = 1; attempt <= retries; attempt++) {
+    // 1) Pre-fetch check: if we are near the rate limit, wait until reset time
+    const now = Date.now()
+    if (globalRequestsAvailable <= 1 && now < globalResetTime) {
+      const waitMs = globalResetTime - now + 500 // 500ms safety buffer
+      console.warn(
+        `[football-api] Rate limit low (${globalRequestsAvailable} requests left). Throttling request to ${endpoint} for ${waitMs}ms until reset...`
+      )
+      await new Promise((resolve) => setTimeout(resolve, waitMs))
+    }
+
     try {
       const res = await fetch(url, {
         headers: { 'X-Auth-Token': apiKey },
         cache: 'no-store',
       })
 
+      // 2) Parse headers to update local rate limit tracker
+      const reqAvailable = res.headers.get('X-RequestsAvailable')
+      const reqReset = res.headers.get('X-RequestCounter-Reset')
+      if (reqAvailable !== null) {
+        globalRequestsAvailable = parseInt(reqAvailable, 10)
+      }
+      if (reqReset !== null) {
+        globalResetTime = Date.now() + parseInt(reqReset, 10) * 1000
+      }
+
       if (!res.ok) {
         if (res.status === 429 && attempt < retries) {
+          // Dynamic delay from X-RequestCounter-Reset if available
+          const resetSeconds = reqReset ? parseInt(reqReset, 10) : 0
+          const retryDelay = resetSeconds > 0 ? (resetSeconds * 1000 + 500) : (delayMs * attempt)
           console.warn(
-            `[football-api] Rate limited (429) on attempt ${attempt}. Retrying in ${delayMs * attempt}ms...`
+            `[football-api] Rate limited (429) on attempt ${attempt}. Retrying in ${retryDelay}ms...`
           )
-          await new Promise((resolve) => setTimeout(resolve, delayMs * attempt))
+          await new Promise((resolve) => setTimeout(resolve, retryDelay))
           continue
         }
         console.error(`[football-api] ${res.status} ${res.statusText} on ${endpoint}`)
@@ -437,9 +463,9 @@ function mapFootballDataMatch(m: any): LiveMatch {
           (m.homeTeam.tla &&
             m.awayTeam.tla &&
             s.homeTeam.toLowerCase().substring(0, 3) ===
-              m.homeTeam.tla.toLowerCase().substring(0, 3) &&
+            m.homeTeam.tla.toLowerCase().substring(0, 3) &&
             s.awayTeam.toLowerCase().substring(0, 3) ===
-              m.awayTeam.tla.toLowerCase().substring(0, 3)))
+            m.awayTeam.tla.toLowerCase().substring(0, 3)))
     )
     if (sim) {
       homeGoals = sim.homeGoals
