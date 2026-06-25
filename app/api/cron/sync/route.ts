@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/server'
 import {
   getWorldCupFixtures,
@@ -242,7 +243,7 @@ export async function GET(request: Request) {
 
         // Fetch events if the match is live, OR if it is finished and has no events in DB yet
         const hasDbEvents =
-          matchedDb.events && Array.isArray(matchedDb.events) && matchedDb.events.length > 0
+          matchedDb.events && Array.isArray(matchedDb.events)
         let eventsPayload = matchedDb.events
         let fetchedEvents = false
 
@@ -252,7 +253,7 @@ export async function GET(request: Request) {
           if (apiMatch.apiFixtureId) {
             try {
               const apiEvents = await getMatchEvents(apiMatch.apiFixtureId)
-              if (apiEvents && apiEvents.length > 0) {
+              if (apiEvents) {
                 eventsPayload = apiEvents
                   .filter((ev) => ev.type === 'Goal' || ev.type === 'Card')
                   .map((ev) => ({
@@ -322,6 +323,8 @@ export async function GET(request: Request) {
     // Trigger recalculation if any matches were updated
     if (updatedCount > 0) {
       await recalculateAllScores()
+      revalidateTag('matches')
+      revalidateTag('profiles')
     }
 
     return NextResponse.json({
