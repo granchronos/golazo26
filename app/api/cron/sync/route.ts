@@ -138,6 +138,12 @@ export async function GET(request: Request) {
     let updatedCount = 0
     const updatedMatchesLog: string[] = []
 
+    // The football-data.org free tier allows 10 requests per minute.
+    // 1 request is used for fixtures, 1 request is used for trends.
+    // That leaves 8 requests for fetching events. We limit to 5 per cron run
+    // to avoid rate limits and Vercel/Supabase timeouts.
+    let remainingEventRequests = 5
+
     for (const apiMatch of apiMatches) {
       const apiStatus = mapApiStatus(apiMatch.statusShort)
 
@@ -251,27 +257,32 @@ export async function GET(request: Request) {
           eventsPayload = null
         } else if (apiStatus === 'live' || (apiStatus === 'finished' && !hasDbEvents)) {
           if (apiMatch.apiFixtureId) {
-            try {
-              const apiEvents = await getMatchEvents(apiMatch.apiFixtureId)
-              if (apiEvents) {
-                eventsPayload = apiEvents
-                  .filter((ev) => ev.type === 'Goal' || ev.type === 'Card')
-                  .map((ev) => ({
-                    time: ev.time.elapsed,
-                    extra: ev.time.extra,
-                    team_id: ev.team.name === apiMatch.homeTeam ? homeDbId : awayDbId,
-                    player: ev.player.name,
-                    type: ev.type,
-                    detail: ev.detail,
-                    comments: ev.comments,
-                  }))
-                fetchedEvents = true
+            if (remainingEventRequests > 0) {
+              try {
+                remainingEventRequests--
+                const apiEvents = await getMatchEvents(apiMatch.apiFixtureId)
+                if (apiEvents) {
+                  eventsPayload = apiEvents
+                    .filter((ev) => ev.type === 'Goal' || ev.type === 'Card')
+                    .map((ev) => ({
+                      time: ev.time.elapsed,
+                      extra: ev.time.extra,
+                      team_id: ev.team.name === apiMatch.homeTeam ? homeDbId : awayDbId,
+                      player: ev.player.name,
+                      type: ev.type,
+                      detail: ev.detail,
+                      comments: ev.comments,
+                    }))
+                  fetchedEvents = true
+                }
+              } catch (eventErr) {
+                console.error(
+                  `Error fetching events for apiFixtureId ${apiMatch.apiFixtureId}:`,
+                  eventErr
+                )
               }
-            } catch (eventErr) {
-              console.error(
-                `Error fetching events for apiFixtureId ${apiMatch.apiFixtureId}:`,
-                eventErr
-              )
+            } else {
+              console.log(`[cron] Skipping events for match ${apiMatch.apiFixtureId} to stay under rate limit.`)
             }
           }
         }
