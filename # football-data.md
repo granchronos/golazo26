@@ -1246,5 +1246,3 @@ Competition codes can be used anywhere you'd use the competition `id`.
 | 2155 | QCCF | WC Qualification CONCACAF | World |
 
 ---
-
-*Documentación compilada desde https://docs.football-data.org/general/v4/ — football-data.org API v4*
