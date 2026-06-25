@@ -50,9 +50,21 @@ export function PredictionMatrix({
   initialGoleador,
   isReadOnly = false,
 }: PredictionMatrixProps) {
-  const isOpen = !isReadOnly && isBeforeDeadline(GROUP_STAGE_DEADLINE)
-  const isChampionOpen = !isReadOnly && isBeforeDeadline(CHAMPION_DEADLINE)
-  const isGoleadorOpen = !isReadOnly && isBeforeDeadline(GOLEADOR_DEADLINE)
+  const [isOpen, setIsOpen] = useState(!isReadOnly && isBeforeDeadline(GROUP_STAGE_DEADLINE))
+  const [isChampionOpen, setIsChampionOpen] = useState(!isReadOnly && isBeforeDeadline(CHAMPION_DEADLINE))
+  const [isGoleadorOpen, setIsGoleadorOpen] = useState(!isReadOnly && isBeforeDeadline(GOLEADOR_DEADLINE))
+
+  useEffect(() => {
+    const checkDeadlines = () => {
+      setIsOpen(!isReadOnly && isBeforeDeadline(GROUP_STAGE_DEADLINE))
+      setIsChampionOpen(!isReadOnly && isBeforeDeadline(CHAMPION_DEADLINE))
+      setIsGoleadorOpen(!isReadOnly && isBeforeDeadline(GOLEADOR_DEADLINE))
+    }
+    
+    const interval = setInterval(checkDeadlines, 10000)
+    return () => clearInterval(interval)
+  }, [isReadOnly])
+
   const isChampGoleadorOpen = isChampionOpen || isGoleadorOpen
 
   const [selections, setSelections] = useState<Selections>(() => {

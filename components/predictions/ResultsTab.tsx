@@ -404,7 +404,14 @@ function MatchRow({
   useEffect(() => {
     const deadline = new Date(match.match_date)
     deadline.setMinutes(deadline.getMinutes() - 5)
-    setIsBeforeDeadline(new Date() < deadline && !isReadOnly)
+    
+    const checkDeadline = () => {
+      setIsBeforeDeadline(new Date() < deadline && !isReadOnly)
+    }
+    
+    checkDeadline()
+    const interval = setInterval(checkDeadline, 10000)
+    return () => clearInterval(interval)
   }, [match.match_date, isReadOnly])
 
   const canPredict = isScheduled && homeTeam && awayTeam && !isReadOnly
