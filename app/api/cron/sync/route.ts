@@ -124,7 +124,7 @@ export async function GET(request: Request) {
     const { data: dbMatches, error: dbError } = await admin
       .from('matches')
       .select(
-        'id, match_number, home_team_id, away_team_id, status, home_score, away_score, events, match_date, odds, elapsed'
+        'id, round, match_number, home_team_id, away_team_id, status, home_score, away_score, events, match_date, odds, elapsed'
       )
 
     if (dbError || !dbMatches) {
@@ -155,12 +155,40 @@ export async function GET(request: Request) {
             apiMatch.awayTeam.toLowerCase().substring(0, 3))
 
       // Find the match in our DB by team IDs
-      const matchedDb = dbMatches.find(
+      let matchedDb = dbMatches.find(
         (dbm) =>
           (dbm.home_team_id === homeDbId && dbm.away_team_id === awayDbId) ||
           // Sometimes APIs swap home/away, check that too just in case
           (dbm.home_team_id === awayDbId && dbm.away_team_id === homeDbId)
       )
+
+      // Fallback for knockout matches where teams are TBD (null) initially
+      if (!matchedDb && apiMatch.round && !apiMatch.round.includes('Group Stage')) {
+        const apiRoundToDbRound: Record<string, string> = {
+          'Round of 32': 'round_of_32',
+          'Round of 16': 'round_of_16',
+          'Quarter Finals': 'quarter_finals',
+          'Semi Finals': 'semi_finals',
+          'Final': 'final',
+          'Third Place': 'third_place',
+        }
+        
+        let dbRound: string | undefined
+        for (const [key, val] of Object.entries(apiRoundToDbRound)) {
+          if (apiMatch.round.includes(key)) {
+            dbRound = val
+            break
+          }
+        }
+
+        if (dbRound) {
+          matchedDb = dbMatches.find(
+            (dbm) =>
+              dbm.round === dbRound &&
+              new Date(dbm.match_date).getTime() === new Date(apiMatch.date).getTime()
+          )
+        }
+      }
 
       if (!matchedDb) continue
 
@@ -199,7 +227,11 @@ export async function GET(request: Request) {
         // Let's determine the winner ID
         let winnerId: string | null = null
         if (apiStatus === 'finished') {
-          if (homeScore !== null && awayScore !== null) {
+          if (apiMatch.homeWinner) {
+            winnerId = homeDbId
+          } else if (apiMatch.awayWinner) {
+            winnerId = awayDbId
+          } else if (homeScore !== null && awayScore !== null) {
             if (homeScore > awayScore) {
               winnerId = matchedDb.home_team_id === homeDbId ? homeDbId : awayDbId
             } else if (awayScore > homeScore) {
@@ -243,13 +275,15 @@ export async function GET(request: Request) {
           }
         }
 
-        // Only update if there is a change in status, scores, odds, date, elapsed, or if new events were fetched/cleared
+        // Only update if there is a change in status, scores, odds, date, elapsed, teams, or if new events were fetched/cleared
         const dateChanged =
           new Date(matchedDb.match_date).getTime() !== new Date(apiMatch.date).getTime()
+        const teamsChanged = matchedDb.home_team_id !== homeDbId || matchedDb.away_team_id !== awayDbId
         const hasChanges =
           matchedDb.status !== apiStatus ||
           matchedDb.home_score !== homeScore ||
           matchedDb.away_score !== awayScore ||
+          teamsChanged ||
           fetchedEvents ||
           (apiStatus === 'scheduled' && matchedDb.events !== null) ||
           matchedDb.odds !== matchOdds ||
@@ -260,6 +294,8 @@ export async function GET(request: Request) {
           const { error: updateError } = await admin
             .from('matches')
             .update({
+              home_team_id: homeDbId,
+              away_team_id: awayDbId,
               home_score: homeScore,
               away_score: awayScore,
               status: apiStatus,

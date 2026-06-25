@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { getCachedMatches, getCachedProfiles } from '@/lib/api/cached'
 import { PageTransition } from '@/components/animations/PageTransition'
 import { GroupRoom } from '@/components/groups/GroupRoom'
 import { GROUP_LETTERS } from '@/lib/constants/teams'
@@ -41,7 +42,7 @@ export default async function GroupDetailPage({ params }: PageProps) {
     { data: rawMembers, error: membersError },
     { data: allGroupPreds },
     { data: allKnockoutPreds },
-    { data: rawMatches },
+    rawMatches,
   ] = await Promise.all([
     admin
       .from('room_members')
@@ -54,7 +55,7 @@ export default async function GroupDetailPage({ params }: PageProps) {
         'user_id, match_id, predicted_winner_id, predicted_home_score, predicted_away_score, matches!inner(match_number)'
       )
       .eq('room_id', id),
-    admin.from('matches').select('*').order('match_number', { ascending: true }),
+    getCachedMatches(),
   ])
 
   if (membersError) {
@@ -63,13 +64,10 @@ export default async function GroupDetailPage({ params }: PageProps) {
 
   // Fetch profiles separately to avoid implicit join issues
   const memberUserIds = (rawMembers || []).map((m) => m.user_id)
-  const [{ data: profiles }, { data: allScores }] = await Promise.all([
+  const [profiles, { data: allScores }] = await Promise.all([
     memberUserIds.length > 0
-      ? admin
-          .from('profiles')
-          .select('id, user_id, name, avatar_url, created_at, updated_at')
-          .in('user_id', memberUserIds)
-      : { data: [] as Profile[], error: null },
+      ? getCachedProfiles(memberUserIds)
+      : [],
     memberUserIds.length > 0
       ? admin
           .from('scores')

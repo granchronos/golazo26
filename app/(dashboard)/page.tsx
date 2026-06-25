@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { getCachedMatches, getCachedProfiles } from '@/lib/api/cached'
 import {
   PageTransition,
   StaggerContainer,
@@ -19,7 +20,7 @@ export default async function HomePage() {
   } = await supabase.auth.getUser()
 
   // Parallel fetch: profile, memberships, matches
-  const [{ data: profile }, { data: memberships }, { data: rawMatches }] = await Promise.all([
+  const [{ data: profile }, { data: memberships }, rawMatches] = await Promise.all([
     admin.from('profiles').select('name').eq('user_id', user!.id).single(),
     admin
       .from('room_members')
@@ -30,10 +31,7 @@ export default async function HomePage() {
     `
       )
       .eq('user_id', user!.id),
-    admin
-      .from('matches')
-      .select('status, round, home_team_id, away_team_id, home_score, away_score')
-      .order('match_number', { ascending: true }),
+    getCachedMatches(),
   ])
 
   const rooms = memberships?.map((m) => m.rooms as unknown as Room) || []
@@ -56,8 +54,8 @@ export default async function HomePage() {
     const memberIds = (roomMembers || []).map((m) => m.user_id)
     if (memberIds.length === 0) continue
 
-    const [{ data: profiles }, { data: scores }] = await Promise.all([
-      admin.from('profiles').select('user_id, name').in('user_id', memberIds),
+    const [profiles, { data: scores }] = await Promise.all([
+      getCachedProfiles(memberIds),
       admin
         .from('scores')
         .select('user_id, total_points')
