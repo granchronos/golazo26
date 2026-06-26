@@ -201,47 +201,52 @@ export async function GET(request: Request) {
         continue
       }
 
+      // ── Positional matching: sort both by date, pair 1:1 ──────────────────
+      // Our seeded dates were estimates; the API has real dates (can differ by hours/days).
+      // Both sides have the same number of matches per round, so sort chronologically
+      // and pair them by position. This is robust regardless of date drift.
+      const roundDbMatches = dbMatches
+        .filter((dbm) => dbm.round === dbRound)
+        .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+
+      const sortedApiMatches = [...apiMatches].sort(
+        (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+      )
+
       let stageUpdated = 0
 
-      for (const apiMatch of apiMatches) {
+      // Pair by position: API match #0 → DB match #0, API match #1 → DB match #1, etc.
+      const pairCount = Math.min(sortedApiMatches.length, roundDbMatches.length)
+      for (let i = 0; i < pairCount; i++) {
+        const apiMatch = sortedApiMatches[i]
+        const matchedDb = roundDbMatches[i]
+
         const homeId = resolveTeamId(apiMatch.homeTeam.name, apiMatch.homeTeam.tla)
         const awayId = resolveTeamId(apiMatch.awayTeam.name, apiMatch.awayTeam.tla)
 
-        // Both teams still TBD from the API → nothing to fill yet
-        if (!homeId && !awayId) continue
-
-        // Find corresponding DB match by round + date (5-min window for timezone drift)
-        const apiDateMs = new Date(apiMatch.utcDate).getTime()
-        const matchedDb = dbMatches.find((dbm) => {
-          if (dbm.round !== dbRound) return false
-          const dbDateMs = new Date(dbm.match_date).getTime()
-          return Math.abs(dbDateMs - apiDateMs) < 5 * 60 * 1000
-        })
-
-        if (!matchedDb) {
-          console.warn(
-            `[sync-knockout] No DB match for API match ${apiMatch.id} (${apiMatch.utcDate}, ${targetStage})`
-          )
-          continue
-        }
-
-        // Preserve existing confirmed teams; only fill NULLs
+        // Both teams still TBD from the API → still update date/venue if changed
         const newHomeId = homeId ?? matchedDb.home_team_id
         const newAwayId = awayId ?? matchedDb.away_team_id
 
         const homeChanged = newHomeId !== matchedDb.home_team_id
         const awayChanged = newAwayId !== matchedDb.away_team_id
 
+        // Always sync the real date from the API (our seeds were estimates)
+        const apiDate = apiMatch.utcDate
+        const dateChanged =
+          new Date(matchedDb.match_date).getTime() !== new Date(apiDate).getTime()
+
         // Venue: update if the API provides one and we still have 'TBD'
         const apiVenue = apiMatch.venue ?? null
         const venueChanged = !!apiVenue && matchedDb.venue === 'TBD' && apiVenue !== 'TBD'
 
-        if (!homeChanged && !awayChanged && !venueChanged) continue
+        if (!homeChanged && !awayChanged && !venueChanged && !dateChanged) continue
 
         const updatePayload: Record<string, string | null> = {}
         if (homeChanged) updatePayload.home_team_id = newHomeId
         if (awayChanged) updatePayload.away_team_id = newAwayId
         if (venueChanged && apiVenue) updatePayload.venue = apiVenue
+        if (dateChanged) updatePayload.match_date = apiDate
 
         const { error: updateError } = await admin
           .from('matches')
@@ -256,15 +261,13 @@ export async function GET(request: Request) {
         } else {
           stageUpdated++
           totalUpdatedCount++
-          const homeLabel = homeChanged
-            ? `${matchedDb.home_team_id ?? 'TBD'} → ${newHomeId}`
-            : (newHomeId ?? 'TBD')
-          const awayLabel = awayChanged
-            ? `${matchedDb.away_team_id ?? 'TBD'} → ${newAwayId}`
-            : (newAwayId ?? 'TBD')
+          const parts: string[] = []
+          if (homeChanged) parts.push(`home: TBD → ${newHomeId}`)
+          if (awayChanged) parts.push(`away: TBD → ${newAwayId}`)
+          if (dateChanged) parts.push(`date: ${apiDate}`)
+          if (venueChanged) parts.push(`venue: ${apiVenue}`)
           allLogs.push(
-            `[${targetStage}] Match #${matchedDb.match_number}: ${homeLabel} vs ${awayLabel}` +
-              (venueChanged ? ` | venue: ${apiVenue}` : '')
+            `[${targetStage}] Match #${matchedDb.match_number}: ${parts.join(' | ')}`
           )
         }
       }
