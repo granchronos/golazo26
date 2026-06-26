@@ -903,6 +903,79 @@ function getSimulatedScorers(): Scorer[] {
   ]
 }
 
+/**
+ * Ordered list of knockout stages (earliest first).
+ * Used to determine which stage to sync next.
+ */
+const KNOCKOUT_STAGE_ORDER = [
+  'LAST_32',
+  'LAST_16',
+  'QUARTER_FINALS',
+  'SEMI_FINALS',
+  'THIRD_PLACE',
+  'FINAL',
+] as const
+
+/**
+ * Fetch the distinct knockout stages that currently have SCHEDULED matches.
+ * Returns them ordered from earliest to latest round.
+ * Uses 1 API request.
+ *
+ * Example return: ['LAST_32'] or ['LAST_16', 'QUARTER_FINALS']
+ */
+export async function getScheduledStages(): Promise<string[]> {
+  const data = await apiFetch<{ matches: any[] }>('/competitions/WC/matches?status=SCHEDULED')
+  if (!data?.matches || data.matches.length === 0) return []
+
+  const distinctStages = Array.from(new Set(data.matches.map((m: any) => m.stage as string)))
+  return distinctStages
+    .filter((s) => (KNOCKOUT_STAGE_ORDER as readonly string[]).includes(s))
+    .sort(
+      (a, b) =>
+        KNOCKOUT_STAGE_ORDER.indexOf(a as (typeof KNOCKOUT_STAGE_ORDER)[number]) -
+        KNOCKOUT_STAGE_ORDER.indexOf(b as (typeof KNOCKOUT_STAGE_ORDER)[number])
+    )
+}
+
+/**
+ * Raw match shape returned by football-data.org for a single stage query.
+ */
+export interface ApiKnockoutMatch {
+  id: number
+  utcDate: string
+  status: string
+  stage: string
+  homeTeam: {
+    id: number | null
+    name: string | null
+    shortName: string | null
+    tla: string | null
+    crest: string | null
+  }
+  awayTeam: {
+    id: number | null
+    name: string | null
+    shortName: string | null
+    tla: string | null
+    crest: string | null
+  }
+  venue?: string | null
+}
+
+/**
+ * Fetch all matches for a specific knockout stage.
+ * Uses 1 API request.
+ *
+ * @param stage - e.g. 'LAST_32', 'LAST_16', 'QUARTER_FINALS', 'SEMI_FINALS', 'FINAL'
+ */
+export async function getKnockoutStageMatches(stage: string): Promise<ApiKnockoutMatch[]> {
+  const data = await apiFetch<{ matches: any[] }>(
+    `/competitions/WC/matches?stage=${encodeURIComponent(stage)}`
+  )
+  if (!data?.matches) return []
+  return data.matches as ApiKnockoutMatch[]
+}
+
 export async function getWorldCupScorers(): Promise<Scorer[]> {
   const data = await apiFetch<{ scorers: any[] }>('/competitions/WC/scorers?limit=50')
   if (!data || !data.scorers || data.scorers.length === 0) {
