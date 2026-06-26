@@ -1000,3 +1000,74 @@ export async function getWorldCupScorers(): Promise<Scorer[]> {
   }))
 }
 
+export interface ThirdPlacedTeam {
+  group: string
+  position: number
+  team: {
+    id: number
+    name: string
+    shortName: string
+    tla: string
+    crest: string
+  }
+  playedGames: number
+  won: number
+  draw: number
+  lost: number
+  points: number
+  goalsFor: number
+  goalsAgainst: number
+  goalDifference: number
+}
+
+export async function getBestThirdPlacedTeams(): Promise<ThirdPlacedTeam[]> {
+  const data = await apiFetch<{ standings: any[] }>('/competitions/WC/standings')
+  if (!data?.standings) return []
+
+  const thirdPlacedTeams: ThirdPlacedTeam[] = []
+
+  // The API returns standings array where each item represents a group
+  for (const groupStanding of data.standings) {
+    // Make sure we only process TOTAL standings for the groups
+    if (groupStanding.type !== 'TOTAL' || !groupStanding.group) continue
+
+    // Find the team at position 3
+    const thirdPlaceRow = groupStanding.table.find((row: any) => row.position === 3)
+    if (thirdPlaceRow) {
+      thirdPlacedTeams.push({
+        group: groupStanding.group, // e.g., "Group A"
+        position: thirdPlaceRow.position,
+        team: {
+          id: thirdPlaceRow.team.id,
+          name: thirdPlaceRow.team.name,
+          shortName: thirdPlaceRow.team.shortName,
+          tla: thirdPlaceRow.team.tla,
+          crest: thirdPlaceRow.team.crest,
+        },
+        playedGames: thirdPlaceRow.playedGames,
+        won: thirdPlaceRow.won,
+        draw: thirdPlaceRow.draw,
+        lost: thirdPlaceRow.lost,
+        points: thirdPlaceRow.points,
+        goalsFor: thirdPlaceRow.goalsFor,
+        goalsAgainst: thirdPlaceRow.goalsAgainst,
+        goalDifference: thirdPlaceRow.goalDifference,
+      })
+    }
+  }
+
+  // Sort them according to FIFA rules:
+  // 1. Greatest number of points
+  // 2. Goal difference
+  // 3. Greatest number of goals scored
+  // 4. Wins
+  // 5. Fair play / alphabetical (fallback)
+  return thirdPlacedTeams.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points
+    if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference
+    if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor
+    if (b.won !== a.won) return b.won - a.won
+    return a.team.name.localeCompare(b.team.name)
+  })
+}
+

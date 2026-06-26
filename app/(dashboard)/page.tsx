@@ -10,6 +10,7 @@ import { Users, Crown, ChevronRight } from 'lucide-react'
 import { CreateRoomModal } from '@/components/groups/CreateRoomModal'
 import { JoinRoomForm } from '@/components/groups/JoinRoomForm'
 import { Dashboard } from '@/components/dashboard/Dashboard'
+import { ThirdPlacedRanking } from '@/components/dashboard/ThirdPlacedRanking'
 import { GROUP_STAGE_DEADLINE } from '@/lib/constants/points'
 import type { Room, Profile } from '@/types/database'
 
@@ -118,9 +119,11 @@ export default async function HomePage() {
           </div>
         </div>
       ) : (
-        /* User has rooms — show dashboard + rooms */
-        <div className="space-y-6">
-          {/* Dashboard */}
+        /* User has rooms — show dashboard + rooms + side widget */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content (Dashboard + Rooms) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Dashboard */}
           <Dashboard
             userName={profile?.name ?? 'Usuario'}
             currentUserId={user!.id}
@@ -167,6 +170,12 @@ export default async function HomePage() {
           <div className="grid grid-cols-2 gap-2">
             <CreateRoomModal variant="compact" />
             <JoinRoomForm variant="compact" />
+          </div>
+          </div>
+
+          {/* Side Widget: Best 3rd Placed Teams */}
+          <div className="lg:col-span-1 h-[600px] lg:h-auto">
+            <ThirdPlacedRanking />
           </div>
         </div>
       )}
