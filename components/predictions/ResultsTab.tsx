@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useMemo, useTransition, useEffect, useRef, useCallback } from 'react'
-import { Check, X, Clock, Loader2, Award, Edit, Info } from 'lucide-react'
+import { Check, X, Clock, Loader2, Award, Edit, Info, AlertTriangle, ChevronUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils/cn'
 import { TeamFlag } from '@/components/ui/TeamFlag'
 import { TEAMS } from '@/lib/constants/teams'
-import { ROUND_LABELS, calculateMatchPoints, SIGN_POINTS, TEAM_BET_POINTS } from '@/lib/constants/points'
+import { ROUND_LABELS, calculateMatchPoints, SIGN_POINTS, TEAM_BET_POINTS, KNOCKOUT_DEADLINES, KNOCKOUT_DEADLINE_LABELS } from '@/lib/constants/points'
 import { ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
 import { formatShortDate, formatMatchDate } from '@/lib/utils/date'
 import { LocalTime } from '@/components/ui/LocalTime'
@@ -305,47 +305,179 @@ export function ResultsTab({
         const roundMatches = matchesByRound.get(round) || []
         if (roundMatches.length === 0) return null
 
-        const byDate = new Map<string, Match[]>()
-        for (const m of roundMatches) {
-          const dateKey = m.match_date.split('T')[0]
-          if (!byDate.has(dateKey)) byDate.set(dateKey, [])
-          byDate.get(dateKey)!.push(m)
-        }
+        return (
+          <RoundSection
+            key={round}
+            round={round}
+            roundMatches={roundMatches}
+            roomId={roomId}
+            knockoutPredictions={knockoutPredictions}
+            scorePredictions={scorePredictions}
+            bracketMatchNumbers={bracketMatchNumbers}
+            allMembersPredictions={allMembersPredictions}
+            isAdmin={isAdmin}
+            isReadOnly={isReadOnly}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── Round Section ────────────────────────────────────────────────────
+
+interface RoundSectionProps {
+  round: string
+  roundMatches: Match[]
+  roomId: string
+  knockoutPredictions: Record<number, string>
+  scorePredictions: Record<number, { home: number; away: number }>
+  bracketMatchNumbers: Set<number>
+  allMembersPredictions?: MemberPredictions[]
+  isAdmin?: boolean
+  isReadOnly?: boolean
+}
+
+function RoundSection({
+  round,
+  roundMatches,
+  roomId,
+  knockoutPredictions,
+  scorePredictions,
+  bracketMatchNumbers,
+  allMembersPredictions = [],
+  isAdmin = false,
+  isReadOnly = false,
+}: RoundSectionProps) {
+  // Flatten all matches in order for this round
+  const allMatches = useMemo(() => {
+    const byDate = new Map<string, Match[]>()
+    for (const m of roundMatches) {
+      const dateKey = m.match_date.split('T')[0]
+      if (!byDate.has(dateKey)) byDate.set(dateKey, [])
+      byDate.get(dateKey)!.push(m)
+    }
+    return { byDate, flat: roundMatches }
+  }, [roundMatches])
+
+  // Finished matches count & "show previous" state
+  const finishedCount = useMemo(
+    () => allMatches.flat.filter((m) => m.status === 'finished').length,
+    [allMatches.flat]
+  )
+
+  // How many finished matches to hide (keep last 2 visible)
+  const hiddenFinishedCount = Math.max(0, finishedCount - 2)
+  const [visiblePrevious, setVisiblePrevious] = useState(0)
+  const actualHidden = Math.max(0, hiddenFinishedCount - visiblePrevious)
+
+  // Round deadline warning state
+  const deadline = KNOCKOUT_DEADLINES[round]
+  const label = KNOCKOUT_DEADLINE_LABELS[round]
+  const [isRoundOpen, setIsRoundOpen] = useState(
+    deadline ? new Date() < deadline : true
+  )
+
+  useEffect(() => {
+    if (!deadline) return
+    const check = () => setIsRoundOpen(new Date() < deadline)
+    check()
+    const interval = setInterval(check, 10000)
+    return () => clearInterval(interval)
+  }, [deadline])
+
+  // Track how many finished matches we've skipped across all date groups
+  let skippedCount = 0
+
+  const handleShowMore = () => {
+    setVisiblePrevious((prev) => prev + 5)
+  }
+
+  return (
+    <div className="glass-card overflow-hidden">
+      {/* Round header */}
+      <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            {ROUND_LABELS[round as keyof typeof ROUND_LABELS]}
+          </span>
+
+          {/* Round deadline warning badge */}
+          {label && (
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider border',
+                isRoundOpen
+                  ? 'bg-red-50 dark:bg-red-500/10 text-[#E61D25] border-[#E61D25]/30 animate-pulse'
+                  : 'bg-gray-100 dark:bg-white/5 text-gray-400 border-gray-200 dark:border-white/10'
+              )}
+            >
+              <AlertTriangle size={10} />
+              {isRoundOpen ? (
+                <span>
+                  Cierra {label.date} · 🇪🇸 {label.spain} · 🇵🇪 {label.peru}
+                </span>
+              ) : (
+                <span>Predicciones cerradas</span>
+              )}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Show previous button */}
+      {actualHidden > 0 && (
+        <div className="flex justify-center py-2 border-b border-gray-100 dark:border-white/[0.04]">
+          <button
+            onClick={handleShowMore}
+            className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/[0.10] transition-all duration-200 text-[11px] font-body font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+          >
+            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 dark:bg-white/[0.10] group-hover:bg-[#2A398D]/20 transition-colors">
+              <ChevronUp size={12} className="text-gray-500 dark:text-gray-400 group-hover:text-[#2A398D] transition-colors" />
+            </span>
+            Mostrar {Math.min(5, actualHidden)} partidos anteriores
+            <span className="text-[9px] font-mono text-gray-400">({actualHidden} ocultos)</span>
+          </button>
+        </div>
+      )}
+
+      {/* Match rows by date */}
+      {Array.from(allMatches.byDate.entries()).map(([dateKey, dayMatches]) => {
+        // Filter out hidden finished matches
+        const visibleDayMatches = dayMatches.filter((match) => {
+          if (match.status === 'finished' && skippedCount < actualHidden) {
+            skippedCount++
+            return false
+          }
+          return true
+        })
+
+        if (visibleDayMatches.length === 0) return null
 
         return (
-          <div key={round} className="glass-card overflow-hidden">
-            <div className="px-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/[0.06]">
-              <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                {ROUND_LABELS[round]}
-              </span>
+          <div key={dateKey}>
+            <div className="px-4 py-1.5 bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/[0.04]">
+              <LocalTime
+                dateStr={dayMatches[0].match_date}
+                mode="short"
+                className="text-[10px] font-mono text-gray-400 uppercase tracking-wider"
+              />
             </div>
-
-            {Array.from(byDate.entries()).map(([dateKey, dayMatches]) => (
-              <div key={dateKey}>
-                <div className="px-4 py-1.5 bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/[0.04]">
-                  <LocalTime
-                    dateStr={dayMatches[0].match_date}
-                    mode="short"
-                    className="text-[10px] font-mono text-gray-400 uppercase tracking-wider"
-                  />
-                </div>
-                {dayMatches.map((match) => (
-                  <MatchRow
-                    key={match.id}
-                    roomId={roomId}
-                    match={match}
-                    knockoutPrediction={
-                      bracketMatchNumbers.has(match.match_number)
-                        ? (knockoutPredictions[match.match_number] ?? null)
-                        : null
-                    }
-                    savedScore={scorePredictions[match.match_number] ?? null}
-                    allMembersPredictions={allMembersPredictions}
-                    isAdmin={isAdmin}
-                    isReadOnly={isReadOnly}
-                  />
-                ))}
-              </div>
+            {visibleDayMatches.map((match) => (
+              <MatchRow
+                key={match.id}
+                roomId={roomId}
+                match={match}
+                knockoutPrediction={
+                  bracketMatchNumbers.has(match.match_number)
+                    ? (knockoutPredictions[match.match_number] ?? null)
+                    : null
+                }
+                savedScore={scorePredictions[match.match_number] ?? null}
+                allMembersPredictions={allMembersPredictions}
+                isAdmin={isAdmin}
+                isReadOnly={isReadOnly}
+              />
             ))}
           </div>
         )

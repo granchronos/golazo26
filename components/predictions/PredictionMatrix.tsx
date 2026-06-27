@@ -9,6 +9,7 @@ import { GroupPredictionCard } from './GroupPredictionCard'
 import { CountdownTimer } from './CountdownTimer'
 import { PredictionsTour } from './PredictionsTour'
 import { KnockoutPredictions } from './KnockoutPredictions'
+import { KnockoutDeadlineBanner } from './KnockoutDeadlineBanner'
 import { triggerWinConfetti } from '@/components/animations/ConfettiEffect'
 import {
   saveGroupPrediction,
@@ -20,6 +21,7 @@ import {
   CHAMPION_DEADLINE,
   GOLEADOR_DEADLINE,
   CHAMPION_GOLEADOR_DEADLINE,
+  KNOCKOUT_DEADLINES,
 } from '@/lib/constants/points'
 import { TeamFlag } from '@/components/ui/TeamFlag'
 import { GROUP_LETTERS, TEAMS } from '@/lib/constants/teams'
@@ -54,15 +56,30 @@ export function PredictionMatrix({
   const [isChampionOpen, setIsChampionOpen] = useState(!isReadOnly && isBeforeDeadline(CHAMPION_DEADLINE))
   const [isGoleadorOpen, setIsGoleadorOpen] = useState(!isReadOnly && isBeforeDeadline(GOLEADOR_DEADLINE))
 
+  // Per-round open state: each knockout round has its own deadline
+  const buildKnockoutOpenMap = () =>
+    Object.fromEntries(
+      Object.entries(KNOCKOUT_DEADLINES).map(([round, deadline]) => [
+        round,
+        !isReadOnly && isBeforeDeadline(deadline),
+      ])
+    ) as Record<string, boolean>
+
+  const [knockoutOpenByRound, setKnockoutOpenByRound] = useState<Record<string, boolean>>(
+    () => buildKnockoutOpenMap()
+  )
+
   useEffect(() => {
     const checkDeadlines = () => {
       setIsOpen(!isReadOnly && isBeforeDeadline(GROUP_STAGE_DEADLINE))
       setIsChampionOpen(!isReadOnly && isBeforeDeadline(CHAMPION_DEADLINE))
       setIsGoleadorOpen(!isReadOnly && isBeforeDeadline(GOLEADOR_DEADLINE))
+      setKnockoutOpenByRound(buildKnockoutOpenMap())
     }
     
     const interval = setInterval(checkDeadlines, 10000)
     return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReadOnly])
 
   const isChampGoleadorOpen = isChampionOpen || isGoleadorOpen
@@ -831,11 +848,15 @@ export function PredictionMatrix({
 
       {/* Knockout predictions section */}
       <div id="knockout-section" className="border-t border-gray-100 dark:border-white/[0.06] pt-6">
+        <KnockoutDeadlineBanner
+          existingKnockoutPredictions={existingKnockoutPredictions}
+          isReadOnly={isReadOnly}
+        />
         <KnockoutPredictions
           roomId={roomId}
           groupSelections={selections}
           existingPredictions={existingKnockoutPredictions}
-          isOpen={isOpen}
+          openByRound={knockoutOpenByRound}
         />
       </div>
 

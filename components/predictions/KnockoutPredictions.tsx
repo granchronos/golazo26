@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Loader2, ChevronDown, Trophy, Star } from 'lucide-react'
+import { Check, Loader2, ChevronDown, Trophy, Star, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils/cn'
 import { WCBadge } from '@/components/ui/WCBadge'
@@ -11,6 +11,7 @@ import { LocalTime } from '@/components/ui/LocalTime'
 import { saveKnockoutPrediction } from '@/app/actions/predictions'
 import { TEAMS, TEAMS_BY_GROUP } from '@/lib/constants/teams'
 import { BRACKET_ROUNDS, ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
+import { KNOCKOUT_DEADLINE_LABELS } from '@/lib/constants/points'
 import { StaggerContainer, StaggerItem } from '@/components/animations/PageTransition'
 import type { GroupLetter } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
@@ -22,14 +23,14 @@ interface KnockoutPredictionsProps {
   roomId: string
   groupSelections: Record<GroupLetter, { first: string | null; second: string | null }>
   existingPredictions: Record<number, string>
-  isOpen: boolean
+  openByRound: Record<string, boolean>
 }
 
 export function KnockoutPredictions({
   roomId,
   groupSelections,
   existingPredictions,
-  isOpen,
+  openByRound,
 }: KnockoutPredictionsProps) {
   const [picks, setPicks] = useState<Record<number, string>>(existingPredictions)
   const [saving, setSaving] = useState<Record<number, boolean>>({})
@@ -167,6 +168,8 @@ export function KnockoutPredictions({
       {BRACKET_ROUNDS.map((round, roundIndex) => {
         const isCollapsed = collapsed[round.id]
         const roundPicked = round.matches.filter((m) => picks[m.matchNumber]).length
+        const isRoundOpen = openByRound[round.id] ?? true
+        const label = KNOCKOUT_DEADLINE_LABELS[round.id]
 
         return (
           <div
@@ -179,11 +182,28 @@ export function KnockoutPredictions({
               onClick={() => setCollapsed((p) => ({ ...p, [round.id]: !p[round.id] }))}
               className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="font-display text-sm dark:text-white">{round.label}</span>
                 <span className="text-[10px] font-mono text-[#C9A84C] bg-[#C9A84C]/10 px-1.5 py-0.5 rounded-full">
                   +{round.points} pts
                 </span>
+                {label && (
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider border',
+                      isRoundOpen
+                        ? 'bg-red-50 dark:bg-red-500/10 text-[#E61D25] border-[#E61D25]/30 animate-pulse'
+                        : 'bg-gray-100 dark:bg-white/5 text-gray-400 border-gray-200 dark:border-white/10'
+                    )}
+                  >
+                    <AlertTriangle size={10} />
+                    {isRoundOpen ? (
+                      <span>Cierra {label.date} · 🇪🇸 {label.spain} · 🇵🇪 {label.peru}</span>
+                    ) : (
+                      <span>Cerrado</span>
+                    )}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono text-gray-400">
@@ -233,7 +253,7 @@ export function KnockoutPredictions({
                         getPoolTeams={getPoolTeams}
                         onPick={handlePick}
                         isFinal={round.id === 'final'}
-                        isOpen={isOpen}
+                        isOpen={isRoundOpen}
                       />
                     ))}
                   </div>
