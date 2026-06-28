@@ -32,6 +32,7 @@ import { PoolBanner } from '@/components/pool/PoolBanner'
 import { PaymentManager } from '@/components/pool/PaymentManager'
 import { PrizeBreakdown } from '@/components/pool/PrizeBreakdown'
 import { ProgressSidebar } from '@/components/predictions/ProgressSidebar'
+import { KnockoutDeadlineBanner } from '@/components/predictions/KnockoutDeadlineBanner'
 import { Modal } from '@/components/ui/Modal'
 import {
   getWhatsAppShareUrl,
@@ -626,6 +627,12 @@ export function GroupRoom({
           </Modal>
         )}
       </AnimatePresence>
+
+      {/* Global Knockout Deadline Banner */}
+      <KnockoutDeadlineBanner
+        existingKnockoutPredictions={activeKnockoutPredictions}
+        isReadOnly={isViewingOther}
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-gray-100 dark:bg-white/[0.04] rounded-xl">
