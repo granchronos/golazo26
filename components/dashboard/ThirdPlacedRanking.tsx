@@ -37,7 +37,7 @@ export function ThirdPlacedRanking() {
         const data = await res.json()
         if (data.success) {
           setTeams(data.data)
-          setIsLive(data.isLive)
+          setIsLive(false) // Fase de grupos terminada
         } else {
           setError(true)
         }
@@ -49,9 +49,6 @@ export function ThirdPlacedRanking() {
     }
 
     fetchRanking()
-    // Poll every 1 hour (matches the backend cache)
-    const interval = setInterval(fetchRanking, 3600000)
-    return () => clearInterval(interval)
   }, [])
 
   if (error) return null

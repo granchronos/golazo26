@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Trophy, Users, BarChart2, MapPin, Calendar, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { TeamFlag } from '@/components/ui/TeamFlag'
+import { KnockoutBracket } from '@/components/dashboard/KnockoutBracket'
 import { TEAMS, GROUP_LETTERS as GL } from '@/lib/constants/teams'
 import type { TeamData } from '@/lib/constants/teams'
 import type { GroupLetter } from '@/types/database'
@@ -45,6 +46,8 @@ export function Dashboard({
   matches,
   countdown,
 }: DashboardProps) {
+  const [showGroups, setShowGroups] = useState(false)
+
   const stats = useMemo(() => {
     const total = matches.length
     const finished = matches.filter((m) => m.status === 'finished').length
@@ -174,20 +177,33 @@ export function Dashboard({
         </div>
       )}
 
+      {/* Knockout Bracket */}
+      <KnockoutBracket matches={matches} />
+
       {/* Group Standings */}
       {stats.groupFinished > 0 && (
         <div className="space-y-3">
-          <h2 className="font-display text-lg dark:text-white flex items-center gap-2">
-            <Users size={18} className="text-[#3CAC3B]" />
-            Posiciones de Grupos
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            {GROUP_LETTERS.map((letter) => {
-              const teams = groupStandings[letter]
-              if (!teams || teams.every((t) => t.pts === 0 && t.gd === 0)) return null
-              return <MiniGroupTable key={letter} letter={letter} teams={teams} />
-            })}
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg dark:text-white flex items-center gap-2">
+              <Users size={18} className="text-[#3CAC3B]" />
+              Posiciones de Grupos
+            </h2>
+            <button
+              onClick={() => setShowGroups((prev) => !prev)}
+              className="text-xs font-semibold px-3 py-1.5 bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition-colors text-gray-600 dark:text-gray-300"
+            >
+              {showGroups ? 'Ocultar' : 'Mostrar'}
+            </button>
           </div>
+          {showGroups && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {GROUP_LETTERS.map((letter) => {
+                const teams = groupStandings[letter]
+                if (!teams || teams.every((t) => t.pts === 0 && t.gd === 0)) return null
+                return <MiniGroupTable key={letter} letter={letter} teams={teams} />
+              })}
+            </div>
+          )}
         </div>
       )}
 
