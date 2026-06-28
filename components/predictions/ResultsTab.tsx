@@ -854,15 +854,15 @@ function MatchRow({
           <div className="flex flex-wrap justify-center gap-2">
             <button
               onClick={() => handleTieBreakerChange('home_et')}
-              className={cn("px-3 py-1 rounded-full border transition-colors", tieBreaker === 'home_et' ? "bg-[#2A398D] text-white border-[#2A398D]" : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10")}
+              className={cn("px-3 py-1 rounded-full border transition-colors flex items-center gap-1.5", tieBreaker === 'home_et' ? "bg-[#2A398D] text-white border-[#2A398D]" : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10")}
             >
-              Gana Local (TE)
+              Gana {homeTeam?.name || 'Local'} (TE)
             </button>
             <button
               onClick={() => handleTieBreakerChange('away_et')}
-              className={cn("px-3 py-1 rounded-full border transition-colors", tieBreaker === 'away_et' ? "bg-[#2A398D] text-white border-[#2A398D]" : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10")}
+              className={cn("px-3 py-1 rounded-full border transition-colors flex items-center gap-1.5", tieBreaker === 'away_et' ? "bg-[#2A398D] text-white border-[#2A398D]" : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10")}
             >
-              Gana Visita (TE)
+              Gana {awayTeam?.name || 'Visita'} (TE)
             </button>
             <button
               onClick={() => handleTieBreakerChange('penalties')}
@@ -875,23 +875,29 @@ function MatchRow({
           {tieBreaker === 'penalties' && (
             <div className="flex items-center gap-2 mt-1 animate-in zoom-in-95">
               <span className="text-[10px] uppercase tracking-wider text-gray-400">Penales:</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={2}
-                value={homePenaltyScore}
-                onChange={handleHomePenChange}
-                className="w-8 h-6 text-center text-xs font-mono font-semibold rounded border border-gray-200 dark:border-white/15 bg-white dark:bg-white/[0.06] dark:text-white"
-              />
+              <div className="flex items-center gap-1.5">
+                {homeTeam && <TeamFlag flagCode={homeTeam.flag_code} name={homeTeam.name} size={14} />}
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={2}
+                  value={homePenaltyScore}
+                  onChange={handleHomePenChange}
+                  className="w-8 h-6 text-center text-xs font-mono font-semibold rounded border border-gray-200 dark:border-white/15 bg-white dark:bg-white/[0.06] dark:text-white"
+                />
+              </div>
               <span className="text-xs text-gray-300">-</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={2}
-                value={awayPenaltyScore}
-                onChange={handleAwayPenChange}
-                className="w-8 h-6 text-center text-xs font-mono font-semibold rounded border border-gray-200 dark:border-white/15 bg-white dark:bg-white/[0.06] dark:text-white"
-              />
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={2}
+                  value={awayPenaltyScore}
+                  onChange={handleAwayPenChange}
+                  className="w-8 h-6 text-center text-xs font-mono font-semibold rounded border border-gray-200 dark:border-white/15 bg-white dark:bg-white/[0.06] dark:text-white"
+                />
+                {awayTeam && <TeamFlag flagCode={awayTeam.flag_code} name={awayTeam.name} size={14} />}
+              </div>
             </div>
           )}
         </div>
@@ -900,8 +906,20 @@ function MatchRow({
       {/* Display saved tie breaker if readonly or past deadline or finished */}
       {savedScore?.tieBreaker && (!canPredict || !isBeforeDeadline || isFinished || isLive) && (
         <div className="px-4 pb-3 flex justify-center">
-          <span className="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-white/5 px-2 py-1 rounded">
-            Desempate: {savedScore.tieBreaker === 'home_et' ? 'Local en TE' : savedScore.tieBreaker === 'away_et' ? 'Visita en TE' : `Penales (${savedScore.homePenalty ?? 0}-${savedScore.awayPenalty ?? 0})`}
+          <span className="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-white/5 px-2 py-1 rounded flex items-center gap-1">
+            Desempate: 
+            {savedScore.tieBreaker === 'home_et' ? (
+              <span className="text-gray-700 dark:text-gray-300 font-bold ml-0.5">Gana {homeTeam?.name || 'Local'} en TE</span>
+            ) : savedScore.tieBreaker === 'away_et' ? (
+              <span className="text-gray-700 dark:text-gray-300 font-bold ml-0.5">Gana {awayTeam?.name || 'Visita'} en TE</span>
+            ) : (
+              <span className="flex items-center gap-1.5 ml-1 font-bold text-gray-700 dark:text-gray-300">
+                Penales:
+                {homeTeam && <TeamFlag flagCode={homeTeam.flag_code} name={homeTeam.name} size={10} />}
+                {savedScore.homePenalty ?? 0} - {savedScore.awayPenalty ?? 0}
+                {awayTeam && <TeamFlag flagCode={awayTeam.flag_code} name={awayTeam.name} size={10} />}
+              </span>
+            )}
           </span>
         </div>
       )}
