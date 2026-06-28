@@ -14,7 +14,7 @@ import {
   NEXT_ROUND,
 } from '@/lib/constants/points'
 import { getMatchPredictionDeadline, getMatchDeadline } from '@/lib/utils/date'
-import type { GroupLetter } from '@/types/database'
+import type { GroupLetter, TieBreaker } from '@/types/database'
 import { GROUP_LETTERS, TEAMS } from '@/lib/constants/teams'
 
 // Save a knockout prediction by match_number (looks up UUID internally)
@@ -70,7 +70,10 @@ export async function saveMatchScorePrediction(
   roomId: string,
   matchNumber: number,
   homeScore: number,
-  awayScore: number
+  awayScore: number,
+  predictedTieBreaker?: TieBreaker | null,
+  predictedHomePenaltyScore?: number | null,
+  predictedAwayPenaltyScore?: number | null
 ) {
   const supabase = await createClient()
   const {
@@ -82,7 +85,7 @@ export async function saveMatchScorePrediction(
 
   const { data: match } = await admin
     .from('matches')
-    .select('id, match_date, match_number, home_team_id, away_team_id')
+    .select('id, match_date, match_number, home_team_id, away_team_id, round')
     .eq('match_number', matchNumber)
     .single()
 
@@ -95,9 +98,29 @@ export async function saveMatchScorePrediction(
 
   // Derive winner from predicted scores
   let predictedWinnerId: string
-  if (homeScore > awayScore) predictedWinnerId = match.home_team_id!
-  else if (awayScore > homeScore) predictedWinnerId = match.away_team_id!
-  else predictedWinnerId = match.home_team_id! // draw defaults to home (group stage)
+  if (homeScore > awayScore) {
+    predictedWinnerId = match.home_team_id!
+  } else if (awayScore > homeScore) {
+    predictedWinnerId = match.away_team_id!
+  } else {
+    if (match.round !== 'group') {
+      if (
+        predictedTieBreaker === 'home_et' ||
+        (predictedTieBreaker === 'penalties' && (predictedHomePenaltyScore ?? 0) > (predictedAwayPenaltyScore ?? 0))
+      ) {
+        predictedWinnerId = match.home_team_id!
+      } else if (
+        predictedTieBreaker === 'away_et' ||
+        (predictedTieBreaker === 'penalties' && (predictedAwayPenaltyScore ?? 0) > (predictedHomePenaltyScore ?? 0))
+      ) {
+        predictedWinnerId = match.away_team_id!
+      } else {
+        predictedWinnerId = match.home_team_id!
+      }
+    } else {
+      predictedWinnerId = match.home_team_id! // draw defaults to home (group stage)
+    }
+  }
 
   const { error } = await admin.from('predictions').upsert(
     {
@@ -107,6 +130,9 @@ export async function saveMatchScorePrediction(
       predicted_winner_id: predictedWinnerId,
       predicted_home_score: homeScore,
       predicted_away_score: awayScore,
+      predicted_tie_breaker: predictedTieBreaker ?? null,
+      predicted_home_penalty_score: predictedHomePenaltyScore ?? null,
+      predicted_away_penalty_score: predictedAwayPenaltyScore ?? null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'user_id,room_id,match_id' }
@@ -290,7 +316,10 @@ export async function saveMatchResult(
   roomId: string,
   homeScore: number,
   awayScore: number,
-  status: 'scheduled' | 'live' | 'finished'
+  status: 'scheduled' | 'live' | 'finished',
+  tieBreaker?: TieBreaker | null,
+  homePenaltyScore?: number | null,
+  awayPenaltyScore?: number | null
 ) {
   const supabase = await createClient()
   const {
@@ -320,6 +349,17 @@ export async function saveMatchResult(
   if (status === 'finished') {
     if (homeScore > awayScore) winnerId = match.home_team_id
     else if (awayScore > homeScore) winnerId = match.away_team_id
+    else if (
+      tieBreaker === 'home_et' ||
+      (tieBreaker === 'penalties' && (homePenaltyScore ?? 0) > (awayPenaltyScore ?? 0))
+    ) {
+      winnerId = match.home_team_id
+    } else if (
+      tieBreaker === 'away_et' ||
+      (tieBreaker === 'penalties' && (awayPenaltyScore ?? 0) > (homePenaltyScore ?? 0))
+    ) {
+      winnerId = match.away_team_id
+    }
   }
 
   // Update match
@@ -330,6 +370,9 @@ export async function saveMatchResult(
       away_score: awayScore,
       winner_id: winnerId,
       status,
+      tie_breaker: tieBreaker ?? null,
+      home_penalty_score: homePenaltyScore ?? null,
+      away_penalty_score: awayPenaltyScore ?? null,
     })
     .eq('id', matchId)
 
@@ -532,6 +575,29 @@ export async function recalculateRoomScores(roomId: string) {
             // Only increment correctPredictionsCount if they hadn't already got points for score
             if (!(pred.predicted_home_score != null && pred.predicted_away_score != null)) {
               correctPredictionsCount++
+            }
+          }
+
+          // 2.2 Tie-breaker predictions
+          if (match.home_score != null && match.home_score === match.away_score && match.tie_breaker) {
+            if (pred && pred.predicted_tie_breaker === match.tie_breaker) {
+              knockoutPoints += POINTS_SYSTEM.tieBreaker || 3
+              
+              if (
+                match.tie_breaker === 'penalties' && 
+                pred.predicted_home_penalty_score != null && 
+                pred.predicted_away_penalty_score != null &&
+                match.home_penalty_score != null &&
+                match.away_penalty_score != null
+              ) {
+                const penaltyResult = calculateMatchPoints(
+                  pred.predicted_home_penalty_score,
+                  pred.predicted_away_penalty_score,
+                  match.home_penalty_score,
+                  match.away_penalty_score
+                )
+                knockoutPoints += penaltyResult.total
+              }
             }
           }
         }

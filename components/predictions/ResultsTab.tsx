@@ -24,6 +24,9 @@ export interface ScorePrediction {
   matchNumber: number
   homeScore: number
   awayScore: number
+  tieBreaker?: string | null
+  homePenalty?: number | null
+  awayPenalty?: number | null
 }
 
 interface MemberPredictions {
@@ -31,7 +34,7 @@ interface MemberPredictions {
   name: string
   groupPredictions: Record<GroupLetter, GroupPrediction | null>
   knockoutPredictions: Record<number, string>
-  scorePredictions: Record<number, { home: number; away: number }>
+  scorePredictions: Record<number, { home: number; away: number; tieBreaker: string | null; homePenalty: number | null; awayPenalty: number | null }>
 }
 
 interface ResultsTabProps {
@@ -39,7 +42,7 @@ interface ResultsTabProps {
   matches: Match[]
   groupPredictions: Record<GroupLetter, GroupPrediction | null>
   knockoutPredictions: Record<number, string>
-  scorePredictions: Record<number, { home: number; away: number }>
+  scorePredictions: Record<number, { home: number; away: number; tieBreaker: string | null; homePenalty: number | null; awayPenalty: number | null }>
   allMembersPredictions?: MemberPredictions[]
   isAdmin?: boolean
   actualGoleador?: string | null
@@ -331,7 +334,7 @@ interface RoundSectionProps {
   roundMatches: Match[]
   roomId: string
   knockoutPredictions: Record<number, string>
-  scorePredictions: Record<number, { home: number; away: number }>
+  scorePredictions: Record<number, { home: number; away: number; tieBreaker: string | null; homePenalty: number | null; awayPenalty: number | null }>
   bracketMatchNumbers: Set<number>
   allMembersPredictions?: MemberPredictions[]
   isAdmin?: boolean
@@ -492,7 +495,7 @@ interface MatchRowProps {
   roomId: string
   match: Match
   knockoutPrediction: string | null
-  savedScore: { home: number; away: number } | null
+  savedScore: { home: number; away: number; tieBreaker: string | null; homePenalty: number | null; awayPenalty: number | null } | null
   allMembersPredictions?: MemberPredictions[]
   isAdmin?: boolean
   isReadOnly?: boolean
@@ -517,6 +520,9 @@ function MatchRow({
   // Score prediction state (user)
   const [homeScore, setHomeScore] = useState<string>(savedScore?.home?.toString() ?? '')
   const [awayScore, setAwayScore] = useState<string>(savedScore?.away?.toString() ?? '')
+  const [tieBreaker, setTieBreaker] = useState<any>(savedScore?.tieBreaker ?? null)
+  const [homePenaltyScore, setHomePenaltyScore] = useState<string>(savedScore?.homePenalty?.toString() ?? '')
+  const [awayPenaltyScore, setAwayPenaltyScore] = useState<string>(savedScore?.awayPenalty?.toString() ?? '')
   const [isPending, startTransition] = useTransition()
   const [isBeforeDeadline, setIsBeforeDeadline] = useState(true)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -524,7 +530,10 @@ function MatchRow({
   useEffect(() => {
     setHomeScore(savedScore?.home?.toString() ?? '')
     setAwayScore(savedScore?.away?.toString() ?? '')
-  }, [savedScore?.home, savedScore?.away])
+    setTieBreaker(savedScore?.tieBreaker ?? null)
+    setHomePenaltyScore(savedScore?.homePenalty?.toString() ?? '')
+    setAwayPenaltyScore(savedScore?.awayPenalty?.toString() ?? '')
+  }, [savedScore?.home, savedScore?.away, savedScore?.tieBreaker, savedScore?.homePenalty, savedScore?.awayPenalty])
 
   // Admin result editing state
   const [isAdminEditing, setIsAdminEditing] = useState(false)
@@ -550,7 +559,7 @@ function MatchRow({
 
   // Save individual score with per-team toast
   const triggerSave = useCallback(
-    (newHome: string, newAway: string, changedSide: 'home' | 'away') => {
+    (newHome: string, newAway: string, newTieBreaker: any, newHomePen: string, newAwayPen: string, changedSide: string) => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
 
       const hNum = newHome !== '' ? parseInt(newHome) : NaN
@@ -561,34 +570,31 @@ function MatchRow({
       const aValid = !isNaN(aNum) && aNum >= 0
       if (!hValid && !aValid) return
 
-      // Show instant toast for the changed side
-      const changedTeam = changedSide === 'home' ? homeTeam : awayTeam
-      const changedValue = changedSide === 'home' ? newHome : newAway
-      if (changedTeam && changedValue !== '') {
-        toast(`${changedTeam.flag_emoji} ${changedTeam.name}: ${changedValue}`, {
-          duration: 1500,
-          id: `score-${match.match_number}-${changedSide}`,
-        })
-      }
-
       // Only persist to server when both sides are filled
       if (!hValid || !aValid) return
 
       saveTimerRef.current = setTimeout(() => {
         startTransition(async () => {
-          const result = await saveMatchScorePrediction(roomId, match.match_number, hNum, aNum)
+          const hPen = parseInt(newHomePen)
+          const aPen = parseInt(newAwayPen)
+          const result = await saveMatchScorePrediction(
+            roomId, 
+            match.match_number, 
+            hNum, 
+            aNum,
+            newTieBreaker,
+            isNaN(hPen) ? null : hPen,
+            isNaN(aPen) ? null : aPen
+          )
           if (result?.error) {
             toast.error(result.error)
           } else {
-            toast.success(
-              `${homeTeam?.flag_emoji ?? ''} ${hNum} - ${aNum} ${awayTeam?.flag_emoji ?? ''}  ✓`,
-              { duration: 2000, id: `score-saved-${match.match_number}` }
-            )
+            toast.success(`Guardado ✓`, { duration: 1500, id: `score-saved-${match.match_number}` })
           }
         })
       }, 500)
     },
-    [roomId, match.match_number, homeTeam, awayTeam]
+    [roomId, match.match_number]
   )
 
   // Cleanup timer on unmount
@@ -603,18 +609,44 @@ function MatchRow({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 2)
       setHomeScore(raw)
-      triggerSave(raw, awayScore, 'home')
+      triggerSave(raw, awayScore, tieBreaker, homePenaltyScore, awayPenaltyScore, 'home')
     },
-    [awayScore, triggerSave]
+    [awayScore, tieBreaker, homePenaltyScore, awayPenaltyScore, triggerSave]
   )
 
   const handleAwayChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 2)
       setAwayScore(raw)
-      triggerSave(homeScore, raw, 'away')
+      triggerSave(homeScore, raw, tieBreaker, homePenaltyScore, awayPenaltyScore, 'away')
     },
-    [homeScore, triggerSave]
+    [homeScore, tieBreaker, homePenaltyScore, awayPenaltyScore, triggerSave]
+  )
+
+  const handleTieBreakerChange = useCallback(
+    (tb: any) => {
+      setTieBreaker(tb)
+      triggerSave(homeScore, awayScore, tb, homePenaltyScore, awayPenaltyScore, 'tb')
+    },
+    [homeScore, awayScore, homePenaltyScore, awayPenaltyScore, triggerSave]
+  )
+
+  const handleHomePenChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 2)
+      setHomePenaltyScore(raw)
+      triggerSave(homeScore, awayScore, tieBreaker, raw, awayPenaltyScore, 'hpen')
+    },
+    [homeScore, awayScore, tieBreaker, awayPenaltyScore, triggerSave]
+  )
+
+  const handleAwayPenChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 2)
+      setAwayPenaltyScore(raw)
+      triggerSave(homeScore, awayScore, tieBreaker, homePenaltyScore, raw, 'apen')
+    },
+    [homeScore, awayScore, tieBreaker, homePenaltyScore, triggerSave]
   )
 
   const handleAdminSaveResult = () => {
@@ -673,12 +705,13 @@ function MatchRow({
 
   return (
     <>
+    <div className={cn(
+      'flex flex-col border-b border-gray-100 dark:border-white/[0.04] last:border-0 transition-all duration-300 relative overflow-hidden',
+      isLive && 'bg-[#E61D25]/[0.03] dark:bg-red-500/[0.02] shadow-[inset_3px_0_0_0_#E61D25]'
+    )}>
       <div
         data-match-status={match.status}
-        className={cn(
-          'flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 border-b border-gray-100 dark:border-white/[0.04] last:border-0 transition-all duration-300 relative overflow-hidden',
-          isLive && 'bg-[#E61D25]/[0.03] dark:bg-red-500/[0.02] shadow-[inset_3px_0_0_0_#E61D25]'
-        )}
+        className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3"
       >
         {/* Home team */}
         <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
@@ -813,6 +846,65 @@ function MatchRow({
           </button>
         )}
       </div>
+      
+      {/* Tie Breaker UI */}
+      {homeScore !== '' && awayScore !== '' && homeScore === awayScore && match.round !== 'group' && canPredict && isBeforeDeadline && (
+        <div className="px-4 pb-3 flex flex-col items-center gap-2 text-xs font-body animate-in slide-in-from-top-2">
+          <p className="text-gray-500 dark:text-gray-400 font-semibold">¿Cómo se desempata?</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => handleTieBreakerChange('home_et')}
+              className={cn("px-3 py-1 rounded-full border transition-colors", tieBreaker === 'home_et' ? "bg-[#2A398D] text-white border-[#2A398D]" : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10")}
+            >
+              Gana Local (TE)
+            </button>
+            <button
+              onClick={() => handleTieBreakerChange('away_et')}
+              className={cn("px-3 py-1 rounded-full border transition-colors", tieBreaker === 'away_et' ? "bg-[#2A398D] text-white border-[#2A398D]" : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10")}
+            >
+              Gana Visita (TE)
+            </button>
+            <button
+              onClick={() => handleTieBreakerChange('penalties')}
+              className={cn("px-3 py-1 rounded-full border transition-colors", tieBreaker === 'penalties' ? "bg-[#2A398D] text-white border-[#2A398D]" : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10")}
+            >
+              Penales
+            </button>
+          </div>
+          
+          {tieBreaker === 'penalties' && (
+            <div className="flex items-center gap-2 mt-1 animate-in zoom-in-95">
+              <span className="text-[10px] uppercase tracking-wider text-gray-400">Penales:</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={2}
+                value={homePenaltyScore}
+                onChange={handleHomePenChange}
+                className="w-8 h-6 text-center text-xs font-mono font-semibold rounded border border-gray-200 dark:border-white/15 bg-white dark:bg-white/[0.06] dark:text-white"
+              />
+              <span className="text-xs text-gray-300">-</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={2}
+                value={awayPenaltyScore}
+                onChange={handleAwayPenChange}
+                className="w-8 h-6 text-center text-xs font-mono font-semibold rounded border border-gray-200 dark:border-white/15 bg-white dark:bg-white/[0.06] dark:text-white"
+              />
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Display saved tie breaker if readonly or past deadline or finished */}
+      {savedScore?.tieBreaker && (!canPredict || !isBeforeDeadline || isFinished || isLive) && (
+        <div className="px-4 pb-3 flex justify-center">
+          <span className="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-white/5 px-2 py-1 rounded">
+            Desempate: {savedScore.tieBreaker === 'home_et' ? 'Local en TE' : savedScore.tieBreaker === 'away_et' ? 'Visita en TE' : `Penales (${savedScore.homePenalty ?? 0}-${savedScore.awayPenalty ?? 0})`}
+          </span>
+        </div>
+      )}
 
       {/* Admin result editor drawer */}
       {isAdmin && isAdminEditing && (
@@ -870,6 +962,7 @@ function MatchRow({
           </div>
         </div>
       )}
+    </div>
     </>
   )
 }

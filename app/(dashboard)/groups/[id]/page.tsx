@@ -52,7 +52,7 @@ export default async function GroupDetailPage({ params }: PageProps) {
     admin
       .from('predictions')
       .select(
-        'user_id, match_id, predicted_winner_id, predicted_home_score, predicted_away_score, matches!inner(match_number)'
+        'user_id, match_id, predicted_winner_id, predicted_home_score, predicted_away_score, predicted_tie_breaker, predicted_home_penalty_score, predicted_away_penalty_score, matches!inner(match_number)'
       )
       .eq('room_id', id),
     getCachedMatches(),
@@ -116,12 +116,18 @@ export default async function GroupDetailPage({ params }: PageProps) {
     if (matchNumber) knockoutPredictions[matchNumber] = p.predicted_winner_id
   }
 
-  // Current user's score predictions: matchNumber → { home, away }
-  const scorePredictions: Record<number, { home: number; away: number }> = {}
+  // Current user's score predictions: matchNumber → { home, away, ... }
+  const scorePredictions: Record<number, { home: number; away: number; tieBreaker: string | null; homePenalty: number | null; awayPenalty: number | null }> = {}
   for (const p of (allKnockoutPreds || []).filter((pp) => pp.user_id === user.id)) {
     const matchNumber = (p.matches as unknown as { match_number: number })?.match_number
     if (matchNumber && p.predicted_home_score != null && p.predicted_away_score != null) {
-      scorePredictions[matchNumber] = { home: p.predicted_home_score, away: p.predicted_away_score }
+      scorePredictions[matchNumber] = { 
+        home: p.predicted_home_score, 
+        away: p.predicted_away_score,
+        tieBreaker: p.predicted_tie_breaker ?? null,
+        homePenalty: p.predicted_home_penalty_score ?? null,
+        awayPenalty: p.predicted_away_penalty_score ?? null
+      }
     }
   }
 
@@ -138,7 +144,7 @@ export default async function GroupDetailPage({ params }: PageProps) {
     )
 
     const memberKnockoutPreds: Record<number, string> = {}
-    const memberScorePreds: Record<number, { home: number; away: number }> = {}
+    const memberScorePreds: Record<number, { home: number; away: number; tieBreaker: string | null; homePenalty: number | null; awayPenalty: number | null }> = {}
     for (const p of (allKnockoutPreds || []).filter((pp) => pp.user_id === uid)) {
       const matchNumber = (p.matches as unknown as { match_number: number })?.match_number
       if (matchNumber) {
@@ -147,6 +153,9 @@ export default async function GroupDetailPage({ params }: PageProps) {
           memberScorePreds[matchNumber] = {
             home: p.predicted_home_score,
             away: p.predicted_away_score,
+            tieBreaker: p.predicted_tie_breaker ?? null,
+            homePenalty: p.predicted_home_penalty_score ?? null,
+            awayPenalty: p.predicted_away_penalty_score ?? null
           }
         }
       }

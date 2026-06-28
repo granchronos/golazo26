@@ -10,6 +10,7 @@ export type MatchRound =
   | 'semi_finals'
   | 'final'
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'postponed'
+export type TieBreaker = 'home_et' | 'away_et' | 'penalties'
 
 export interface Database {
   public: {
@@ -111,6 +112,9 @@ export interface Database {
           events: any | null
           odds: string | null
           elapsed: number | null
+          tie_breaker: TieBreaker | null
+          home_penalty_score: number | null
+          away_penalty_score: number | null
         }
         Insert: {
           id?: string
@@ -129,6 +133,9 @@ export interface Database {
           events?: any | null
           odds?: string | null
           elapsed?: number | null
+          tie_breaker?: TieBreaker | null
+          home_penalty_score?: number | null
+          away_penalty_score?: number | null
         }
         Update: {
           home_team_id?: string | null
@@ -140,6 +147,9 @@ export interface Database {
           events?: any | null
           odds?: string | null
           elapsed?: number | null
+          tie_breaker?: TieBreaker | null
+          home_penalty_score?: number | null
+          away_penalty_score?: number | null
         }
         Relationships: []
       }
@@ -152,6 +162,9 @@ export interface Database {
           predicted_winner_id: string
           predicted_home_score: number | null
           predicted_away_score: number | null
+          predicted_tie_breaker: TieBreaker | null
+          predicted_home_penalty_score: number | null
+          predicted_away_penalty_score: number | null
           created_at: string
           updated_at: string
         }
@@ -163,6 +176,9 @@ export interface Database {
           predicted_winner_id: string
           predicted_home_score?: number | null
           predicted_away_score?: number | null
+          predicted_tie_breaker?: TieBreaker | null
+          predicted_home_penalty_score?: number | null
+          predicted_away_penalty_score?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -170,6 +186,9 @@ export interface Database {
           predicted_winner_id?: string
           predicted_home_score?: number | null
           predicted_away_score?: number | null
+          predicted_tie_breaker?: TieBreaker | null
+          predicted_home_penalty_score?: number | null
+          predicted_away_penalty_score?: number | null
           updated_at?: string
         }
         Relationships: []

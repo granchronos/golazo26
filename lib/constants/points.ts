@@ -18,6 +18,8 @@ export const POINTS_SYSTEM = {
     champion: 15,
     goleador: 10,
   },
+  // Knockout: tie breaker prediction bonus
+  tieBreaker: 3,
 } as const
 
 export const ROUND_POINTS: Record<MatchRound, number> = {

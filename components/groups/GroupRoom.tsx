@@ -65,7 +65,7 @@ interface MemberPredictions {
   name: string
   groupPredictions: Record<GroupLetter, GroupPrediction | null>
   knockoutPredictions: Record<number, string>
-  scorePredictions: Record<number, { home: number; away: number }>
+  scorePredictions: Record<number, { home: number; away: number; tieBreaker: string | null; homePenalty: number | null; awayPenalty: number | null }>
   predictedChampionId: string | null
   predictedGoleador: string | null
 }
@@ -75,7 +75,7 @@ interface GroupRoomProps {
   members: RoomMemberWithProfile[]
   groupPredictions: Record<GroupLetter, GroupPrediction | null>
   knockoutPredictions: Record<number, string>
-  scorePredictions: Record<number, { home: number; away: number }>
+  scorePredictions: Record<number, { home: number; away: number; tieBreaker: string | null; homePenalty: number | null; awayPenalty: number | null }>
   matches: Match[]
   currentUserId: string
   allMembersPredictions: MemberPredictions[]
