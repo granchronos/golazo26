@@ -37,9 +37,9 @@ async function run() {
     process.exit(1)
   }
 
-  const allMatches = [
-    ...scoreMatches.map(m => ({ ...m, type: 'score' })),
-    ...bMatches.map(m => ({ id: m.id, type: 'bracket' }))
+  const allMatches: { id: string, type: 'score' | 'bracket', pHome?: number, pAway?: number }[] = [
+    ...scoreMatches.map(m => ({ ...m, type: 'score' as const })),
+    ...bMatches.map(m => ({ id: m.id, type: 'bracket' as const }))
   ]
 
   console.log('Inserting restoration predictions for Sofia...')

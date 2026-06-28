@@ -876,7 +876,13 @@ export function GroupRoom({
             </span>
           </div>
           <div className="divide-y divide-gray-50 dark:divide-white/[0.04]">
-            {sortedMembers.map((member) => {
+            {[...sortedMembers]
+              .sort((a, b) => {
+                const goalsA = (a.predicted_goleador ? matchedGoleadores[a.predicted_goleador]?.goals : 0) ?? 0
+                const goalsB = (b.predicted_goleador ? matchedGoleadores[b.predicted_goleador]?.goals : 0) ?? 0
+                return goalsB - goalsA
+              })
+              .map((member) => {
               const goleadorPick = member.predicted_goleador
               const matchInfo = goleadorPick ? matchedGoleadores[goleadorPick] : null
               return (
