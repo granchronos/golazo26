@@ -11,7 +11,7 @@ import { LocalTime } from '@/components/ui/LocalTime'
 import { saveKnockoutPrediction } from '@/app/actions/predictions'
 import { TEAMS, TEAMS_BY_GROUP } from '@/lib/constants/teams'
 import { BRACKET_ROUNDS, ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
-import { KNOCKOUT_DEADLINE_LABELS } from '@/lib/constants/points'
+
 import { StaggerContainer, StaggerItem } from '@/components/animations/PageTransition'
 import type { GroupLetter } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'

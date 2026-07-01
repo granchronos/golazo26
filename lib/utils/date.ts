@@ -1,10 +1,4 @@
-import {
-  ROUND_OF_32_DEADLINE,
-  ROUND_OF_16_DEADLINE,
-  QUARTER_FINALS_DEADLINE,
-  SEMI_FINALS_DEADLINE,
-  FINAL_DEADLINE,
-} from '@/lib/constants/points'
+
 
 export function formatMatchDate(dateStr: string): string {
   const date = new Date(dateStr)
@@ -58,19 +52,25 @@ export function getMatchDeadline(matchDate: string): Date {
   return date
 }
 
+const ROUND_DEADLINES: Record<string, Date> = {
+  round_of_32: new Date('2026-06-28T18:55:00Z'),
+  round_of_16: new Date('2026-07-04T18:55:00Z'),
+  quarter_finals: new Date('2026-07-09T21:55:00Z'),
+  semi_finals: new Date('2026-07-14T20:55:00Z'),
+  final: new Date('2026-07-19T20:55:00Z'),
+}
+
 export function getMatchPredictionDeadline(matchNumber: number, matchDate: string): Date {
   const matchDeadline = getMatchDeadline(matchDate)
 
-  // Helper: return the earlier of the round deadline or the per-match deadline
   const earlier = (roundDeadline: Date) =>
     roundDeadline < matchDeadline ? roundDeadline : matchDeadline
 
-  if (matchNumber >= 73 && matchNumber <= 88) return earlier(ROUND_OF_32_DEADLINE)    // R32
-  if (matchNumber >= 89 && matchNumber <= 96) return earlier(ROUND_OF_16_DEADLINE)    // R16
-  if (matchNumber >= 97 && matchNumber <= 100) return earlier(QUARTER_FINALS_DEADLINE) // QF
-  if (matchNumber >= 101 && matchNumber <= 102) return earlier(SEMI_FINALS_DEADLINE)   // SF
-  if (matchNumber === 103) return earlier(FINAL_DEADLINE)                              // Final
+  if (matchNumber >= 73 && matchNumber <= 88) return earlier(ROUND_DEADLINES.round_of_32)
+  if (matchNumber >= 89 && matchNumber <= 96) return earlier(ROUND_DEADLINES.round_of_16)
+  if (matchNumber >= 97 && matchNumber <= 100) return earlier(ROUND_DEADLINES.quarter_finals)
+  if (matchNumber >= 101 && matchNumber <= 102) return earlier(ROUND_DEADLINES.semi_finals)
+  if (matchNumber === 103) return earlier(ROUND_DEADLINES.final)
 
-  // Group stage and others: 5 minutes before kickoff
   return matchDeadline
 }

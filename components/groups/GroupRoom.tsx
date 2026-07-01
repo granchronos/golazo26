@@ -628,7 +628,7 @@ export function GroupRoom({
         )}
       </AnimatePresence>
 
-      {/* Global Knockout Deadline Banner */}
+      {/* Global Knockout Banner */}
       <KnockoutDeadlineBanner
         existingKnockoutPredictions={activeKnockoutPredictions}
         isReadOnly={isViewingOther}

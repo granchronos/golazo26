@@ -21,7 +21,6 @@ import {
   CHAMPION_DEADLINE,
   GOLEADOR_DEADLINE,
   CHAMPION_GOLEADOR_DEADLINE,
-  KNOCKOUT_DEADLINES,
 } from '@/lib/constants/points'
 import { TeamFlag } from '@/components/ui/TeamFlag'
 import { GROUP_LETTERS, TEAMS } from '@/lib/constants/teams'

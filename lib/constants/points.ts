@@ -157,35 +157,4 @@ export const CHAMPION_GOLEADOR_DEADLINE = CHAMPION_DEADLINE
 // First Matchday (Jornada 1) score prediction closes: Jun 12 at 20:55 local (18:55 UTC)
 export const FIRST_JORNADA_DEADLINE = new Date('2026-06-12T18:55:00Z')
 
-// Round of 32:  Jun 28 at 20:55 Spain (18:55 UTC / 13:55 Peru) — matches #73–88
-export const ROUND_OF_32_DEADLINE = new Date('2026-06-28T18:55:00Z')
 
-// Round of 16:  Jul  4 at 18:55 Spain (16:55 UTC / 11:55 Peru) — matches #89–96
-export const ROUND_OF_16_DEADLINE = new Date('2026-07-04T16:55:00Z')
-
-// Quarter Finals: Jul 9 at 21:55 Spain (19:55 UTC / 14:55 Peru) — matches #97–100
-export const QUARTER_FINALS_DEADLINE = new Date('2026-07-09T19:55:00Z')
-
-// Semi Finals: Jul 14 at 20:55 Spain (18:55 UTC / 13:55 Peru) — matches #101–102
-export const SEMI_FINALS_DEADLINE = new Date('2026-07-14T18:55:00Z')
-
-// Final: Jul 19 at 20:55 Spain (18:55 UTC / 13:55 Peru) — match #103
-export const FINAL_DEADLINE = new Date('2026-07-19T18:55:00Z')
-
-// Lookup map: round_id → deadline Date
-export const KNOCKOUT_DEADLINES: Record<string, Date> = {
-  round_of_32:    ROUND_OF_32_DEADLINE,
-  round_of_16:    ROUND_OF_16_DEADLINE,
-  quarter_finals: QUARTER_FINALS_DEADLINE,
-  semi_finals:    SEMI_FINALS_DEADLINE,
-  final:          FINAL_DEADLINE,
-}
-
-// Display labels (Spain / Peru) shown in warning badges and banners
-export const KNOCKOUT_DEADLINE_LABELS: Record<string, { date: string; spain: string; peru: string }> = {
-  round_of_32:    { date: '28 Jun', spain: '20:55h', peru: '13:55h' },
-  round_of_16:    { date: '4 Jul',  spain: '18:55h', peru: '11:55h' },
-  quarter_finals: { date: '9 Jul',  spain: '21:55h', peru: '14:55h' },
-  semi_finals:    { date: '14 Jul', spain: '20:55h', peru: '13:55h' },
-  final:          { date: '19 Jul', spain: '20:55h', peru: '13:55h' },
-}
