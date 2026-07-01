@@ -52,12 +52,12 @@ export function getMatchDeadline(matchDate: string): Date {
   return date
 }
 
-const ROUND_DEADLINES: Record<string, Date> = {
-  round_of_32: new Date('2026-06-28T18:55:00Z'),
-  round_of_16: new Date('2026-07-04T18:55:00Z'),
-  quarter_finals: new Date('2026-07-09T21:55:00Z'),
-  semi_finals: new Date('2026-07-14T20:55:00Z'),
-  final: new Date('2026-07-19T20:55:00Z'),
+export const ROUND_DEADLINES: Record<string, Date> = {
+  round_of_32: new Date('2026-06-28T20:55:00+02:00'), // 20:55 España = 13:55 Perú
+  round_of_16: new Date('2026-07-04T18:55:00+02:00'), // 18:55 España = 11:55 Perú
+  quarter_finals: new Date('2026-07-09T21:55:00+02:00'), // 21:55 España = 14:55 Perú
+  semi_finals: new Date('2026-07-14T20:55:00+02:00'), // 20:55 España = 13:55 Perú
+  final: new Date('2026-07-19T20:55:00+02:00'), // 20:55 España = 13:55 Perú
 }
 
 export function getMatchPredictionDeadline(matchNumber: number, matchDate: string): Date {

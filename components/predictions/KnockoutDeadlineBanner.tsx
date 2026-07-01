@@ -5,15 +5,7 @@ import { Info, X, Clock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { BRACKET_ROUNDS } from '@/lib/constants/bracket'
-import { getCountdown } from '@/lib/utils/date'
-
-const ROUND_START_DATES: Record<string, Date> = {
-  round_of_32: new Date('2026-06-28T18:55:00Z'),
-  round_of_16: new Date('2026-07-04T16:55:00Z'),
-  quarter_finals: new Date('2026-07-09T19:55:00Z'),
-  semi_finals: new Date('2026-07-14T18:55:00Z'),
-  final: new Date('2026-07-19T18:55:00Z'),
-}
+import { getCountdown, ROUND_DEADLINES } from '@/lib/utils/date'
 
 const ROUND_START_LABELS: Record<string, { date: string; spain: string; peru: string }> = {
   round_of_32:    { date: '28 Jun', spain: '20:55h', peru: '13:55h' },
@@ -77,7 +69,7 @@ export function KnockoutDeadlineBanner({
     const currentNow = now.getTime()
 
     return BRACKET_ROUNDS.map((round): RoundStatus | null => {
-      const startDate = ROUND_START_DATES[round.id]
+      const startDate = ROUND_DEADLINES[round.id]
       if (!startDate) return null
 
       const isUpcoming = startDate.getTime() > currentNow
