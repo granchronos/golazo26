@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { getBestThirdPlacedTeams } from '@/lib/api/football'
 
-export const revalidate = 3600 // Cache for 1 hour
+
 
 export async function GET() {
   try {
