@@ -700,9 +700,17 @@ function MatchRow({
         <div className="flex flex-col items-center w-[7.5rem] sm:w-32 flex-shrink-0 gap-0.5">
           {isFinished ? (
             <>
-              <span className="font-mono text-base font-bold text-gray-900 dark:text-white">
-                {match.home_score} {match.home_penalty_score != null && `(${match.home_penalty_score})`} - {match.away_penalty_score != null && `(${match.away_penalty_score})`} {match.away_score}
-              </span>
+              <div className="font-mono text-base font-bold text-gray-900 dark:text-white flex items-center justify-center gap-1.5">
+                <span>{match.home_score}</span>
+                {match.home_penalty_score != null && (
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold">({match.home_penalty_score})</span>
+                )}
+                <span>-</span>
+                {match.away_penalty_score != null && (
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold">({match.away_penalty_score})</span>
+                )}
+                <span>{match.away_score}</span>
+              </div>
               <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 FINALIZADO
               </span>
