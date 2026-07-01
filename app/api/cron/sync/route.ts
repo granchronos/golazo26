@@ -125,7 +125,7 @@ export async function GET(request: Request) {
     const { data: dbMatches, error: dbError } = await admin
       .from('matches')
       .select(
-        'id, round, match_number, home_team_id, away_team_id, status, home_score, away_score, events, match_date, odds, elapsed'
+        'id, round, match_number, home_team_id, away_team_id, status, home_score, away_score, events, match_date, odds, elapsed, home_penalty_score, away_penalty_score'
       )
 
     if (dbError || !dbMatches) {
@@ -230,6 +230,8 @@ export async function GET(request: Request) {
       if (matchedDb) {
         const homeScore = apiMatch.homeGoals ?? null
         const awayScore = apiMatch.awayGoals ?? null
+        const homePenaltyScore = apiMatch.homePenaltyScore ?? null
+        const awayPenaltyScore = apiMatch.awayPenaltyScore ?? null
 
         // Let's determine the winner ID
         let winnerId: string | null = null
@@ -295,6 +297,8 @@ export async function GET(request: Request) {
           matchedDb.status !== apiStatus ||
           matchedDb.home_score !== homeScore ||
           matchedDb.away_score !== awayScore ||
+          matchedDb.home_penalty_score !== homePenaltyScore ||
+          matchedDb.away_penalty_score !== awayPenaltyScore ||
           teamsChanged ||
           fetchedEvents ||
           (apiStatus === 'scheduled' && matchedDb.events !== null) ||
@@ -316,6 +320,8 @@ export async function GET(request: Request) {
               odds: matchOdds,
               match_date: apiMatch.date,
               elapsed: apiMatch.elapsed,
+              home_penalty_score: homePenaltyScore,
+              away_penalty_score: awayPenaltyScore,
             })
             .eq('id', matchedDb.id)
 

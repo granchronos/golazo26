@@ -374,20 +374,7 @@ function RoundSection({
   const [visiblePrevious, setVisiblePrevious] = useState(0)
   const actualHidden = Math.max(0, hiddenFinishedCount - visiblePrevious)
 
-  // Round deadline warning state
-  const deadline = KNOCKOUT_DEADLINES[round]
-  const label = KNOCKOUT_DEADLINE_LABELS[round]
-  const [isRoundOpen, setIsRoundOpen] = useState(
-    deadline ? new Date() < deadline : true
-  )
 
-  useEffect(() => {
-    if (!deadline) return
-    const check = () => setIsRoundOpen(new Date() < deadline)
-    check()
-    const interval = setInterval(check, 10000)
-    return () => clearInterval(interval)
-  }, [deadline])
 
   // Track how many finished matches we've skipped across all date groups
   let skippedCount = 0
@@ -404,27 +391,6 @@ function RoundSection({
           <span className="text-xs font-display text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             {ROUND_LABELS[round as keyof typeof ROUND_LABELS]}
           </span>
-
-          {/* Round deadline warning badge */}
-          {label && (
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider border',
-                isRoundOpen
-                  ? 'bg-red-50 dark:bg-red-500/10 text-[#E61D25] border-[#E61D25]/30 animate-pulse'
-                  : 'bg-gray-100 dark:bg-white/5 text-gray-400 border-gray-200 dark:border-white/10'
-              )}
-            >
-              <AlertTriangle size={10} />
-              {isRoundOpen ? (
-                <span>
-                  Cierra {label.date} · 🇪🇸 {label.spain} · 🇵🇪 {label.peru}
-                </span>
-              ) : (
-                <span>Predicciones cerradas</span>
-              )}
-            </span>
-          )}
         </div>
       </div>
 
@@ -735,7 +701,7 @@ function MatchRow({
           {isFinished ? (
             <>
               <span className="font-mono text-base font-bold text-gray-900 dark:text-white">
-                {match.home_score} - {match.away_score}
+                {match.home_score} {match.home_penalty_score != null && `(${match.home_penalty_score})`} - {match.away_penalty_score != null && `(${match.away_penalty_score})`} {match.away_score}
               </span>
               <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 FINALIZADO
@@ -904,7 +870,7 @@ function MatchRow({
       )}
       
       {/* Display saved tie breaker if readonly or past deadline or finished */}
-      {savedScore?.tieBreaker && (!canPredict || !isBeforeDeadline || isFinished || isLive) && (
+      {savedScore?.tieBreaker && (!canPredict || !isBeforeDeadline || isFinished || isLive) && (isLive || isScheduled || match.home_penalty_score != null) && (
         <div className="px-4 pb-3 flex justify-center">
           <span className="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-white/5 px-2 py-1 rounded flex items-center gap-1">
             Desempate: 

@@ -56,25 +56,11 @@ export function PredictionMatrix({
   const [isChampionOpen, setIsChampionOpen] = useState(!isReadOnly && isBeforeDeadline(CHAMPION_DEADLINE))
   const [isGoleadorOpen, setIsGoleadorOpen] = useState(!isReadOnly && isBeforeDeadline(GOLEADOR_DEADLINE))
 
-  // Per-round open state: each knockout round has its own deadline
-  const buildKnockoutOpenMap = () =>
-    Object.fromEntries(
-      Object.entries(KNOCKOUT_DEADLINES).map(([round, deadline]) => [
-        round,
-        !isReadOnly && isBeforeDeadline(deadline),
-      ])
-    ) as Record<string, boolean>
-
-  const [knockoutOpenByRound, setKnockoutOpenByRound] = useState<Record<string, boolean>>(
-    () => buildKnockoutOpenMap()
-  )
-
   useEffect(() => {
     const checkDeadlines = () => {
       setIsOpen(!isReadOnly && isBeforeDeadline(GROUP_STAGE_DEADLINE))
       setIsChampionOpen(!isReadOnly && isBeforeDeadline(CHAMPION_DEADLINE))
       setIsGoleadorOpen(!isReadOnly && isBeforeDeadline(GOLEADOR_DEADLINE))
-      setKnockoutOpenByRound(buildKnockoutOpenMap())
     }
     
     const interval = setInterval(checkDeadlines, 10000)
@@ -853,7 +839,7 @@ export function PredictionMatrix({
           roomId={roomId}
           groupSelections={selections}
           existingPredictions={existingKnockoutPredictions}
-          openByRound={knockoutOpenByRound}
+          isReadOnly={isReadOnly}
         />
       </div>
 

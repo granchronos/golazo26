@@ -23,14 +23,14 @@ interface KnockoutPredictionsProps {
   roomId: string
   groupSelections: Record<GroupLetter, { first: string | null; second: string | null }>
   existingPredictions: Record<number, string>
-  openByRound: Record<string, boolean>
+  isReadOnly?: boolean
 }
 
 export function KnockoutPredictions({
   roomId,
   groupSelections,
   existingPredictions,
-  openByRound,
+  isReadOnly = false,
 }: KnockoutPredictionsProps) {
   const [picks, setPicks] = useState<Record<number, string>>(existingPredictions)
   const [saving, setSaving] = useState<Record<number, boolean>>({})
@@ -168,9 +168,7 @@ export function KnockoutPredictions({
       {BRACKET_ROUNDS.map((round, roundIndex) => {
         const isCollapsed = collapsed[round.id]
         const roundPicked = round.matches.filter((m) => picks[m.matchNumber]).length
-        const isRoundOpen = openByRound[round.id] ?? true
-        const label = KNOCKOUT_DEADLINE_LABELS[round.id]
-
+        
         return (
           <div
             key={round.id}
@@ -187,34 +185,14 @@ export function KnockoutPredictions({
                 <span className="text-[10px] font-mono text-[#C9A84C] bg-[#C9A84C]/10 px-1.5 py-0.5 rounded-full">
                   +{round.points} pts
                 </span>
-                {label && (
-                  <span
-                    className={cn(
-                      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider border',
-                      isRoundOpen
-                        ? 'bg-red-50 dark:bg-red-500/10 text-[#E61D25] border-[#E61D25]/30 animate-pulse'
-                        : 'bg-gray-100 dark:bg-white/5 text-gray-400 border-gray-200 dark:border-white/10'
-                    )}
-                  >
-                    <AlertTriangle size={10} />
-                    {isRoundOpen ? (
-                      <span>Cierra {label.date} · 🇪🇸 {label.spain} · 🇵🇪 {label.peru}</span>
-                    ) : (
-                      <span>Cerrado</span>
-                    )}
-                  </span>
-                )}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-gray-400">
+              <div className="flex items-center gap-3 text-gray-400">
+                <span className="text-[10px] font-mono">
                   {roundPicked}/{round.matches.length}
                 </span>
                 <ChevronDown
-                  size={14}
-                  className={cn(
-                    'text-gray-400 transition-transform duration-200',
-                    isCollapsed && '-rotate-90'
-                  )}
+                  size={16}
+                  className={cn('transition-transform duration-300', isCollapsed && 'rotate-180')}
                 />
               </div>
             </button>
@@ -251,9 +229,8 @@ export function KnockoutPredictions({
                         isSaving={!!saving[matchDef.matchNumber]}
                         resolveTeam={resolveTeam}
                         getPoolTeams={getPoolTeams}
-                        onPick={handlePick}
+                        onPick={isReadOnly ? () => {} : handlePick}
                         isFinal={round.id === 'final'}
-                        isOpen={isRoundOpen}
                       />
                     ))}
                   </div>
@@ -277,7 +254,6 @@ interface MatchCardProps {
   getPoolTeams: (groups: [GroupLetter, GroupLetter]) => TeamData[]
   onPick: (matchNumber: number, teamId: string) => void
   isFinal: boolean
-  isOpen: boolean
 }
 
 function MatchCard({
@@ -288,10 +264,14 @@ function MatchCard({
   getPoolTeams,
   onPick,
   isFinal,
-  isOpen,
 }: MatchCardProps) {
   const isPool =
     matchDef.home.source.kind === '3rd_pool' || matchDef.away.source.kind === '3rd_pool'
+
+  // Calculate open deadline internally (matchDate - 5 minutes)
+  const deadline = new Date(matchDef.matchDate)
+  deadline.setMinutes(deadline.getMinutes() - 5)
+  const isOpen = new Date() < deadline
 
   // Rendered using LocalTime component to be timezone-safe and prevent hydration issues
 

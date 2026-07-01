@@ -31,6 +31,8 @@ export interface LiveMatch {
   homeTla?: string
   awayTla?: string
   odds?: string
+  homePenaltyScore: number | null
+  awayPenaltyScore: number | null
 }
 
 let globalRequestsAvailable = 10
@@ -395,6 +397,8 @@ function getSimulatedMatches(): LiveMatch[] {
       awayWinner,
       homeTla: m.homeTeam.toLowerCase().substring(0, 3),
       awayTla: m.awayTeam.toLowerCase().substring(0, 3),
+      homePenaltyScore: null,
+      awayPenaltyScore: null,
     }
   })
 }
@@ -465,8 +469,17 @@ function mapFootballDataMatch(m: any): LiveMatch {
   // For extra time / penalties: use regularTime for 90-min score, fullTime for total
   // score.winner: "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null
   // score.duration: "REGULAR" | "EXTRA_TIME" | "PENALTY_SHOOTOUT"
-  let homeGoals = m.score?.fullTime?.home ?? null
-  let awayGoals = m.score?.fullTime?.away ?? null
+  
+  let homePenaltyScore = null
+  let awayPenaltyScore = null
+  if (m.score?.duration === 'PENALTY_SHOOTOUT') {
+    homePenaltyScore = m.score?.penalties?.home ?? null
+    awayPenaltyScore = m.score?.penalties?.away ?? null
+  }
+
+  // Use regularTime (90 min score) if available, otherwise fallback to fullTime
+  let homeGoals = m.score?.regularTime?.home ?? m.score?.fullTime?.home ?? null
+  let awayGoals = m.score?.regularTime?.away ?? m.score?.fullTime?.away ?? null
 
   // Fallback to SIMULATED_MATCHES if the API reports finished/live but scores are null
   if (
@@ -558,6 +571,8 @@ function mapFootballDataMatch(m: any): LiveMatch {
     homeTla: m.homeTeam?.tla?.toLowerCase() ?? undefined,
     awayTla: m.awayTeam?.tla?.toLowerCase() ?? undefined,
     odds: apiOdds,
+    homePenaltyScore,
+    awayPenaltyScore,
   }
 }
 
