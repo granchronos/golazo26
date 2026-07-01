@@ -1,5 +1,6 @@
 'use client'
 
+import { getMatchPredictionDeadline } from '@/lib/utils/date'
 import { useState, useTransition, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Loader2, ChevronDown, Trophy, Star, AlertTriangle } from 'lucide-react'
@@ -231,6 +232,7 @@ export function KnockoutPredictions({
                         getPoolTeams={getPoolTeams}
                         onPick={isReadOnly ? () => {} : handlePick}
                         isFinal={round.id === 'final'}
+                        isReadOnly={isReadOnly}
                       />
                     ))}
                   </div>
@@ -254,6 +256,7 @@ interface MatchCardProps {
   getPoolTeams: (groups: [GroupLetter, GroupLetter]) => TeamData[]
   onPick: (matchNumber: number, teamId: string) => void
   isFinal: boolean
+  isReadOnly?: boolean
 }
 
 function MatchCard({
@@ -264,16 +267,15 @@ function MatchCard({
   getPoolTeams,
   onPick,
   isFinal,
+  isReadOnly = false,
 }: MatchCardProps) {
   const isPool =
     matchDef.home.source.kind === '3rd_pool' || matchDef.away.source.kind === '3rd_pool'
 
   // Calculate open deadline internally (matchDate - 5 minutes)
-  const deadline = new Date(matchDef.matchDate)
-  deadline.setMinutes(deadline.getMinutes() - 5)
-  const isOpen = new Date() < deadline
-
-  // Rendered using LocalTime component to be timezone-safe and prevent hydration issues
+  const deadline = getMatchPredictionDeadline(matchDef.matchNumber, matchDef.matchDate)
+  const isLocked = new Date() > deadline || isReadOnly
+  const isOpen = !isLocked
 
   if (isPool) {
     // Pool match: split into two sides (home pool vs away pool)

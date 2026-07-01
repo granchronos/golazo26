@@ -69,8 +69,8 @@ export async function saveKnockoutPrediction(
 export async function saveMatchScorePrediction(
   roomId: string,
   matchNumber: number,
-  homeScore: number,
-  awayScore: number,
+  homeScore: number | null,
+  awayScore: number | null,
   predictedTieBreaker?: TieBreaker | null,
   predictedHomePenaltyScore?: number | null,
   predictedAwayPenaltyScore?: number | null
@@ -96,11 +96,14 @@ export async function saveMatchScorePrediction(
     return { error: 'Las apuestas para este partido ya están cerradas' }
   }
 
-  // Derive winner from predicted scores
+  // Derive winner from predicted scores (handle nulls as 0 for comparison)
+  const hCalc = homeScore ?? 0
+  const aCalc = awayScore ?? 0
+
   let predictedWinnerId: string
-  if (homeScore > awayScore) {
+  if (hCalc > aCalc) {
     predictedWinnerId = match.home_team_id!
-  } else if (awayScore > homeScore) {
+  } else if (aCalc > hCalc) {
     predictedWinnerId = match.away_team_id!
   } else {
     if (match.round !== 'group') {

@@ -8,7 +8,7 @@ import { TeamFlag } from '@/components/ui/TeamFlag'
 import { TEAMS } from '@/lib/constants/teams'
 import { ROUND_LABELS, calculateMatchPoints, SIGN_POINTS, TEAM_BET_POINTS } from '@/lib/constants/points'
 import { ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
-import { formatShortDate, formatMatchDate } from '@/lib/utils/date'
+import { formatShortDate, formatMatchDate, getMatchPredictionDeadline } from '@/lib/utils/date'
 import { LocalTime } from '@/components/ui/LocalTime'
 import {
   saveMatchScorePrediction,
@@ -509,8 +509,7 @@ function MatchRow({
   const [isResultSaving, startResultSaving] = useTransition()
 
   useEffect(() => {
-    const deadline = new Date(match.match_date)
-    deadline.setMinutes(deadline.getMinutes() - 5)
+    const deadline = getMatchPredictionDeadline(match.match_number, match.match_date)
     
     const checkDeadline = () => {
       setIsBeforeDeadline(new Date() < deadline && !isReadOnly)
@@ -519,7 +518,7 @@ function MatchRow({
     checkDeadline()
     const interval = setInterval(checkDeadline, 10000)
     return () => clearInterval(interval)
-  }, [match.match_date, isReadOnly])
+  }, [match.match_date, match.match_number, isReadOnly])
 
   const canPredict = isScheduled && homeTeam && awayTeam && !isReadOnly
 
@@ -536,9 +535,6 @@ function MatchRow({
       const aValid = !isNaN(aNum) && aNum >= 0
       if (!hValid && !aValid) return
 
-      // Only persist to server when both sides are filled
-      if (!hValid || !aValid) return
-
       saveTimerRef.current = setTimeout(() => {
         startTransition(async () => {
           const hPen = parseInt(newHomePen)
@@ -546,8 +542,8 @@ function MatchRow({
           const result = await saveMatchScorePrediction(
             roomId, 
             match.match_number, 
-            hNum, 
-            aNum,
+            hValid ? hNum : null, 
+            aValid ? aNum : null,
             newTieBreaker,
             isNaN(hPen) ? null : hPen,
             isNaN(aPen) ? null : aPen

@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Info, X, Clock } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { cn } from '@/lib/utils/cn'
+import { Info, Clock } from 'lucide-react'
 import { BRACKET_ROUNDS } from '@/lib/constants/bracket'
 import { getCountdown, ROUND_DEADLINES } from '@/lib/utils/date'
+import { Modal } from '@/components/ui/Modal'
 
 const ROUND_START_LABELS: Record<string, { date: string; spain: string; peru: string }> = {
   round_of_32:    { date: '28 Jun', spain: '20:55h', peru: '13:55h' },
@@ -35,6 +34,7 @@ export function KnockoutDeadlineBanner({
 }: KnockoutDeadlineBannerProps) {
   const [dismissedRounds, setDismissedRounds] = useState<Record<string, boolean>>({})
   const [now, setNow] = useState(new Date())
+  const [isTemporarilyClosed, setIsTemporarilyClosed] = useState(false)
 
   // Load dismissed state from localStorage on mount
   useEffect(() => {
@@ -64,7 +64,7 @@ export function KnockoutDeadlineBanner({
 
   // Calculate status for all rounds
   const statuses = useMemo(() => {
-    if (isReadOnly) return []
+    if (isReadOnly || isTemporarilyClosed) return []
 
     const currentNow = now.getTime()
 
@@ -92,76 +92,66 @@ export function KnockoutDeadlineBanner({
         timeLabels: ROUND_START_LABELS[round.id],
       }
     }).filter(Boolean) as RoundStatus[]
-  }, [existingKnockoutPredictions, isReadOnly, now, dismissedRounds])
+  }, [existingKnockoutPredictions, isReadOnly, now, dismissedRounds, isTemporarilyClosed])
 
   if (statuses.length === 0) return null
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: -5, height: 0 }}
-        animate={{ opacity: 1, y: 0, height: 'auto' }}
-        exit={{ opacity: 0, y: -5, height: 0 }}
-        className="mb-4 overflow-hidden"
-      >
-        <div className="relative rounded-xl border border-blue-200/50 dark:border-blue-500/20 bg-blue-50/30 dark:bg-blue-500/5 p-3">
-          <div className="flex items-start gap-2.5">
-            <div className="mt-0.5 text-blue-500 dark:text-blue-400">
-              <Info size={16} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="space-y-2">
-                {statuses.map((status) => {
-                  const countdown = getCountdown(status.startDate)
-                  
-                  return (
-                    <div key={status.id} className="flex flex-col gap-2 group relative border-b border-blue-100/50 dark:border-blue-500/10 pb-2 last:border-0 last:pb-0">
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap pr-4">
-                            <span className="text-xs font-semibold text-blue-800 dark:text-blue-300">
-                              {status.label}
-                            </span>
-                            <span className="text-[11px] text-blue-600/80 dark:text-blue-400/80">
-                              Inicia el {status.timeLabels.date} · 🇪🇸 {status.timeLabels.spain} · 🇵🇪 {status.timeLabels.peru}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-blue-700/70 dark:text-blue-300/70 mt-0.5">
-                            Te faltan {status.missingCount} de {status.totalCount} predicciones
-                          </p>
-                        </div>
-
-                        {/* Live Countdown */}
-                        <div className="flex items-center gap-1.5 font-mono text-[10px] bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded-md self-start shrink-0 text-blue-700 dark:text-blue-300">
-                          <Clock size={10} />
-                          {countdown.days > 0 && <span>{countdown.days}d</span>}
-                          <span>{String(countdown.hours).padStart(2, '0')}h</span>
-                          <span>{String(countdown.minutes).padStart(2, '0')}m</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-end mt-1">
-                        <label className="flex items-center gap-1.5 cursor-pointer group/chk">
-                          <input 
-                            type="checkbox" 
-                            className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500/20 bg-white/50 cursor-pointer"
-                            onChange={(e) => {
-                              if (e.target.checked) handleDismiss(status.id)
-                            }}
-                          />
-                          <span className="text-[10px] text-blue-700/60 group-hover/chk:text-blue-700/90 dark:text-blue-300/50 dark:group-hover/chk:text-blue-300/80 transition-colors">
-                            No volver a mostrar
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+    <Modal open={statuses.length > 0} onClose={() => setIsTemporarilyClosed(true)} title="Aviso Importante" size="sm">
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 p-3 rounded-lg border border-blue-100 dark:border-blue-500/20">
+          <Info size={20} className="shrink-0" />
+          <p className="text-sm font-medium">
+            Tienes predicciones pendientes para las próximas fases eliminatorias.
+          </p>
         </div>
-      </motion.div>
-    </AnimatePresence>
+
+        <div className="space-y-3">
+          {statuses.map((status) => {
+            const countdown = getCountdown(status.startDate)
+            
+            return (
+              <div key={status.id} className="flex flex-col gap-3 p-4 bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/10">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-1">
+                      {status.label}
+                    </h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">
+                      Inicia el {status.timeLabels.date} · 🇪🇸 {status.timeLabels.spain} · 🇵🇪 {status.timeLabels.peru}
+                    </p>
+                    <p className="text-xs font-semibold text-red-500 dark:text-red-400">
+                      Te faltan {status.missingCount} de {status.totalCount} predicciones
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 font-mono text-xs bg-white dark:bg-black/20 px-2.5 py-1 rounded-md self-start shrink-0 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10">
+                    <Clock size={12} className="text-[#E61D25] dark:text-red-500" />
+                    {countdown.days > 0 && <span>{countdown.days}d</span>}
+                    <span>{String(countdown.hours).padStart(2, '0')}h</span>
+                    <span>{String(countdown.minutes).padStart(2, '0')}m</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end mt-1 border-t border-gray-200 dark:border-white/10 pt-3">
+                  <label className="flex items-center gap-2 cursor-pointer group/chk">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 rounded border-gray-300 text-[#2A398D] focus:ring-[#2A398D]/20 cursor-pointer"
+                      onChange={(e) => {
+                        if (e.target.checked) handleDismiss(status.id)
+                      }}
+                    />
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400 group-hover/chk:text-gray-900 dark:group-hover/chk:text-gray-200 transition-colors">
+                      Entendido, no volver a mostrar
+                    </span>
+                  </label>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </Modal>
   )
 }
