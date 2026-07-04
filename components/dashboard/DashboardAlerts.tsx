@@ -29,6 +29,9 @@ export function DashboardAlerts({
     const result: Array<{ roundId: string; label: string; missing: number; urgency: 'critical' | 'warning' | 'info' }> = []
 
     for (const round of BRACKET_ROUNDS) {
+      // Only show from quarter-finals onwards
+      if (round.id === 'round_of_32' || round.id === 'round_of_16') continue
+
       const deadline = ROUND_DEADLINES[round.id]
       if (!deadline) continue
       const deadlineMs = deadline.getTime()

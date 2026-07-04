@@ -69,6 +69,9 @@ export function KnockoutDeadlineBanner({
     const currentNow = now.getTime()
 
     return BRACKET_ROUNDS.map((round) => {
+      // Only show from quarter-finals onwards
+      if (round.id === 'round_of_32' || round.id === 'round_of_16') return null
+
       const startDate = ROUND_DEADLINES[round.id]
       if (!startDate) return null
 
