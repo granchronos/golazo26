@@ -5,7 +5,7 @@ import { Check, X, Clock, Loader2, Award, Edit, Info, AlertTriangle, ChevronUp }
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils/cn'
 import { TeamFlag } from '@/components/ui/TeamFlag'
-import { TEAMS } from '@/lib/constants/teams'
+import { TEAMS, TEAMS_BY_ID } from '@/lib/constants/teams'
 import { ROUND_LABELS, calculateMatchPoints, SIGN_POINTS, TEAM_BET_POINTS } from '@/lib/constants/points'
 import { ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
 import { formatShortDate, formatMatchDate, getMatchPredictionDeadline } from '@/lib/utils/date'
@@ -18,8 +18,6 @@ import {
 import type { Match, MatchRound, GroupLetter, GroupPrediction } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
 import { PointsBreakdown } from '@/components/predictions/PointsBreakdown'
-
-const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
 
 export interface ScorePrediction {
   matchNumber: number

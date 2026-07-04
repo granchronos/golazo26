@@ -10,15 +10,13 @@ import { WCBadge } from '@/components/ui/WCBadge'
 import { TeamFlag } from '@/components/ui/TeamFlag'
 import { LocalTime } from '@/components/ui/LocalTime'
 import { saveKnockoutPrediction } from '@/app/actions/predictions'
-import { TEAMS, TEAMS_BY_GROUP } from '@/lib/constants/teams'
+import { TEAMS, TEAMS_BY_ID, TEAMS_BY_GROUP } from '@/lib/constants/teams'
 import { BRACKET_ROUNDS, ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
 
 import { StaggerContainer, StaggerItem } from '@/components/animations/PageTransition'
 import type { GroupLetter } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
 import type { SlotSource, BracketMatchDef } from '@/lib/constants/bracket'
-
-const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
 
 interface KnockoutPredictionsProps {
   roomId: string

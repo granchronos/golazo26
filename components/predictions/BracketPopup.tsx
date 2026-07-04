@@ -5,7 +5,7 @@ import { Trophy, Share2, Download, Loader2 } from 'lucide-react'
 import { toPng } from 'html-to-image'
 import { cn } from '@/lib/utils/cn'
 import { TeamFlag } from '@/components/ui/TeamFlag'
-import { TEAMS, WC_HISTORY } from '@/lib/constants/teams'
+import { TEAMS, TEAMS_BY_ID, WC_HISTORY } from '@/lib/constants/teams'
 import {
   R16_BRACKET,
   QF_BRACKET,
@@ -14,8 +14,6 @@ import {
   type BracketMatchDef,
 } from '@/lib/constants/bracket'
 import type { TeamData } from '@/lib/constants/teams'
-
-const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
 
 // ─── Layout constants ──────────────────────────────────────────────
 const MATCH_W = 132

@@ -23,7 +23,7 @@ import {
   CHAMPION_GOLEADOR_DEADLINE,
 } from '@/lib/constants/points'
 import { TeamFlag } from '@/components/ui/TeamFlag'
-import { GROUP_LETTERS, TEAMS } from '@/lib/constants/teams'
+import { GROUP_LETTERS, TEAMS, TEAMS_BY_ID } from '@/lib/constants/teams'
 import { isBeforeDeadline } from '@/lib/utils/date'
 import { cn } from '@/lib/utils/cn'
 import type { GroupLetter, GroupPrediction } from '@/types/database'
@@ -41,7 +41,6 @@ type Selections = Record<GroupLetter, { first: string | null; second: string | n
 
 // Helper to find team by ID
 const findTeam = (id: string) => TEAMS.find((t) => t.id === id)
-const TEAMS_BY_ID = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
 
 export function PredictionMatrix({
   roomId,
@@ -158,18 +157,6 @@ export function PredictionMatrix({
   >([])
   const [selectedGoleadorTeamId, setSelectedGoleadorTeamId] = useState<string>('')
   const goleadorComboboxRef = useRef<HTMLDivElement>(null)
-
-  // Sync state with props
-  useEffect(() => {
-    setPredictedChampionId(initialChampionId)
-    setSavedChampionId(initialChampionId)
-  }, [initialChampionId])
-
-  useEffect(() => {
-    setPredictedGoleador(initialGoleador)
-    setGoleadorSearch(initialGoleador)
-    setSavedGoleador(initialGoleador)
-  }, [initialGoleador])
 
   // Fetch star players on mount
   useEffect(() => {

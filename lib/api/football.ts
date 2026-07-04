@@ -42,7 +42,7 @@ const fetchCache = new Map<string, { data: any; expiresAt: number }>()
 const CACHE_TTL = 30 * 1000 // 30 seconds cache
 
 async function apiFetch<T>(endpoint: string, retries = 3, delayMs = 1000): Promise<T | null> {
-  const apiKey = process.env.FOOTBALL_DATA_API_KEY || 'e203db181ff3498084907b213da91fe2'
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY
   if (!apiKey) {
     console.warn('[football-api] FOOTBALL_DATA_API_KEY not set')
     return null
@@ -615,26 +615,26 @@ export async function getWorldCupFixtures(): Promise<LiveMatch[]> {
  * Uses API status filter: ?status=LIVE (pseudo-filter that combines IN_PLAY + PAUSED)
  */
 export async function getLiveWorldCupFixtures(): Promise<LiveMatch[]> {
-  // Try fetching only live matches directly (reduces payload)
   const data = await apiFetch<{ matches: any[] }>('/competitions/WC/matches?status=LIVE')
-  if (!data || !data.matches || data.matches.length === 0) {
-    // Fallback: filter from all matches
-    const allData = await apiFetch<{ matches: any[] }>('/competitions/WC/matches')
-    if (!allData || !allData.matches) {
-      const all = getSimulatedMatches()
-      return all.filter((m) => mapApiStatus(m.statusShort) === 'live')
-    }
-    return allData.matches
-      .filter(
-        (m) =>
-          m.status === 'IN_PLAY' ||
-          m.status === 'PAUSED' ||
-          m.status === 'EXTRA_TIME' ||
-          m.status === 'PENALTY_SHOOTOUT'
-      )
-      .map(mapFootballDataMatch)
+  if (data?.matches && data.matches.length > 0) {
+    return data.matches.map(mapFootballDataMatch)
   }
-  return data.matches.map(mapFootballDataMatch)
+
+  // Fallback: fetch all and filter to live-only
+  const allData = await apiFetch<{ matches: any[] }>('/competitions/WC/matches')
+  if (!allData?.matches) {
+    return getSimulatedMatches().filter((m) => mapApiStatus(m.statusShort) === 'live')
+  }
+
+  return allData.matches
+    .filter(
+      (m) =>
+        m.status === 'IN_PLAY' ||
+        m.status === 'PAUSED' ||
+        m.status === 'EXTRA_TIME' ||
+        m.status === 'PENALTY_SHOOTOUT'
+    )
+    .map(mapFootballDataMatch)
 }
 
 /**

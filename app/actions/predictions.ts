@@ -424,81 +424,76 @@ export async function recalculateAllScores() {
   const { data: rooms } = await admin.from('rooms').select('id')
   if (!rooms) return
 
-  for (const room of rooms) {
-    await recalculateRoomScores(room.id)
-  }
+  await Promise.all(rooms.map((room) => recalculateRoomScores(room.id)))
 }
 
 export async function recalculateRoomScores(roomId: string) {
   const admin = await createAdminClient()
 
-  // Fetch all matches
-  const { data: matches } = await admin.from('matches').select('*')
-  if (!matches) return
+  // Fetch all data in parallel
+  const [{ data: matches }, { data: members }, { data: predictions }, { data: groupPredictions }, { data: roomData }] =
+    await Promise.all([
+      admin.from('matches').select('*'),
+      admin.from('room_members').select('user_id, predicted_champion_id, predicted_goleador').eq('room_id', roomId),
+      admin.from('predictions').select('*').eq('room_id', roomId),
+      admin.from('group_predictions').select('*').eq('room_id', roomId),
+      admin.from('rooms').select('actual_goleador').eq('id', roomId).single(),
+    ])
 
-  // Fetch all room members
-  const { data: members } = await admin
-    .from('room_members')
-    .select('user_id, predicted_champion_id, predicted_goleador')
-    .eq('room_id', roomId)
-  if (!members) return
+  if (!matches || !members) return
 
-  // Fetch all match predictions for the room
-  const { data: predictions } = await admin.from('predictions').select('*').eq('room_id', roomId)
-
-  // Fetch all group predictions for the room
-  const { data: groupPredictions } = await admin
-    .from('group_predictions')
-    .select('*')
-    .eq('room_id', roomId)
-
-  // Fetch actual goleador of the room
-  const { data: roomData } = await admin
-    .from('rooms')
-    .select('actual_goleador')
-    .eq('id', roomId)
-    .single()
   const actualGoleador = roomData?.actual_goleador || null
 
+  // O(1) team→group lookup
+  const teamGroupMap = new Map(TEAMS.map((t) => [t.id, t.group_letter]))
+
+  // O(1) match lookup by ID
+  const matchById = new Map(matches.map((m) => [m.id, m]))
+
+  // Pre-index member predictions
+  const predsByUser = new Map<string, typeof predictions>()
+  for (const pred of predictions || []) {
+    const arr = predsByUser.get(pred.user_id) || []
+    arr.push(pred)
+    predsByUser.set(pred.user_id, arr)
+  }
+
+  const groupPredsByUser = new Map<string, typeof groupPredictions>()
+  for (const gp of groupPredictions || []) {
+    const arr = groupPredsByUser.get(gp.user_id) || []
+    arr.push(gp)
+    groupPredsByUser.set(gp.user_id, arr)
+  }
+
   // Determine actual group standings dynamically based on matches
-  const groupStandings: Record<string, string[]> = {} // group_letter -> [1st_team_id, 2nd_team_id]
+  const groupStandings: Record<string, string[]> = {}
 
   for (const letter of GROUP_LETTERS) {
     const groupMatches = matches.filter(
       (m) =>
         m.round === 'group' &&
-        (TEAMS.find((t) => t.id === m.home_team_id)?.group_letter === letter ||
-          TEAMS.find((t) => t.id === m.away_team_id)?.group_letter === letter)
+        (teamGroupMap.get(m.home_team_id!) === letter ||
+          teamGroupMap.get(m.away_team_id!) === letter)
     )
 
     const allGroupMatchesFinished =
       groupMatches.length === 6 && groupMatches.every((m) => m.status === 'finished')
 
     if (allGroupMatchesFinished) {
-      // Calculate standings
       const teamsInGroup = TEAMS.filter((t) => t.group_letter === letter)
-      const stats = teamsInGroup.map((team) => ({
-        id: team.id,
-        points: 0,
-        gd: 0,
-        gf: 0,
-        ga: 0,
-      }))
+      const statsMap = new Map(teamsInGroup.map((team) => [team.id, { id: team.id, points: 0, gf: 0, ga: 0, gd: 0 }]))
 
       for (const m of groupMatches) {
-        const homeStat = stats.find((s) => s.id === m.home_team_id)!
-        const awayStat = stats.find((s) => s.id === m.away_team_id)!
+        const homeStat = statsMap.get(m.home_team_id!)!
+        const awayStat = statsMap.get(m.away_team_id!)!
 
         const hs = m.home_score ?? 0
         const as = m.away_score ?? 0
 
         homeStat.gf += hs
-        homeStat.ga = (homeStat.ga || 0) + as
+        homeStat.ga += as
         awayStat.gf += as
-        awayStat.ga = (awayStat.ga || 0) + hs
-
-        homeStat.gd = homeStat.gf - homeStat.ga
-        awayStat.gd = awayStat.gf - awayStat.ga
+        awayStat.ga += hs
 
         if (hs > as) {
           homeStat.points += 3
@@ -510,7 +505,7 @@ export async function recalculateRoomScores(roomId: string) {
         }
       }
 
-      // Sort standings: points desc, gd desc, gf desc
+      const stats = Array.from(statsMap.values()).map((s) => ({ ...s, gd: s.gf - s.ga }))
       stats.sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points
         if (b.gd !== a.gd) return b.gd - a.gd
@@ -523,9 +518,7 @@ export async function recalculateRoomScores(roomId: string) {
 
   // Build a set of teams that participated in each round (for team bets)
   const teamsInRounds: Record<string, Set<string>> = {}
-  const tournamentWinnerId = matches.find(
-    (m) => m.round === 'final' && m.status === 'finished' && m.winner_id
-  )?.winner_id || null
+  let tournamentWinnerId: string | null = null
 
   for (const match of matches) {
     if (match.status === 'finished') {
@@ -533,16 +526,22 @@ export async function recalculateRoomScores(roomId: string) {
       if (match.home_team_id) teamsInRounds[match.round].add(match.home_team_id)
       if (match.away_team_id) teamsInRounds[match.round].add(match.away_team_id)
     }
+    if (match.round === 'final' && match.status === 'finished' && match.winner_id) {
+      tournamentWinnerId = match.winner_id
+    }
   }
 
+  const finalMatch = matches.find((m) => m.round === 'final')
+
   // Recalculate scores for each member
+  const scoreUpdates: Promise<{ error: unknown }>[] = []
+
   for (const member of members) {
     let groupPoints = 0
     let knockoutPoints = 0
     let correctPredictionsCount = 0
 
-    // 1. Match Score Predictions (new formula: sign + approximation)
-    const memberPreds = (predictions || []).filter((p) => p.user_id === member.user_id)
+    const memberPreds = predsByUser.get(member.user_id) || []
 
     for (const match of matches) {
       const pred = memberPreds.find((p) => p.match_id === match.id)
@@ -550,7 +549,6 @@ export async function recalculateRoomScores(roomId: string) {
       if (match.status === 'finished') {
         const isGroupMatch = match.round === 'group'
 
-        // Score prediction: new formula
         if (pred && pred.predicted_home_score != null && pred.predicted_away_score != null) {
           const result = calculateMatchPoints(
             pred.predicted_home_score,
@@ -570,23 +568,19 @@ export async function recalculateRoomScores(roomId: string) {
           }
         }
 
-        // 2. Knockout Round Winner Predictions
         if (!isGroupMatch) {
           const roundPoints = ROUND_POINTS[match.round as keyof typeof ROUND_POINTS] || 0
           if (pred && pred.predicted_winner_id === match.winner_id && match.winner_id) {
             knockoutPoints += roundPoints
-            // Only increment correctPredictionsCount if they hadn't already got points for score
             if (!(pred.predicted_home_score != null && pred.predicted_away_score != null)) {
               correctPredictionsCount++
             }
           }
 
-          // 2.2 Tie-breaker predictions (ET or penalties)
           if (match.tie_breaker && match.winner_id) {
             if (pred && pred.predicted_tie_breaker === match.tie_breaker) {
               knockoutPoints += POINTS_SYSTEM.tieBreaker || 3
 
-              // Bonus: approximate penalty shootout score
               if (
                 match.tie_breaker === 'penalties' &&
                 pred.predicted_home_penalty_score != null &&
@@ -608,10 +602,9 @@ export async function recalculateRoomScores(roomId: string) {
       }
     }
 
-    // 2.5. Team Bets: derived from knockout bracket
-    // If user predicts team X wins in round R, they implicitly predict X reaches NEXT_ROUND[R]
+    // Team Bets: derived from knockout bracket
     for (const pred of memberPreds) {
-      const match = matches.find((m) => m.id === pred.match_id)
+      const match = matchById.get(pred.match_id)
       if (!match || match.round === 'group' || !pred.predicted_winner_id) continue
 
       const nextRound = NEXT_ROUND[match.round]
@@ -621,12 +614,10 @@ export async function recalculateRoomScores(roomId: string) {
       if (teamBetPts === 0) continue
 
       if (nextRound === 'winner') {
-        // Final winner = tournament winner
         if (tournamentWinnerId && pred.predicted_winner_id === tournamentWinnerId) {
           knockoutPoints += teamBetPts
         }
       } else {
-        // Check if team actually participated in the next round
         const teamsInNext = teamsInRounds[nextRound]
         if (teamsInNext && teamsInNext.has(pred.predicted_winner_id)) {
           knockoutPoints += teamBetPts
@@ -634,29 +625,28 @@ export async function recalculateRoomScores(roomId: string) {
       }
     }
 
-    // 3. Group Standings Predictions
-    const memberGroupPreds = (groupPredictions || []).filter((gp) => gp.user_id === member.user_id)
+    // Group Standings Predictions
+    const memberGroupPreds = groupPredsByUser.get(member.user_id) || []
     for (const gp of memberGroupPreds) {
       const actual = groupStandings[gp.group_letter]
       if (actual) {
         if (gp.team_1st_id === actual[0]) {
-          groupPoints += POINTS_SYSTEM.groupStage.correct1st // 5 pts
+          groupPoints += POINTS_SYSTEM.groupStage.correct1st
         }
         if (gp.team_2nd_id === actual[1]) {
-          groupPoints += POINTS_SYSTEM.groupStage.correct2nd // 5 pts
+          groupPoints += POINTS_SYSTEM.groupStage.correct2nd
         }
       }
     }
 
-    // 4. Agnostic Champion Prediction
-    const finalMatch = matches.find((m) => m.round === 'final')
+    // Agnostic Champion Prediction
     if (finalMatch && finalMatch.status === 'finished' && finalMatch.winner_id) {
       if (member.predicted_champion_id === finalMatch.winner_id) {
-        knockoutPoints += POINTS_SYSTEM.agnostic.champion // 15 pts
+        knockoutPoints += POINTS_SYSTEM.agnostic.champion
       }
     }
 
-    // 5. Agnostic Top Scorer (Goleador) Prediction
+    // Agnostic Top Scorer (Goleador) Prediction
     if (actualGoleador && member.predicted_goleador) {
       const predNorm = member.predicted_goleador
         .trim()
@@ -674,23 +664,28 @@ export async function recalculateRoomScores(roomId: string) {
         predNorm.includes(actualNorm) ||
         actualNorm.includes(predNorm)
       ) {
-        knockoutPoints += POINTS_SYSTEM.agnostic.goleador // 10 pts
+        knockoutPoints += POINTS_SYSTEM.agnostic.goleador
       }
     }
 
-    // Upsert into scores table
     const totalPoints = groupPoints + knockoutPoints
-    await admin.from('scores').upsert(
-      {
-        user_id: member.user_id,
-        room_id: roomId,
-        total_points: totalPoints,
-        group_points: groupPoints,
-        knockout_points: knockoutPoints,
-        correct_predictions: correctPredictionsCount,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id,room_id' }
+    scoreUpdates.push(
+      Promise.resolve(
+        admin.from('scores').upsert(
+          {
+            user_id: member.user_id,
+            room_id: roomId,
+            total_points: totalPoints,
+            group_points: groupPoints,
+            knockout_points: knockoutPoints,
+            correct_predictions: correctPredictionsCount,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id,room_id' }
+        )
+      ).then(() => ({ error: null }))
     )
   }
+
+  await Promise.all(scoreUpdates)
 }

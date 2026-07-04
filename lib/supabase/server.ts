@@ -28,12 +28,12 @@ export async function createClient() {
   )
 }
 
-// Singleton admin client — reused across the request lifecycle
-let _adminClient: SupabaseClient<Database> | null = null
+// Use globalThis to survive HMR in dev; in serverless each invocation gets its own scope anyway.
+const globalForAdmin = globalThis as unknown as { __supabaseAdmin?: SupabaseClient<Database> }
 
 export async function createAdminClient() {
-  if (!_adminClient) {
-    _adminClient = createBaseClient<Database>(
+  if (!globalForAdmin.__supabaseAdmin) {
+    globalForAdmin.__supabaseAdmin = createBaseClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
@@ -44,5 +44,5 @@ export async function createAdminClient() {
       }
     )
   }
-  return _adminClient
+  return globalForAdmin.__supabaseAdmin
 }

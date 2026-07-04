@@ -5,11 +5,10 @@ import { Trophy, Users, BarChart2, MapPin, Calendar, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { TeamFlag } from '@/components/ui/TeamFlag'
 import { KnockoutBracket } from '@/components/dashboard/KnockoutBracket'
-import { TEAMS, GROUP_LETTERS as GL } from '@/lib/constants/teams'
+import { TEAMS, TEAMS_BY_ID, GROUP_LETTERS as GL } from '@/lib/constants/teams'
 import type { TeamData } from '@/lib/constants/teams'
 import type { GroupLetter } from '@/types/database'
 
-const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
 const GROUP_LETTERS: GroupLetter[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
 
 // ─── Types ───────────────────────────────────────────────────────────

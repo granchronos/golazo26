@@ -4,13 +4,11 @@ import { useState } from 'react'
 import { GitCompareArrows } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { TeamFlag } from '@/components/ui/TeamFlag'
-import { TEAMS, GROUP_LETTERS } from '@/lib/constants/teams'
+import { TEAMS, TEAMS_BY_ID, GROUP_LETTERS } from '@/lib/constants/teams'
 import { BRACKET_ROUNDS, ALL_BRACKET_MATCHES } from '@/lib/constants/bracket'
 import type { SlotSource } from '@/lib/constants/bracket'
 import type { TeamData } from '@/lib/constants/teams'
 import type { GroupLetter, GroupPrediction } from '@/types/database'
-
-const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
 
 // Resolve which team a person has at each slot based on their group + knockout predictions
 function resolveSlot(

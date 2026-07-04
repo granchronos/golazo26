@@ -5,8 +5,7 @@ import { createPortal } from 'react-dom'
 import { X, Check } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import type { TeamData } from '@/lib/constants/teams'
-import { TEAMS } from '@/lib/constants/teams'
-const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
+import { TEAMS, TEAMS_BY_ID } from '@/lib/constants/teams'
 import { ROUND_LABELS, ROUND_POINTS, SIGN_POINTS, TEAM_BET_POINTS } from '@/lib/constants/points'
 import type { Match } from '@/types/database'
 

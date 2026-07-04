@@ -4,10 +4,8 @@ import { useMemo } from 'react'
 import { Trophy, Medal, Award, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { TeamFlag } from '@/components/ui/TeamFlag'
-import { TEAMS } from '@/lib/constants/teams'
+import { TEAMS, TEAMS_BY_ID } from '@/lib/constants/teams'
 import type { TeamData } from '@/lib/constants/teams'
-
-const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
 
 interface BetSummaryProps {
   knockoutPredictions: Record<number, string>
