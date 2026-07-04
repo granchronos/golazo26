@@ -514,6 +514,8 @@ function MatchRow({
   const [isResultSaving, startResultSaving] = useTransition()
 
   // Sync admin editor states from match data when editing opens
+  // Intentionally only depends on isAdminEditing — we want to sync once on open,
+  // not re-sync every time match data changes (which would overwrite unsaved edits)
   useEffect(() => {
     if (isAdminEditing) {
       setActualHomeScore(match.home_score?.toString() ?? '')
@@ -523,6 +525,7 @@ function MatchRow({
       setActualAwayPen(match.away_penalty_score?.toString() ?? '')
       setActualStatus(match.status)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdminEditing])
 
   useEffect(() => {
