@@ -110,8 +110,6 @@ export function ResultsTab({
   )
 
   const roundOrder = [
-    'group',
-    'round_of_32',
     'round_of_16',
     'quarter_finals',
     'semi_finals',
@@ -120,8 +118,6 @@ export function ResultsTab({
   ] as const
   const matchesByRound = useMemo(() => {
     const rounds: MatchRound[] = [
-      'group',
-      'round_of_32',
       'round_of_16',
       'quarter_finals',
       'semi_finals',
