@@ -296,11 +296,11 @@ export function GroupRoom({
 
   const router = useRouter()
 
-  // Auto refresh room data every minute to fetch new members/scores
+  // Auto refresh room data every 2 minutes to fetch new members/scores
   useEffect(() => {
     const interval = setInterval(() => {
       router.refresh()
-    }, 60000)
+    }, 120000)
     return () => clearInterval(interval)
   }, [router])
 

@@ -33,9 +33,8 @@ export function DashboardAlerts({
       if (!deadline) continue
       const deadlineMs = deadline.getTime()
 
-      // Only show if within alert window (7 days before or 1 day after deadline)
+      // Show if within 7 days or past deadline with missing picks (no expiry limit)
       if (deadlineMs > now + 7 * 24 * 60 * 60 * 1000) continue
-      if (now - deadlineMs > 24 * 60 * 60 * 1000) continue
 
       // Count missing bracket picks
       const missingBracket = round.matches.filter(
@@ -56,7 +55,8 @@ export function DashboardAlerts({
 
       const diff = deadlineMs - now
       let urgency: 'critical' | 'warning' | 'info' = 'info'
-      if (diff < 60 * 60 * 1000 || diff < 0) urgency = 'critical'
+      if (diff < 0) urgency = 'critical'
+      else if (diff < 60 * 60 * 1000) urgency = 'critical'
       else if (diff < 6 * 60 * 60 * 1000) urgency = 'warning'
 
       result.push({ roundId: round.id, label: round.label, missing, urgency })

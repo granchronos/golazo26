@@ -17,6 +17,7 @@ import {
 } from '@/app/actions/predictions'
 import type { Match, MatchRound, GroupLetter, GroupPrediction } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
+import { PointsBreakdown } from '@/components/predictions/PointsBreakdown'
 
 const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
 
@@ -804,8 +805,15 @@ function MatchRow({
             </span>
           )}
 
-          {/* Points badge (new system) */}
-          {matchPoints && <PointsBadge points={matchPoints} />}
+          {/* Points badge with breakdown (new system) */}
+          {matchPoints && (
+            <PointsBreakdown
+              match={match}
+              matchPoints={matchPoints}
+              savedScore={savedScore}
+              knockoutPrediction={knockoutPrediction}
+            />
+          )}
 
           {/* Knockout prediction indicator (only when no score prediction) */}
           {knockoutPrediction && !savedScore && (
@@ -1022,30 +1030,6 @@ function MatchRow({
       )}
     </div>
     </>
-  )
-}
-
-// ─── Points Badge (new scoring system) ─────────────────────────────────
-
-function PointsBadge({ points }: { points: { signPoints: number; extraPoints: number; total: number } }) {
-  if (points.total === 0) {
-    return (
-      <div className="flex items-center gap-0.5">
-        <X size={9} className="text-[#E61D25]" />
-        <span className="text-[9px] font-mono text-[#E61D25]">0 pts</span>
-      </div>
-    )
-  }
-
-  const color = points.total >= 5 ? '#3CAC3B' : points.total >= 3 ? '#C9A84C' : '#2A398D'
-
-  return (
-    <div className="flex items-center gap-0.5">
-      <Check size={9} style={{ color }} />
-      <span className="text-[9px] font-mono font-bold" style={{ color }}>
-        +{points.total} pts
-      </span>
-    </div>
   )
 }
 

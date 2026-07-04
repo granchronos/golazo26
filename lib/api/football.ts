@@ -71,10 +71,14 @@ async function apiFetch<T>(endpoint: string, retries = 3, delayMs = 1000): Promi
     }
 
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 8000)
       const res = await fetch(url, {
         headers: { 'X-Auth-Token': apiKey },
         cache: 'no-store',
+        signal: controller.signal,
       })
+      clearTimeout(timeoutId)
 
       // 2) Parse headers to update local rate limit tracker (X-RequestsAvailable or X-Requests-Available-Minute)
       const reqAvailable = res.headers.get('X-RequestsAvailable') || res.headers.get('X-Requests-Available-Minute')

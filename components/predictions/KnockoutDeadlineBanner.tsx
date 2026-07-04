@@ -74,9 +74,8 @@ export function KnockoutDeadlineBanner({
 
       const deadlineMs = startDate.getTime()
       const isFuture = deadlineMs > currentNow
-      // Show if upcoming OR if it passed within the last 24h (urgent)
-      const isRecentlyExpired = deadlineMs <= currentNow && currentNow - deadlineMs < 24 * 60 * 60 * 1000
-      if (!isFuture && !isRecentlyExpired) return null
+      // Show all rounds that have missing picks, regardless of how old the deadline is
+      // Expired rounds are shown as "VENCIDA" instead of hidden
 
       // Count missing bracket picks
       const pickedCount = round.matches.filter((m) => existingKnockoutPredictions[m.matchNumber]).length
@@ -239,16 +238,24 @@ export function KnockoutDeadlineBanner({
 
                   <div className={cn(
                     'flex items-center gap-1.5 font-mono text-xs px-2.5 py-1 rounded-md self-start shrink-0 border',
-                    urgency === 'critical'
-                      ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/30'
-                      : urgency === 'warning'
-                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/30'
-                        : 'bg-white dark:bg-black/20 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10'
+                    isExpired
+                      ? 'bg-gray-100 dark:bg-gray-800/30 text-red-500 dark:text-red-400 border-gray-200 dark:border-gray-700/30'
+                      : urgency === 'critical'
+                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/30'
+                        : urgency === 'warning'
+                          ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/30'
+                          : 'bg-white dark:bg-black/20 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10'
                   )}>
-                    <Clock size={12} className={urgency === 'critical' ? 'text-red-500' : urgency === 'warning' ? 'text-amber-500' : ''} />
-                    {countdown.days > 0 && <span>{countdown.days}d</span>}
-                    <span>{String(countdown.hours).padStart(2, '0')}h</span>
-                    <span>{String(countdown.minutes).padStart(2, '0')}m</span>
+                    {isExpired ? (
+                      <span className="text-[10px] font-bold">VENCIDA</span>
+                    ) : (
+                      <>
+                        <Clock size={12} className={urgency === 'critical' ? 'text-red-500' : urgency === 'warning' ? 'text-amber-500' : ''} />
+                        {countdown.days > 0 && <span>{countdown.days}d</span>}
+                        <span>{String(countdown.hours).padStart(2, '0')}h</span>
+                        <span>{String(countdown.minutes).padStart(2, '0')}m</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
