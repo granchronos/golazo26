@@ -75,32 +75,41 @@ export function KnockoutDeadlineBanner({
       const deadlineMs = startDate.getTime()
       const isFuture = deadlineMs > currentNow
       // Show all rounds that have missing picks, regardless of how old the deadline is
-      // Expired rounds are shown as "VENCIDA" instead of hidden
 
-      // Count missing bracket picks
-      const pickedCount = round.matches.filter((m) => existingKnockoutPredictions[m.matchNumber]).length
-      const totalCount = round.matches.length
-      const missingBracket = totalCount - pickedCount
-
-      // Count missing score predictions
+      // Only count matches whose teams are confirmed (not TBD)
       const roundMatchNumbers = new Set(round.matches.map(m => m.matchNumber))
-      const upcomingRoundMatches = upcomingMatches.filter(
+      const roundUpcomingMatches = upcomingMatches.filter(
         m => roundMatchNumbers.has(m.match_number)
       )
-      const missingScores = upcomingRoundMatches.filter(m => {
+      const confirmedMatches = roundUpcomingMatches.filter(
+        m => m.home_team_id && m.away_team_id
+      )
+      const confirmedMatchNumbers = new Set(confirmedMatches.map(m => m.match_number))
+
+      // Count missing bracket picks (only for confirmed matches)
+      const bracketMatchNumbers = round.matches
+        .filter(m => confirmedMatchNumbers.has(m.matchNumber))
+        .map(m => m.matchNumber)
+      const pickedCount = bracketMatchNumbers.filter(
+        mn => existingKnockoutPredictions[mn]
+      ).length
+      const missingBracket = bracketMatchNumbers.length - pickedCount
+
+      // Count missing score predictions (only for confirmed matches)
+      const missingScores = confirmedMatches.filter(m => {
         const pred = scorePredictions[m.match_number]
         return !pred || pred.home == null || pred.away == null
       }).length
 
-      // Build detailed missing match list
+      // Build detailed missing match list (only for confirmed matches)
       const missingMatches: RoundStatus['missingMatches'] = []
-      for (const m of round.matches) {
-        const bracketMissing = !existingKnockoutPredictions[m.matchNumber]
-        if (bracketMissing) {
-          missingMatches.push({ matchNumber: m.matchNumber, matchDate: m.matchDate, type: 'bracket' })
+      for (const mn of bracketMatchNumbers) {
+        if (!existingKnockoutPredictions[mn]) {
+          const bm = round.matches.find(m => m.matchNumber === mn)
+          if (bm) missingMatches.push({ matchNumber: mn, matchDate: bm.matchDate, type: 'bracket' })
         }
       }
-      for (const m of upcomingRoundMatches) {
+      for (const m of confirmedMatches) {
         const pred = scorePredictions[m.match_number]
         const scoreMissing = !pred || pred.home == null || pred.away == null
         if (scoreMissing) {
@@ -118,7 +127,7 @@ export function KnockoutDeadlineBanner({
         label: round.label,
         missingBracket,
         missingScores,
-        totalCount: totalCount + upcomingRoundMatches.length,
+        totalCount: confirmedMatches.length,
         startDate,
         timeLabels: ROUND_START_LABELS[round.id],
         missingMatches,

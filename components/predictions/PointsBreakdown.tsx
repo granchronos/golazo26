@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Check } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import type { TeamData } from '@/lib/constants/teams'
@@ -18,14 +19,15 @@ interface PointsBreakdownProps {
 
 export function PointsBreakdown({ match, matchPoints, savedScore, knockoutPrediction }: PointsBreakdownProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({})
+  const badgeRef = useRef<HTMLDivElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!isOpen) return
     const handleClickOutside = (e: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
-          ref.current && !ref.current.contains(e.target as Node)) {
+          badgeRef.current && !badgeRef.current.contains(e.target as Node)) {
         setIsOpen(false)
       }
     }
@@ -62,11 +64,116 @@ export function PointsBreakdown({ match, matchPoints, savedScore, knockoutPredic
 
   if (totalPoints === 0) return null
 
+  const handleToggle = () => {
+    if (!isOpen && badgeRef.current) {
+      const rect = badgeRef.current.getBoundingClientRect()
+      const popoverW = 288
+      const popoverH = 240
+      const gap = 4
+      const viewW = window.innerWidth
+      const viewH = window.innerHeight
+
+      // Horizontal: prefer right-aligned, but clamp to viewport
+      let left = rect.right - popoverW
+      if (left < 8) left = 8
+      if (left + popoverW > viewW - 8) left = viewW - popoverW - 8
+
+      // Vertical: prefer below, else above, else center
+      const spaceBelow = viewH - rect.bottom
+      const spaceAbove = rect.top
+      let top: number
+      let origin: string
+
+      if (spaceBelow >= popoverH + gap) {
+        top = rect.bottom + gap
+        origin = 'top right'
+      } else if (spaceAbove >= popoverH + gap) {
+        top = rect.top - popoverH - gap
+        origin = 'bottom right'
+      } else {
+        top = (viewH - popoverH) / 2
+        origin = 'center right'
+      }
+
+      setPopoverStyle({
+        position: 'fixed',
+        top: Math.max(8, Math.min(top, viewH - popoverH - 8)),
+        left,
+        zIndex: 9999,
+      })
+    }
+    setIsOpen(!isOpen)
+  }
+
+  const popoverContent = (
+    <div className="w-72 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 dark:border-zinc-800">
+        <span className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+          Detalle de Puntos
+        </span>
+        <button
+          onClick={() => setIsOpen(false)}
+          className="p-0.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded transition-colors"
+        >
+          <X size={12} className="text-gray-400" />
+        </button>
+      </div>
+
+      <div className="px-3 py-2.5 space-y-2.5">
+        {/* Match info */}
+        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+          <span className="font-semibold text-gray-800 dark:text-gray-200">
+            {homeTeam?.name ?? '?'} {match.home_score ?? '-'}-{match.away_score ?? '-'} {awayTeam?.name ?? '?'}
+          </span>
+        </div>
+        <div className="text-[10px] text-gray-400 font-mono -mt-2">
+          {roundLabel} · Partido #{match.match_number}
+        </div>
+
+        {/* User's score prediction */}
+        {savedScore && (
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="text-gray-500">Tu pronóstico:</span>
+            <span className="font-mono font-semibold text-gray-800 dark:text-gray-200">
+              {savedScore.home}-{savedScore.away}
+            </span>
+          </div>
+        )}
+
+        {/* Breakdown */}
+        <div className="space-y-1.5 pt-1.5 border-t border-gray-100 dark:border-zinc-800">
+          {items.map((item) => (
+            <div key={item.label} className="flex items-center justify-between text-xs">
+              <span className="text-gray-600 dark:text-gray-400">{item.label}</span>
+              <span className={cn(
+                'font-mono font-bold',
+                item.positive ? 'text-[#3CAC3B]' : 'text-[#E61D25]'
+              )}>
+                {item.positive ? `+${item.pts}` : `${item.pts}`} pts
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Total */}
+        <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-100 dark:border-zinc-800">
+          <span className="font-bold text-gray-900 dark:text-white">TOTAL</span>
+          <span className={cn(
+            'font-mono font-bold',
+            totalPoints > 0 ? 'text-[#3CAC3B]' : 'text-[#E61D25]'
+          )}>
+            {totalPoints > 0 ? `+${totalPoints}` : '0'} pts
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="relative inline-flex">
+    <div className="inline-flex">
       <div
-        ref={ref}
-        onClick={() => setIsOpen(!isOpen)}
+        ref={badgeRef}
+        onClick={handleToggle}
         className={cn(
           'cursor-pointer select-none',
           totalPoints > 0 ? 'hover:opacity-80' : ''
@@ -87,74 +194,14 @@ export function PointsBreakdown({ match, matchPoints, savedScore, knockoutPredic
         </div>
       </div>
 
-      {isOpen && (
+      {isOpen && typeof window !== 'undefined' && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div
-            ref={popoverRef}
-            className="absolute z-50 top-full mt-2 right-0 w-64 sm:w-72 bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-gray-200 dark:border-zinc-700 overflow-hidden"
-          >
-            <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 dark:border-zinc-800">
-              <span className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                Detalle de Puntos
-              </span>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-0.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded transition-colors"
-              >
-                <X size={12} className="text-gray-400" />
-              </button>
-            </div>
-
-            <div className="px-3 py-2.5 space-y-2.5">
-              {/* Match info */}
-              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                <span className="font-semibold text-gray-800 dark:text-gray-200">
-                  {homeTeam?.name ?? '?'} {match.home_score ?? '-'}-{match.away_score ?? '-'} {awayTeam?.name ?? '?'}
-                </span>
-              </div>
-              <div className="text-[10px] text-gray-400 font-mono -mt-2">
-                {roundLabel} · Partido #{match.match_number}
-              </div>
-
-              {/* User's score prediction */}
-              {savedScore && (
-                <div className="flex items-center gap-1.5 text-[11px]">
-                  <span className="text-gray-500">Tu pronóstico:</span>
-                  <span className="font-mono font-semibold text-gray-800 dark:text-gray-200">
-                    {savedScore.home}-{savedScore.away}
-                  </span>
-                </div>
-              )}
-
-              {/* Breakdown */}
-              <div className="space-y-1.5 pt-1.5 border-t border-gray-100 dark:border-zinc-800">
-                {items.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600 dark:text-gray-400">{item.label}</span>
-                    <span className={cn(
-                      'font-mono font-bold',
-                      item.positive ? 'text-[#3CAC3B]' : 'text-[#E61D25]'
-                    )}>
-                      {item.positive ? `+${item.pts}` : `${item.pts}`} pts
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Total */}
-              <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-100 dark:border-zinc-800">
-                <span className="font-bold text-gray-900 dark:text-white">TOTAL</span>
-                <span className={cn(
-                  'font-mono font-bold',
-                  totalPoints > 0 ? 'text-[#3CAC3B]' : 'text-[#E61D25]'
-                )}>
-                  {totalPoints > 0 ? `+${totalPoints}` : '0'} pts
-                </span>
-              </div>
-            </div>
+          <div className="fixed inset-0 z-[9998]" onClick={() => setIsOpen(false)} />
+          <div ref={popoverRef} style={popoverStyle}>
+            {popoverContent}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   )

@@ -12,7 +12,7 @@ interface DashboardAlertsProps {
   roomName: string
   existingKnockoutPredictions: Record<number, string>
   scorePredictions: Record<number, { home: number; away: number } | { home: number | null; away: number | null }>
-  matches: Array<{ match_number: number; match_date: string; round: string; status: string }>
+  matches: Array<{ match_number: number; match_date: string; round: string; status: string; home_team_id: string | null; away_team_id: string | null }>
 }
 
 export function DashboardAlerts({
@@ -36,15 +36,24 @@ export function DashboardAlerts({
       // Show if within 7 days or past deadline with missing picks (no expiry limit)
       if (deadlineMs > now + 7 * 24 * 60 * 60 * 1000) continue
 
-      // Count missing bracket picks
-      const missingBracket = round.matches.filter(
-        (m) => !existingKnockoutPredictions[m.matchNumber]
+      // Only count matches whose teams are confirmed (not TBD)
+      const roundMatchNumbers = new Set(round.matches.map(m => m.matchNumber))
+      const confirmedMatches = matches.filter(
+        m => roundMatchNumbers.has(m.match_number) && m.home_team_id && m.away_team_id
+      )
+      const confirmedNumbers = new Set(confirmedMatches.map(m => m.match_number))
+
+      // Count missing bracket picks (only for confirmed matches)
+      const bracketMatchNumbers = round.matches
+        .filter(m => confirmedNumbers.has(m.matchNumber))
+        .map(m => m.matchNumber)
+      const missingBracket = bracketMatchNumbers.filter(
+        mn => !existingKnockoutPredictions[mn]
       ).length
 
-      // Count missing score predictions
-      const roundMatchNumbers = new Set(round.matches.map(m => m.matchNumber))
-      const missingScores = matches
-        .filter(m => roundMatchNumbers.has(m.match_number) && m.status !== 'finished')
+      // Count missing score predictions (only for confirmed matches)
+      const missingScores = confirmedMatches
+        .filter(m => m.status !== 'finished')
         .filter(m => {
           const pred = scorePredictions[m.match_number]
           return !pred || pred.home == null || pred.away == null
