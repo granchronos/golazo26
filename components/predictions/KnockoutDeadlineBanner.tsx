@@ -16,6 +16,8 @@ const ROUND_START_LABELS: Record<string, { date: string; spain: string; peru: st
 
 interface KnockoutDeadlineBannerProps {
   existingKnockoutPredictions: Record<number, string>
+  scorePredictions: Record<number, { home: number; away: number } | { home: number | null; away: number | null }>
+  upcomingMatches: Array<{ match_number: number; match_date: string; home_team_id: string | null; away_team_id: string | null; round: string }>
   isReadOnly?: boolean
 }
 
@@ -30,6 +32,8 @@ interface RoundStatus {
 
 export function KnockoutDeadlineBanner({
   existingKnockoutPredictions,
+  scorePredictions,
+  upcomingMatches,
   isReadOnly = false,
 }: KnockoutDeadlineBannerProps) {
   const [dismissedRounds, setDismissedRounds] = useState<Record<string, boolean>>({})
@@ -77,22 +81,34 @@ export function KnockoutDeadlineBanner({
 
       if (dismissedRounds[round.id]) return null // User dismissed
 
+      // Count missing bracket picks
       const pickedCount = round.matches.filter((m) => existingKnockoutPredictions[m.matchNumber]).length
       const totalCount = round.matches.length
-      const missingCount = totalCount - pickedCount
+      const missingBracket = totalCount - pickedCount
 
+      // Count missing score predictions for upcoming matches in this round
+      const roundMatchNumbers = new Set(round.matches.map(m => m.matchNumber))
+      const upcomingRoundMatches = upcomingMatches.filter(
+        m => roundMatchNumbers.has(m.match_number) && new Date(m.match_date).getTime() > currentNow
+      )
+      const missingScores = upcomingRoundMatches.filter(m => {
+        const pred = scorePredictions[m.match_number]
+        return !pred || pred.home == null || pred.away == null
+      }).length
+
+      const missingCount = missingBracket + missingScores
       if (missingCount === 0) return null // All filled
 
       return {
         id: round.id,
         label: round.label,
         missingCount,
-        totalCount,
+        totalCount: totalCount + upcomingRoundMatches.length,
         startDate,
         timeLabels: ROUND_START_LABELS[round.id],
       }
     }).filter(Boolean) as RoundStatus[]
-  }, [existingKnockoutPredictions, isReadOnly, now, dismissedRounds, isTemporarilyClosed])
+  }, [existingKnockoutPredictions, scorePredictions, upcomingMatches, isReadOnly, now, dismissedRounds, isTemporarilyClosed])
 
   if (statuses.length === 0) return null
 
@@ -102,7 +118,7 @@ export function KnockoutDeadlineBanner({
         <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 p-3 rounded-lg border border-blue-100 dark:border-blue-500/20">
           <Info size={20} className="shrink-0" />
           <p className="text-sm font-medium">
-            Tienes predicciones pendientes para las próximas fases eliminatorias.
+            Tienes predicciones pendientes para las próximas fases. ¡No olvides poner el marcador de cada partido!
           </p>
         </div>
 

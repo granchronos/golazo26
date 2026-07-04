@@ -708,7 +708,11 @@ function MatchRow({
                 <span>{match.away_score}</span>
               </div>
               <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                FINALIZADO
+                {match.tie_breaker === 'home_et' || match.tie_breaker === 'away_et'
+                  ? 'FINALIZADO (TE)'
+                  : match.tie_breaker === 'penalties'
+                    ? 'FINALIZADO (PEN)'
+                    : 'FINALIZADO'}
               </span>
             </>
           ) : isLive ? (

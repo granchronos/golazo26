@@ -581,14 +581,15 @@ export async function recalculateRoomScores(roomId: string) {
             }
           }
 
-          // 2.2 Tie-breaker predictions
-          if (match.home_score != null && match.home_score === match.away_score && match.tie_breaker) {
+          // 2.2 Tie-breaker predictions (ET or penalties)
+          if (match.tie_breaker && match.winner_id) {
             if (pred && pred.predicted_tie_breaker === match.tie_breaker) {
               knockoutPoints += POINTS_SYSTEM.tieBreaker || 3
-              
+
+              // Bonus: approximate penalty shootout score
               if (
-                match.tie_breaker === 'penalties' && 
-                pred.predicted_home_penalty_score != null && 
+                match.tie_breaker === 'penalties' &&
+                pred.predicted_home_penalty_score != null &&
                 pred.predicted_away_penalty_score != null &&
                 match.home_penalty_score != null &&
                 match.away_penalty_score != null

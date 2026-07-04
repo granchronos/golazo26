@@ -631,6 +631,8 @@ export function GroupRoom({
       {/* Global Knockout Banner */}
       <KnockoutDeadlineBanner
         existingKnockoutPredictions={activeKnockoutPredictions}
+        scorePredictions={activeScorePredictions}
+        upcomingMatches={matches.filter(m => m.round !== 'group' && m.status === 'scheduled')}
         isReadOnly={isViewingOther}
       />
 

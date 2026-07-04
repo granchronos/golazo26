@@ -11,6 +11,7 @@ import {
 } from '@/lib/api/football'
 import { recalculateAllScores } from '@/app/actions/predictions'
 import { getOddsForTeams } from '@/lib/constants/teams'
+import type { TieBreaker } from '@/types/database'
 
 // Comprehensive English to DB ID team name mapping
 const TEAM_NAME_MAP: Record<string, string> = {
@@ -125,7 +126,7 @@ export async function GET(request: Request) {
     const { data: dbMatches, error: dbError } = await admin
       .from('matches')
       .select(
-        'id, round, match_number, home_team_id, away_team_id, status, home_score, away_score, events, match_date, odds, elapsed, home_penalty_score, away_penalty_score'
+        'id, round, match_number, home_team_id, away_team_id, status, home_score, away_score, events, match_date, odds, elapsed, home_penalty_score, away_penalty_score, tie_breaker'
       )
 
     if (dbError || !dbMatches) {
@@ -233,6 +234,19 @@ export async function GET(request: Request) {
         const homePenaltyScore = apiMatch.homePenaltyScore ?? null
         const awayPenaltyScore = apiMatch.awayPenaltyScore ?? null
 
+        // Derive tie_breaker from API's scoreDuration
+        let tieBreaker: TieBreaker | null = null
+        if (apiStatus === 'finished' && apiMatch.scoreDuration) {
+          if (apiMatch.scoreDuration === 'PENALTY_SHOOTOUT') {
+            tieBreaker = 'penalties'
+          } else if (apiMatch.scoreDuration === 'EXTRA_TIME') {
+            // Winner in ET
+            if (apiMatch.homeWinner) tieBreaker = 'home_et'
+            else if (apiMatch.awayWinner) tieBreaker = 'away_et'
+          }
+          // REGULAR → null (no tie breaker needed)
+        }
+
         // Let's determine the winner ID
         let winnerId: string | null = null
         if (apiStatus === 'finished') {
@@ -299,6 +313,7 @@ export async function GET(request: Request) {
           matchedDb.away_score !== awayScore ||
           matchedDb.home_penalty_score !== homePenaltyScore ||
           matchedDb.away_penalty_score !== awayPenaltyScore ||
+          (matchedDb as any).tie_breaker !== tieBreaker ||
           teamsChanged ||
           fetchedEvents ||
           (apiStatus === 'scheduled' && matchedDb.events !== null) ||
@@ -322,6 +337,7 @@ export async function GET(request: Request) {
               elapsed: apiMatch.elapsed,
               home_penalty_score: homePenaltyScore,
               away_penalty_score: awayPenaltyScore,
+              tie_breaker: tieBreaker,
             })
             .eq('id', matchedDb.id)
 
