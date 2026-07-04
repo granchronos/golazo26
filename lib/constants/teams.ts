@@ -676,11 +676,15 @@ export function getOddsForTeams(homeId: string, awayId: string): string {
   pDraw = Math.max(0.05, Math.min(0.35, pDraw))
   pAway = Math.max(0.02, Math.min(0.95, pAway))
 
-  // Normalize
+  // Normalize (clamp sum to 1.0 to avoid floating-point drift)
   const sum = pHome + pDraw + pAway
   pHome /= sum
   pDraw /= sum
   pAway /= sum
+
+  // Fix floating-point rounding so probabilities sum to exactly 1
+  const drift = 1 - pHome - pDraw - pAway
+  pHome += drift
 
   const oHome = 1 / pHome
   const oDraw = 1 / pDraw

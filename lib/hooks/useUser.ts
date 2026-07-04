@@ -12,22 +12,24 @@ export function useUser() {
 
   useEffect(() => {
     const supabase = createClient()
+    let cancelled = false
+
+    async function fetchProfile(userId: string) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+      if (!cancelled) setProfile(data)
+    }
 
     async function getUser() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
+      if (cancelled) return
       setUser(user)
-
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .single()
-        setProfile(profile)
-      }
-
+      if (user) await fetchProfile(user.id)
       setLoading(false)
     }
 
@@ -35,21 +37,20 @@ export function useUser() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (cancelled) return
       setUser(session?.user ?? null)
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single()
-        setProfile(profile)
+        await fetchProfile(session.user.id)
       } else {
         setProfile(null)
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [])
 
   return { user, profile, loading }

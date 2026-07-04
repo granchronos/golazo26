@@ -48,18 +48,27 @@ export function isBeforeDeadline(deadline: Date): boolean {
 
 export function getMatchDeadline(matchDate: string): Date {
   const date = new Date(matchDate)
-  date.setMinutes(date.getMinutes() - 5) // 5 min before kickoff
-  return date
+  return new Date(date.getTime() - 5 * 60 * 1000) // 5 min before kickoff (no mutation)
 }
 
-export const ROUND_DEADLINES: Record<string, Date> = {
-  round_of_32: new Date('2026-06-28T20:55:00+02:00'), // 20:55 España = 13:55 Perú
-  round_of_16: new Date('2026-07-04T18:55:00+02:00'), // 18:55 España = 11:55 Perú
-  quarter_finals: new Date('2026-07-09T21:55:00+02:00'), // 21:55 España = 14:55 Perú
-  semi_finals: new Date('2026-07-14T20:55:00+02:00'), // 20:55 España = 13:55 Perú
-  third_place: new Date('2026-07-18T18:55:00+02:00'), // 18:55 España = 11:55 Perú
-  final: new Date('2026-07-19T20:55:00+02:00'), // 20:55 España = 13:55 Perú
+const ROUND_DEADLINE_ENTRIES: [string, string][] = [
+  ['round_of_32', '2026-06-28T20:55:00+02:00'],
+  ['round_of_16', '2026-07-04T18:55:00+02:00'],
+  ['quarter_finals', '2026-07-09T21:55:00+02:00'],
+  ['semi_finals', '2026-07-14T20:55:00+02:00'],
+  ['third_place', '2026-07-18T18:55:00+02:00'],
+  ['final', '2026-07-19T20:55:00+02:00'],
+]
+
+export function getRoundDeadlines(): Record<string, Date> {
+  const obj: Record<string, Date> = {}
+  for (const [key, iso] of ROUND_DEADLINE_ENTRIES) {
+    obj[key] = new Date(iso)
+  }
+  return obj
 }
+
+export const ROUND_DEADLINES: Record<string, Date> = getRoundDeadlines()
 
 export function getMatchPredictionDeadline(matchNumber: number, matchDate: string): Date {
   const matchDeadline = getMatchDeadline(matchDate)

@@ -287,7 +287,12 @@ export async function saveAgnosticPredictions(
     return { error: 'Error al verificar las predicciones actuales: ' + fetchErr.message }
   }
 
-  const updatePayload: any = {}
+  interface RoomMemberUpdate {
+    predicted_champion_id?: string | null
+    predicted_goleador?: string | null
+  }
+
+  const updatePayload: RoomMemberUpdate = {}
 
   if (isChampionOpen) {
     updatePayload.predicted_champion_id = championId || null

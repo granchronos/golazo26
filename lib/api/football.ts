@@ -36,9 +36,69 @@ export interface LiveMatch {
   scoreDuration: 'REGULAR' | 'EXTRA_TIME' | 'PENALTY_SHOOTOUT' | null
 }
 
+/** Raw shape of a match object from football-data.org v4 */
+interface ApiMatch {
+  id: number
+  utcDate: string
+  status: string
+  minute?: number | null
+  stage?: string
+  group?: string | null
+  score?: {
+    winner?: 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW' | null
+    duration?: 'REGULAR' | 'EXTRA_TIME' | 'PENALTY_SHOOTOUT'
+    fullTime?: { home: number | null; away: number | null }
+    regularTime?: { home: number | null; away: number | null }
+    penalties?: { home: number | null; away: number | null }
+  }
+  homeTeam?: {
+    id?: number | null
+    name?: string
+    shortName?: string
+    tla?: string
+    crest?: string
+  }
+  awayTeam?: {
+    id?: number | null
+    name?: string
+    shortName?: string
+    tla?: string
+    crest?: string
+  }
+  odds?: { homeWin?: number; draw?: number; awayWin?: number }
+  goals?: Array<{
+    minute?: number
+    injuryTime?: number | null
+    team?: { name?: string }
+    scorer?: { name?: string }
+    type?: string
+  }>
+  bookings?: Array<{
+    minute?: number
+    team?: { name?: string }
+    player?: { name?: string }
+    card?: string
+  }>
+}
+
+/** Raw shape of a scorer from football-data.org v4 */
+interface ApiScorer {
+  player: { id: number; name: string; nationality: string; position?: string; section?: string }
+  team: { id: number; name: string; tla?: string }
+  goals: number
+  assists?: number | null
+  penalties?: number | null
+}
+
+/** Raw shape of a trend from football-data.org */
+interface ApiTrend {
+  id: number
+  odds?: { odds_1x2?: { home?: number; draw?: number; away?: number } }
+}
+
 let globalRequestsAvailable = 10
 let globalResetTime = Date.now()
-const fetchCache = new Map<string, { data: any; expiresAt: number }>()
+const fetchCache = new Map<string, { data: unknown; expiresAt: number }>()
 const CACHE_TTL = 30 * 1000 // 30 seconds cache
 
 async function apiFetch<T>(endpoint: string, retries = 3, delayMs = 1000): Promise<T | null> {
@@ -114,10 +174,11 @@ async function apiFetch<T>(endpoint: string, retries = 3, delayMs = 1000): Promi
       })
 
       return json
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
       if (attempt < retries) {
         console.warn(
-          `[football-api] Attempt ${attempt} failed for ${endpoint} (${err.message || err}). Retrying in ${delayMs * attempt}ms...`
+          `[football-api] Attempt ${attempt} failed for ${endpoint} (${message}). Retrying in ${delayMs * attempt}ms...`
         )
         await new Promise((resolve) => setTimeout(resolve, delayMs * attempt))
       } else {
@@ -467,7 +528,7 @@ function mapApiStatusToShort(apiStatus: string): string {
   }
 }
 
-function mapFootballDataMatch(m: any): LiveMatch {
+function mapFootballDataMatch(m: ApiMatch): LiveMatch {
   const dbStatus = mapApiStatus(m.status)
   let statusShort = mapApiStatusToShort(m.status)
 
@@ -594,7 +655,7 @@ function mapFootballDataMatch(m: any): LiveMatch {
 }
 
 export async function getWorldCupFixtures(): Promise<LiveMatch[]> {
-  const data = await apiFetch<{ matches: any[] }>('/competitions/WC/matches')
+  const data = await apiFetch<{ matches: ApiMatch[] }>('/competitions/WC/matches')
   if (!data || !data.matches || data.matches.length === 0) {
     if (process.env.NODE_ENV === 'development') {
       console.log(
@@ -615,13 +676,13 @@ export async function getWorldCupFixtures(): Promise<LiveMatch[]> {
  * Uses API status filter: ?status=LIVE (pseudo-filter that combines IN_PLAY + PAUSED)
  */
 export async function getLiveWorldCupFixtures(): Promise<LiveMatch[]> {
-  const data = await apiFetch<{ matches: any[] }>('/competitions/WC/matches?status=LIVE')
+  const data = await apiFetch<{ matches: ApiMatch[] }>('/competitions/WC/matches?status=LIVE')
   if (data?.matches && data.matches.length > 0) {
     return data.matches.map(mapFootballDataMatch)
   }
 
   // Fallback: fetch all and filter to live-only
-  const allData = await apiFetch<{ matches: any[] }>('/competitions/WC/matches')
+  const allData = await apiFetch<{ matches: ApiMatch[] }>('/competitions/WC/matches')
   if (!allData?.matches) {
     return getSimulatedMatches().filter((m) => mapApiStatus(m.statusShort) === 'live')
   }
@@ -647,7 +708,7 @@ export async function getWorldCupFixturesByDate(date: string): Promise<LiveMatch
   const nextDay = new Date(dateObj.getTime() + 24 * 60 * 60 * 1000)
   const dateTo = nextDay.toISOString().split('T')[0]
 
-  const data = await apiFetch<{ matches: any[] }>(
+  const data = await apiFetch<{ matches: ApiMatch[] }>(
     `/competitions/WC/matches?dateFrom=${date}&dateTo=${dateTo}`
   )
   if (!data || !data.matches || data.matches.length === 0) {
@@ -664,16 +725,16 @@ export async function getMatchesTrends(
   dateFrom: string,
   dateTo: string
 ): Promise<Record<number, { home: number; draw: number; away: number }>> {
-  const data = await apiFetch<{ trends: any[] }>(`/trends/?dateFrom=${dateFrom}&dateTo=${dateTo}`)
+  const data = await apiFetch<{ trends: ApiTrend[] }>(`/trends/?dateFrom=${dateFrom}&dateTo=${dateTo}`)
   const oddsMap: Record<number, { home: number; draw: number; away: number }> = {}
 
   if (data && data.trends) {
-    data.trends.forEach((t: any) => {
+    data.trends.forEach((t) => {
       if (t.id && t.odds && t.odds.odds_1x2 && t.odds.odds_1x2.home !== undefined) {
         oddsMap[t.id] = {
           home: t.odds.odds_1x2.home,
-          draw: t.odds.odds_1x2.draw,
-          away: t.odds.odds_1x2.away,
+          draw: t.odds.odds_1x2.draw ?? 0,
+          away: t.odds.odds_1x2.away ?? 0,
         }
       }
     })
@@ -800,7 +861,7 @@ export async function getMatchEvents(apiFixtureId: number): Promise<any[]> {
   }
 
   // For real API matches: fetch the single match endpoint which includes goals/bookings
-  const match = await apiFetch<any>(`/matches/${apiFixtureId}`)
+  const match = await apiFetch<ApiMatch>(`/matches/${apiFixtureId}`)
   if (!match) return []
 
   const events: any[] = []
@@ -956,10 +1017,10 @@ const KNOCKOUT_STAGE_ORDER = [
  * Example return: ['LAST_32'] or ['LAST_16', 'QUARTER_FINALS']
  */
 export async function getScheduledStages(): Promise<string[]> {
-  const data = await apiFetch<{ matches: any[] }>('/competitions/WC/matches?status=SCHEDULED')
+  const data = await apiFetch<{ matches: ApiMatch[] }>('/competitions/WC/matches?status=SCHEDULED')
   if (!data?.matches || data.matches.length === 0) return []
 
-  const distinctStages = Array.from(new Set(data.matches.map((m: any) => m.stage as string)))
+  const distinctStages = Array.from(new Set(data.matches.map((m) => m.stage as string)))
   return distinctStages
     .filter((s) => (KNOCKOUT_STAGE_ORDER as readonly string[]).includes(s))
     .sort(
@@ -1001,7 +1062,7 @@ export interface ApiKnockoutMatch {
  * @param stage - e.g. 'LAST_32', 'LAST_16', 'QUARTER_FINALS', 'SEMI_FINALS', 'FINAL'
  */
 export async function getKnockoutStageMatches(stage: string): Promise<ApiKnockoutMatch[]> {
-  const data = await apiFetch<{ matches: any[] }>(
+  const data = await apiFetch<{ matches: ApiMatch[] }>(
     `/competitions/WC/matches?stage=${encodeURIComponent(stage)}`
   )
   if (!data?.matches) return []
@@ -1009,12 +1070,12 @@ export async function getKnockoutStageMatches(stage: string): Promise<ApiKnockou
 }
 
 export async function getWorldCupScorers(): Promise<Scorer[]> {
-  const data = await apiFetch<{ scorers: any[] }>('/competitions/WC/scorers?limit=50')
+  const data = await apiFetch<{ scorers: ApiScorer[] }>('/competitions/WC/scorers?limit=50')
   if (!data || !data.scorers || data.scorers.length === 0) {
     console.warn('[football-api] Scorers API returned no data, using simulated fallback')
     return getSimulatedScorers()
   }
-  return data.scorers.map((s: any) => ({
+  return data.scorers.map((s) => ({
     player: {
       id: s.player.id,
       name: s.player.name,
@@ -1053,7 +1114,22 @@ export interface ThirdPlacedTeam {
 }
 
 export async function getBestThirdPlacedTeams(): Promise<ThirdPlacedTeam[]> {
-  const data = await apiFetch<{ standings: any[] }>('/competitions/WC/standings')
+  const data = await apiFetch<{ standings: Array<{
+    type: string
+    group?: string
+    table: Array<{
+      position: number
+      team: { id: number; name: string; shortName: string; tla: string; crest: string }
+      playedGames: number
+      won: number
+      draw: number
+      lost: number
+      points: number
+      goalsFor: number
+      goalsAgainst: number
+      goalDifference: number
+    }>
+  }> }>('/competitions/WC/standings')
   if (!data?.standings) return []
 
   const thirdPlacedTeams: ThirdPlacedTeam[] = []
@@ -1064,7 +1140,7 @@ export async function getBestThirdPlacedTeams(): Promise<ThirdPlacedTeam[]> {
     if (groupStanding.type !== 'TOTAL' || !groupStanding.group) continue
 
     // Find the team at position 3
-    const thirdPlaceRow = groupStanding.table.find((row: any) => row.position === 3)
+    const thirdPlaceRow = groupStanding.table.find((row) => row.position === 3)
     if (thirdPlaceRow) {
       thirdPlacedTeams.push({
         group: groupStanding.group, // e.g., "Group A"

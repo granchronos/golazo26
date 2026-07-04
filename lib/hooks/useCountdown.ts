@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { getCountdown } from '@/lib/utils/date'
 
 export function useCountdown(targetDate: Date) {
-  // Initialize with zeros to avoid hydration mismatch (server vs client time diff)
   const [countdown, setCountdown] = useState({
     days: 0,
     hours: 0,
@@ -22,7 +21,8 @@ export function useCountdown(targetDate: Date) {
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [targetDate])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetDate.getTime()])
 
   return { ...countdown, mounted }
 }

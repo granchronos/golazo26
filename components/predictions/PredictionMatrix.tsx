@@ -42,6 +42,19 @@ type Selections = Record<GroupLetter, { first: string | null; second: string | n
 // Helper to find team by ID
 const findTeam = (id: string) => TEAMS.find((t) => t.id === id)
 
+// Module-level cache for /api/players to avoid re-fetching on remount
+let playersCache: { data: Player[]; expiresAt: number } | null = null
+const PLAYERS_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+interface Player {
+  id: string
+  name: string
+  position: string
+  teamId: string
+  teamName: string
+  flagEmoji: string
+}
+
 export function PredictionMatrix({
   roomId,
   existingPredictions,
@@ -158,17 +171,26 @@ export function PredictionMatrix({
   const [selectedGoleadorTeamId, setSelectedGoleadorTeamId] = useState<string>('')
   const goleadorComboboxRef = useRef<HTMLDivElement>(null)
 
-  // Fetch star players on mount
+  // Fetch star players on mount (with module-level cache)
   useEffect(() => {
     async function fetchStars() {
       try {
+        if (playersCache && Date.now() < playersCache.expiresAt) {
+          setStars(playersCache.data)
+          if (initialGoleador) {
+            const match = playersCache.data.find((p) => p.name === initialGoleador)
+            if (match) setSelectedGoleadorTeamId(match.teamId)
+          }
+          return
+        }
         const res = await fetch('/api/players')
         const data = await res.json()
         if (data.players) {
-          setStars(data.players)
-          // If we have an initial goleador, try to find their flag
+          const players = data.players as Player[]
+          playersCache = { data: players, expiresAt: Date.now() + PLAYERS_CACHE_TTL }
+          setStars(players)
           if (initialGoleador) {
-            const match = data.players.find((p: any) => p.name === initialGoleador)
+            const match = players.find((p) => p.name === initialGoleador)
             if (match) setSelectedGoleadorTeamId(match.teamId)
           }
         }

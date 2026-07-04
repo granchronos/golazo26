@@ -301,14 +301,16 @@ export function getMatchupData(homeId: string, awayId: string): MatchupData | nu
   return DATA[key(homeId, awayId)] ?? null
 }
 
-// Generic fallback facts based on team history
+// Generic fallback facts based on team IDs
 export function getFallbackFacts(homeId: string, awayId: string): MatchupData {
+  const homeName = homeId.toUpperCase()
+  const awayName = awayId.toUpperCase()
   return {
     wcMeetings: 0,
     facts: [
       {
-        title: 'Sin historial directo',
-        detail: 'Estos equipos no se han enfrentado antes en una Copa del Mundo.',
+        title: `${homeName} vs ${awayName}`,
+        detail: `Sin historial previo en Copa del Mundo entre ${homeName} y ${awayName}.`,
       },
     ],
   }
