@@ -101,6 +101,15 @@ function getMatchTeams(
       }
       return null
     }
+    if (source.kind === 'loser') {
+      const parentTeams = getMatchTeams(source.matchNumber, groupSelections, predictions)
+      const pickId = predictions[source.matchNumber]
+      if (pickId && parentTeams.home && parentTeams.away) {
+        const loser = pickId === parentTeams.home.id ? parentTeams.away : pickId === parentTeams.away.id ? parentTeams.home : null
+        return loser ?? null
+      }
+      return null
+    }
     if (source.kind === '3rd_pool') {
       const pickId = predictions[matchNumber]
       if (pickId) {
@@ -134,6 +143,14 @@ function resolveTeam(
     const pickId = predictions[source.matchNumber]
     if (pickId && (pickId === parentTeams.home?.id || pickId === parentTeams.away?.id)) {
       return TEAMS_BY_ID[pickId] ?? null
+    }
+    return null
+  }
+  if (source.kind === 'loser') {
+    const parentTeams = getMatchTeams(source.matchNumber, groupSelections, predictions)
+    const pickId = predictions[source.matchNumber]
+    if (pickId && parentTeams.home && parentTeams.away) {
+      return pickId === parentTeams.home.id ? parentTeams.away : parentTeams.home
     }
     return null
   }

@@ -10,6 +10,7 @@ export type SlotSource =
   | { kind: '2nd'; group: GroupLetter }
   | { kind: '3rd_pool'; groups: [GroupLetter, GroupLetter] }
   | { kind: 'winner'; matchNumber: number }
+  | { kind: 'loser'; matchNumber: number }
 
 export interface BracketSlot {
   source: SlotSource
@@ -220,6 +221,16 @@ export const SF_BRACKET: BracketMatchDef[] = [
   },
 ]
 
+// ─── Third Place ──────────────────────────────────────────────────────
+export const THIRD_PLACE_BRACKET: BracketMatchDef[] = [
+  {
+    matchNumber: 104,
+    matchDate: '2026-07-18T20:00:00Z',
+    home: { source: { kind: 'loser', matchNumber: 101 }, label: 'Perdedor P101' },
+    away: { source: { kind: 'loser', matchNumber: 102 }, label: 'Perdedor P102' },
+  },
+]
+
 // ─── Final ───────────────────────────────────────────────────────────
 export const FINAL_BRACKET: BracketMatchDef[] = [
   {
@@ -235,6 +246,7 @@ export const ALL_BRACKET_MATCHES: BracketMatchDef[] = [
   ...R16_BRACKET,
   ...QF_BRACKET,
   ...SF_BRACKET,
+  ...THIRD_PLACE_BRACKET,
   ...FINAL_BRACKET,
 ]
 
@@ -243,5 +255,6 @@ export const BRACKET_ROUNDS = [
   { id: 'round_of_16' as const, label: 'Octavos de Final', points: 15, matches: R16_BRACKET },
   { id: 'quarter_finals' as const, label: 'Cuartos de Final', points: 20, matches: QF_BRACKET },
   { id: 'semi_finals' as const, label: 'Semifinales', points: 50, matches: SF_BRACKET },
+  { id: 'third_place' as const, label: 'Tercer Lugar', points: 30, matches: THIRD_PLACE_BRACKET },
   { id: 'final' as const, label: 'Gran Final 🏆', points: 100, matches: FINAL_BRACKET },
 ]

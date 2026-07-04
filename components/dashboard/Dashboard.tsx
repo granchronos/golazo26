@@ -60,12 +60,13 @@ export function Dashboard({
     // Current phase
     let currentPhase = 'Fase de Grupos'
     if (knockoutFinished > 0) {
-      const rounds = ['round_of_32', 'round_of_16', 'quarter_finals', 'semi_finals', 'final']
+      const rounds = ['round_of_32', 'round_of_16', 'quarter_finals', 'semi_finals', 'third_place', 'final']
       const labels: Record<string, string> = {
         round_of_32: 'Ronda de 32',
         round_of_16: 'Octavos de Final',
         quarter_finals: 'Cuartos de Final',
         semi_finals: 'Semifinales',
+        third_place: 'Tercer Lugar',
         final: 'Gran Final',
       }
       for (const r of rounds.reverse()) {

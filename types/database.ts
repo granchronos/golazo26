@@ -8,6 +8,7 @@ export type MatchRound =
   | 'round_of_16'
   | 'quarter_finals'
   | 'semi_finals'
+  | 'third_place'
   | 'final'
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'postponed'
 export type TieBreaker = 'home_et' | 'away_et' | 'penalties'

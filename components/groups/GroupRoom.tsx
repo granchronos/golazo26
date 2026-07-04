@@ -56,6 +56,9 @@ interface RoomMemberWithProfile {
   user_id: string
   profile: Profile | null
   total_points: number
+  group_points: number
+  knockout_points: number
+  correct_predictions: number
   payment_status: PaymentStatus
   predicted_champion_id?: string | null
   predicted_goleador?: string | null
@@ -531,7 +534,7 @@ export function GroupRoom({
                 const progress = memberProgress[member.user_id]
                 const groupsDone = progress?.groups ?? 0
                 const knockoutDone = progress?.knockout ?? 0
-                const isComplete = groupsDone === 12 && knockoutDone >= 31
+                const isComplete = groupsDone === 12 && knockoutDone >= 32
                 return (
                   <div key={member.user_id} className="flex items-center gap-2.5 px-3 py-2.5">
                     <div
@@ -564,7 +567,7 @@ export function GroupRoom({
                         </span>
                         <span className="text-gray-300 dark:text-gray-600">·</span>
                         <span className="text-[10px] font-mono text-gray-400">
-                          Llaves {knockoutDone}/31
+                          Llaves {knockoutDone}/32
                         </span>
                       </div>
                     </div>
@@ -722,7 +725,7 @@ export function GroupRoom({
               const progress = memberProgress[member.user_id]
               const groupsDone = progress?.groups ?? 0
               const knockoutDone = progress?.knockout ?? 0
-              const isComplete = groupsDone === 12 && knockoutDone >= 31
+              const isComplete = groupsDone === 12 && knockoutDone >= 32
               const bracketChamp = allMembersPredictions.find((m) => m.userId === member.user_id)
                 ?.knockoutPredictions[103]
               const champPick = bracketChamp || member.predicted_champion_id
@@ -781,7 +784,7 @@ export function GroupRoom({
                         </span>
                       ) : (
                         <span className="text-[10px] font-body text-gray-400">
-                          {groupsDone}/12 grupos · {knockoutDone}/31 llaves
+                          {groupsDone}/12 grupos · {knockoutDone}/32 llaves
                         </span>
                       )}
                       {champPick && (
@@ -797,6 +800,24 @@ export function GroupRoom({
                       {member.total_points}
                     </span>
                     <span className="text-[10px] text-gray-400 ml-0.5">pts</span>
+                    <div className="flex items-center gap-1 mt-0.5 justify-end">
+                      {member.correct_predictions > 0 && (
+                        <span className="text-[9px] font-mono text-[#3CAC3B] bg-[#3CAC3B]/10 px-1 py-0.5 rounded flex items-center gap-0.5">
+                          <Check size={8} />
+                          {member.correct_predictions}
+                        </span>
+                      )}
+                      {member.group_points > 0 && (
+                        <span className="text-[9px] font-mono text-[#2A398D] bg-[#2A398D]/10 px-1 py-0.5 rounded">
+                          G{member.group_points}
+                        </span>
+                      )}
+                      {member.knockout_points > 0 && (
+                        <span className="text-[9px] font-mono text-[#C9A84C] bg-[#C9A84C]/10 px-1 py-0.5 rounded">
+                          K{member.knockout_points}
+                        </span>
+                      )}
+                    </div>
                     {room.pool_enabled && (
                       <div className="mt-0.5">
                         {member.payment_status === 'confirmed' ? (

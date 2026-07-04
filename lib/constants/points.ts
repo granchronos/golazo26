@@ -28,6 +28,7 @@ export const ROUND_POINTS: Record<MatchRound, number> = {
   round_of_16: 15,
   quarter_finals: 20,
   semi_finals: 50,
+  third_place: 30,
   final: 100,
 }
 
@@ -85,6 +86,7 @@ export const TEAM_BET_POINTS: Record<string, number> = {
   round_of_16: 10,      // Win R16 → team reaches QF → 10 pts
   quarter_finals: 15,   // Win QF → team reaches SF → 15 pts
   semi_finals: 25,      // Win SF → team reaches Final → 25 pts
+  third_place: 0,       // No team bet for 3rd place (no next round)
   final: 50,            // Win Final → Tournament Winner → 50 pts
 }
 
@@ -94,7 +96,8 @@ export const NEXT_ROUND: Record<string, string> = {
   round_of_16: 'quarter_finals',
   quarter_finals: 'semi_finals',
   semi_finals: 'final',
-  final: 'winner',  // special: tournament winner
+  third_place: 'winner',  // special: winner of 3rd place match
+  final: 'winner',        // special: tournament winner
 }
 
 // ── Legacy exports (kept for compatibility) ──────────────────────────
@@ -119,6 +122,7 @@ export const ROUND_LABELS: Record<MatchRound, string> = {
   round_of_16: 'Octavos de Final',
   quarter_finals: 'Cuartos de Final',
   semi_finals: 'Semifinales',
+  third_place: 'Tercer Lugar',
   final: 'Gran Final',
 }
 

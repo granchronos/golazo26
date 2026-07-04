@@ -38,15 +38,15 @@ export function ProgressSidebar({
     return { completed, count }
   }, [groupPredictions])
 
-  // Cap knockout at 31 max (there are only 31 knockout matches)
+  // Cap knockout at 32 max (R32 + R16 + QF + SF + 3rd Place + Final)
   const knockoutRaw = Object.keys(knockoutPredictions).length
-  const knockoutCount = Math.min(knockoutRaw, 31)
+  const knockoutCount = Math.min(knockoutRaw, 32)
 
   const isChampionComplete = !!predictedChampionId
   const isGoleadorComplete = !!predictedGoleador && predictedGoleador.trim().length > 0
 
-  // Total Progress: 12 groups + 31 knockout matches + 1 champion + 1 goleador = 45 total predictions
-  const totalItems = 45
+  // Total Progress: 12 groups + 32 knockout matches + 1 champion + 1 goleador = 46 total predictions
+  const totalItems = 46
   const completedItems = Math.min(
     groupStats.count + knockoutCount + (isChampionComplete ? 1 : 0) + (isGoleadorComplete ? 1 : 0),
     totalItems
@@ -161,26 +161,26 @@ export function ProgressSidebar({
                     <Layers size={12} className="text-[#2A398D]" /> Bracket
                   </span>
                   <span
-                    className={cn(
-                      'font-mono',
-                      knockoutCount >= 31 ? 'text-emerald-500' : 'text-gray-400'
-                    )}
-                  >
-                    {knockoutCount}/31
+                      className={cn(
+                          'font-mono',
+                          knockoutCount >= 32 ? 'text-emerald-500' : 'text-gray-400'
+                      )}
+                    >
+                      {knockoutCount}/32
                   </span>
                 </div>
                 <div className="h-1.5 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
                   <div
-                    className={cn(
-                      'h-full rounded-full transition-all duration-500',
-                      knockoutCount >= 31 ? 'bg-emerald-400' : 'bg-[#2A398D]'
-                    )}
-                    style={{ width: `${Math.min(Math.round((knockoutCount / 31) * 100), 100)}%` }}
+                      className={cn(
+                          'h-full rounded-full transition-all duration-500',
+                          knockoutCount >= 32 ? 'bg-emerald-400' : 'bg-[#2A398D]'
+                      )}
+                      style={{ width: `${Math.min(Math.round((knockoutCount / 32) * 100), 100)}%` }}
                   />
                 </div>
-                <p className="text-[10px] text-gray-400 font-body leading-tight">
-                  32avos hasta la Gran Final
-                </p>
+                  <p className="text-[10px] text-gray-400 font-body leading-tight">
+                   32avos hasta el Tercer Lugar
+                 </p>
               </div>
 
               {/* Special Picks */}

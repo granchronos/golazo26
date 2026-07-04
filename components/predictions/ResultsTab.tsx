@@ -15,7 +15,7 @@ import {
   saveMatchResult,
   saveActualGoleador,
 } from '@/app/actions/predictions'
-import type { Match, GroupLetter, GroupPrediction } from '@/types/database'
+import type { Match, MatchRound, GroupLetter, GroupPrediction } from '@/types/database'
 import type { TeamData } from '@/lib/constants/teams'
 
 const TEAMS_BY_ID: Record<string, TeamData> = Object.fromEntries(TEAMS.map((t) => [t.id, t]))
@@ -114,17 +114,19 @@ export function ResultsTab({
     'round_of_16',
     'quarter_finals',
     'semi_finals',
+    'third_place',
     'final',
   ] as const
   const matchesByRound = useMemo(() => {
-    const rounds = [
+    const rounds: MatchRound[] = [
       'group',
       'round_of_32',
       'round_of_16',
       'quarter_finals',
       'semi_finals',
+      'third_place',
       'final',
-    ] as const
+    ]
     const map = new Map<string, Match[]>()
     for (const round of rounds) {
       map.set(round, [])
@@ -505,8 +507,23 @@ function MatchRow({
   const [isAdminEditing, setIsAdminEditing] = useState(false)
   const [actualHomeScore, setActualHomeScore] = useState(match.home_score?.toString() ?? '')
   const [actualAwayScore, setActualAwayScore] = useState(match.away_score?.toString() ?? '')
+  const [actualTieBreaker, setActualTieBreaker] = useState<string>(match.tie_breaker ?? '')
+  const [actualHomePen, setActualHomePen] = useState<string>(match.home_penalty_score?.toString() ?? '')
+  const [actualAwayPen, setActualAwayPen] = useState<string>(match.away_penalty_score?.toString() ?? '')
   const [actualStatus, setActualStatus] = useState<typeof match.status>(match.status)
   const [isResultSaving, startResultSaving] = useTransition()
+
+  // Sync admin editor states from match data when editing opens
+  useEffect(() => {
+    if (isAdminEditing) {
+      setActualHomeScore(match.home_score?.toString() ?? '')
+      setActualAwayScore(match.away_score?.toString() ?? '')
+      setActualTieBreaker(match.tie_breaker ?? '')
+      setActualHomePen(match.home_penalty_score?.toString() ?? '')
+      setActualAwayPen(match.away_penalty_score?.toString() ?? '')
+      setActualStatus(match.status)
+    }
+  }, [isAdminEditing])
 
   useEffect(() => {
     const deadline = getMatchPredictionDeadline(match.match_number, match.match_date)
@@ -619,8 +636,17 @@ function MatchRow({
       return
     }
 
+    const tb = actualTieBreaker || null
+    const hPen = actualHomePen !== '' ? parseInt(actualHomePen) : NaN
+    const aPen = actualAwayPen !== '' ? parseInt(actualAwayPen) : NaN
+
     startResultSaving(async () => {
-      const result = await saveMatchResult(match.id, roomId, h, a, actualStatus as any)
+      const result = await saveMatchResult(
+        match.id, roomId, h, a, actualStatus as any,
+        tb as any,
+        isNaN(hPen) ? null : hPen,
+        isNaN(aPen) ? null : aPen
+      )
       if (result?.error) {
         toast.error(result.error)
       } else {
@@ -936,6 +962,43 @@ function MatchRow({
               <option value="finished">Finalizado</option>
             </select>
           </div>
+
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-700 dark:text-gray-300">Desempate:</span>
+            <select
+              value={actualTieBreaker}
+              onChange={(e) => setActualTieBreaker(e.target.value)}
+              className="h-7 px-2 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
+            >
+              <option value="">Normal</option>
+              <option value="home_et">Gana Local (TE)</option>
+              <option value="away_et">Gana Visita (TE)</option>
+              <option value="penalties">Penales</option>
+            </select>
+          </div>
+
+          {actualTieBreaker === 'penalties' && (
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-gray-700 dark:text-gray-300">Penales:</span>
+              <input
+                type="number"
+                min={0}
+                value={actualHomePen}
+                onChange={(e) => setActualHomePen(e.target.value)}
+                className="w-10 h-7 text-center rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
+                placeholder="0"
+              />
+              <span className="text-gray-400">-</span>
+              <input
+                type="number"
+                min={0}
+                value={actualAwayPen}
+                onChange={(e) => setActualAwayPen(e.target.value)}
+                className="w-10 h-7 text-center rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:border-[#E61D25]"
+                placeholder="0"
+              />
+            </div>
+          )}
 
           <div className="flex items-center gap-2 ml-auto">
             <button

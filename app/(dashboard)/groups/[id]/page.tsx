@@ -71,32 +71,39 @@ export default async function GroupDetailPage({ params }: PageProps) {
     memberUserIds.length > 0
       ? admin
           .from('scores')
-          .select('user_id, total_points')
+          .select('user_id, total_points, group_points, knockout_points, correct_predictions')
           .eq('room_id', id)
           .in('user_id', memberUserIds)
-      : { data: [] as { user_id: string; total_points: number }[], error: null },
+      : { data: [] as { user_id: string; total_points: number; group_points: number; knockout_points: number; correct_predictions: number }[], error: null },
   ])
 
   const profilesMap = new Map((profiles || []).map((p) => [p.user_id, p as Profile]))
-  const scoresMap = new Map((allScores || []).map((s) => [s.user_id, s.total_points]))
+  const scoresMap = new Map((allScores || []).map((s) => [s.user_id, s]))
+  const defaultScore = { total_points: 0, group_points: 0, knockout_points: 0, correct_predictions: 0 }
 
-  const members = (rawMembers || []).map((m) => ({
-    user_id: m.user_id,
-    profile:
-      profilesMap.get(m.user_id) ??
-      ({
-        id: '',
-        user_id: m.user_id,
-        name: 'Anónimo',
-        avatar_url: null,
-        created_at: '',
-        updated_at: '',
-      } as Profile),
-    total_points: scoresMap.get(m.user_id) ?? 0,
-    payment_status: (m.payment_status as 'pending' | 'confirmed' | 'exempt') ?? 'pending',
-    predicted_champion_id: m.predicted_champion_id as string | null,
-    predicted_goleador: m.predicted_goleador as string | null,
-  }))
+  const members = (rawMembers || []).map((m) => {
+    const s = scoresMap.get(m.user_id) ?? defaultScore
+    return {
+      user_id: m.user_id,
+      profile:
+        profilesMap.get(m.user_id) ??
+        ({
+          id: '',
+          user_id: m.user_id,
+          name: 'Anónimo',
+          avatar_url: null,
+          created_at: '',
+          updated_at: '',
+        } as Profile),
+      total_points: s.total_points ?? 0,
+      group_points: s.group_points ?? 0,
+      knockout_points: s.knockout_points ?? 0,
+      correct_predictions: s.correct_predictions ?? 0,
+      payment_status: (m.payment_status as 'pending' | 'confirmed' | 'exempt') ?? 'pending',
+      predicted_champion_id: m.predicted_champion_id as string | null,
+      predicted_goleador: m.predicted_goleador as string | null,
+    }
+  })
 
   // Current user's group predictions
   const groupPredictions = GROUP_LETTERS.reduce(

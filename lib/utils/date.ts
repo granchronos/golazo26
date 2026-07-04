@@ -57,6 +57,7 @@ export const ROUND_DEADLINES: Record<string, Date> = {
   round_of_16: new Date('2026-07-04T18:55:00+02:00'), // 18:55 España = 11:55 Perú
   quarter_finals: new Date('2026-07-09T21:55:00+02:00'), // 21:55 España = 14:55 Perú
   semi_finals: new Date('2026-07-14T20:55:00+02:00'), // 20:55 España = 13:55 Perú
+  third_place: new Date('2026-07-18T18:55:00+02:00'), // 18:55 España = 11:55 Perú
   final: new Date('2026-07-19T20:55:00+02:00'), // 20:55 España = 13:55 Perú
 }
 
@@ -71,6 +72,7 @@ export function getMatchPredictionDeadline(matchNumber: number, matchDate: strin
   if (matchNumber >= 97 && matchNumber <= 100) return earlier(ROUND_DEADLINES.quarter_finals)
   if (matchNumber >= 101 && matchNumber <= 102) return earlier(ROUND_DEADLINES.semi_finals)
   if (matchNumber === 103) return earlier(ROUND_DEADLINES.final)
+  if (matchNumber === 104) return earlier(ROUND_DEADLINES.third_place)
 
   return matchDeadline
 }

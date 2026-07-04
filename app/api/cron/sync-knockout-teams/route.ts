@@ -84,12 +84,13 @@ const TLA_FALLBACK_MAP: Record<string, string> = {
   spa: 'esp',
 }
 
-// API stage → DB round (third_place is not in our schema)
+// API stage → DB round
 const STAGE_TO_DB_ROUND: Record<string, string> = {
   LAST_32: 'round_of_32',
   LAST_16: 'round_of_16',
   QUARTER_FINALS: 'quarter_finals',
   SEMI_FINALS: 'semi_finals',
+  THIRD_PLACE: 'third_place',
   FINAL: 'final',
 }
 

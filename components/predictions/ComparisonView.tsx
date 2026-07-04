@@ -28,6 +28,18 @@ function resolveSlot(
       return null
     case 'winner':
       return knockoutPreds[source.matchNumber] ?? null
+    case 'loser': {
+      const parentWinner = knockoutPreds[source.matchNumber]
+      if (!parentWinner) return null
+      const matchDef = ALL_BRACKET_MATCHES.find((m) => m.matchNumber === source.matchNumber)
+      if (!matchDef) return null
+      // Resolve both teams in the parent match and return the loser
+      const homeTeam = resolveSlot(matchDef.home.source, groupPreds, knockoutPreds)
+      const awayTeam = resolveSlot(matchDef.away.source, groupPreds, knockoutPreds)
+      if (parentWinner === homeTeam) return awayTeam
+      if (parentWinner === awayTeam) return homeTeam
+      return null
+    }
   }
 }
 

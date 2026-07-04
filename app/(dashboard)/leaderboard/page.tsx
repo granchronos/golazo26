@@ -17,6 +17,8 @@ async function getLeaderboard() {
       `
       total_points,
       correct_predictions,
+      group_points,
+      knockout_points,
       user_id,
       profiles!inner(name, avatar_url)
     `
@@ -134,11 +136,30 @@ export default async function LeaderboardPage() {
               </div>
 
               {/* Points */}
-              <div className="flex-shrink-0">
-                <span className="font-mono text-sm font-bold text-gray-700 dark:text-gray-300">
-                  {entry.total_points}
-                </span>
-                <span className="text-[10px] text-gray-400 ml-1">pts</span>
+              <div className="flex-shrink-0 text-right">
+                <div className="flex items-center gap-1">
+                  <span className="font-mono text-sm font-bold text-gray-700 dark:text-gray-300">
+                    {entry.total_points}
+                  </span>
+                  <span className="text-[10px] text-gray-400">pts</span>
+                </div>
+                <div className="flex items-center gap-1 mt-0.5 justify-end">
+                  {entry.correct_predictions > 0 && (
+                    <span className="text-[9px] font-mono text-[#3CAC3B] bg-[#3CAC3B]/10 px-1 py-0.5 rounded">
+                      ✅{entry.correct_predictions}
+                    </span>
+                  )}
+                  {entry.group_points > 0 && (
+                    <span className="text-[9px] font-mono text-[#2A398D] bg-[#2A398D]/10 px-1 py-0.5 rounded">
+                      G{entry.group_points}
+                    </span>
+                  )}
+                  {entry.knockout_points > 0 && (
+                    <span className="text-[9px] font-mono text-[#C9A84C] bg-[#C9A84C]/10 px-1 py-0.5 rounded">
+                      K{entry.knockout_points}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           )
