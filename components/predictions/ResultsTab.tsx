@@ -110,6 +110,8 @@ export function ResultsTab({
   )
 
   const roundOrder = [
+    'group',
+    'round_of_32',
     'round_of_16',
     'quarter_finals',
     'semi_finals',
@@ -118,6 +120,8 @@ export function ResultsTab({
   ] as const
   const matchesByRound = useMemo(() => {
     const rounds: MatchRound[] = [
+      'group',
+      'round_of_32',
       'round_of_16',
       'quarter_finals',
       'semi_finals',
@@ -368,8 +372,9 @@ function RoundSection({
     [allMatches.flat]
   )
 
-  // How many finished matches to hide (keep last 2 visible)
-  const hiddenFinishedCount = Math.max(0, finishedCount - 2)
+  // How many finished matches to hide (group and round_of_32 start fully collapsed)
+  const keepVisible = round === 'group' || round === 'round_of_32' ? 0 : 2
+  const hiddenFinishedCount = Math.max(0, finishedCount - keepVisible)
   const [visiblePrevious, setVisiblePrevious] = useState(0)
   const actualHidden = Math.max(0, hiddenFinishedCount - visiblePrevious)
 
