@@ -61,7 +61,7 @@ export function PointsBreakdown({ match, matchPoints, savedScore, knockoutPredic
     items.push({ label: 'Sin acierto', pts: 0, positive: false })
   }
 
-  if (totalPoints === 0) return null
+  if (totalPoints === 0 && !savedScore) return null
 
   const handleToggle = () => {
     if (!isOpen && badgeRef.current) {
