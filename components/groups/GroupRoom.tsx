@@ -88,7 +88,6 @@ type Tab = 'predictions' | 'results' | 'leaderboard' | 'comparison' | 'pool'
 
 const BASE_TABS: { id: Tab; label: string; icon: typeof Trophy }[] = [
   { id: 'results', label: 'Resultados', icon: CalendarDays },
-  { id: 'predictions', label: 'Apuestas', icon: Trophy },
   { id: 'leaderboard', label: 'Ranking', icon: BarChart2 },
   // { id: 'comparison', label: 'Comparar', icon: GitCompareArrows }, // Temporarily hidden
 ]
@@ -707,7 +706,7 @@ export function GroupRoom({
           matchedGoleadores={matchedGoleadores}
           onSelectMember={(userId) => {
             setViewingUserId(userId)
-            setActiveTab('predictions')
+            setActiveTab('results')
           }}
         />
       </div>
