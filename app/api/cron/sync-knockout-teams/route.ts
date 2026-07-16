@@ -145,6 +145,7 @@ export async function GET(request: Request) {
         'round_of_16',
         'quarter_finals',
         'semi_finals',
+        'third_place',
         'final',
       ])
 
