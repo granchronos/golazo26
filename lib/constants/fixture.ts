@@ -1,6 +1,6 @@
 export interface FixtureMatch {
   match_number: number
-  round: 'group' | 'round_of_32' | 'round_of_16' | 'quarter_finals' | 'semi_finals' | 'final'
+  round: 'group' | 'round_of_32' | 'round_of_16' | 'quarter_finals' | 'semi_finals' | 'third_place' | 'final'
   group_letter?: string
   home_team_id: string | null
   away_team_id: string | null
@@ -873,6 +873,16 @@ export const KNOCKOUT_MATCHES: FixtureMatch[] = [
     match_date: '2026-07-19T20:00:00Z',
     venue: 'MetLife Stadium',
     city: 'Nueva York',
+  },
+  // Third Place
+  {
+    match_number: 104,
+    round: 'third_place',
+    home_team_id: null,
+    away_team_id: null,
+    match_date: '2026-07-18T21:00:00Z',
+    venue: 'TBD',
+    city: 'TBD',
   },
 ]
 

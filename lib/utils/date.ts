@@ -56,7 +56,7 @@ const ROUND_DEADLINE_ENTRIES: [string, string][] = [
   ['round_of_16', '2026-07-04T18:55:00+02:00'],
   ['quarter_finals', '2026-07-09T21:55:00+02:00'],
   ['semi_finals', '2026-07-14T20:55:00+02:00'],
-  ['third_place', '2026-07-18T18:55:00+02:00'],
+  ['third_place', '2026-07-18T22:55:00+02:00'],
   ['final', '2026-07-19T20:55:00+02:00'],
 ]
 
