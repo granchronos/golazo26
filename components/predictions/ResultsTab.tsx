@@ -288,6 +288,7 @@ export function ResultsTab({
                   <div>• Octavos: <span className="font-bold text-gray-900 dark:text-white">15 pts</span></div>
                   <div>• Cuartos: <span className="font-bold text-gray-900 dark:text-white">20 pts</span></div>
                   <div>• Semis: <span className="font-bold text-gray-900 dark:text-white">50 pts</span></div>
+                  <div>• Tercer Lugar: <span className="font-bold text-gray-900 dark:text-white">30 pts</span></div>
                   <div className="col-span-2">• Final: <span className="font-bold text-gray-900 dark:text-white">100 pts</span></div>
                 </div>
               </div>

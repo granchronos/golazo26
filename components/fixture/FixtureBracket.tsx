@@ -7,6 +7,7 @@ import {
   R16_BRACKET,
   QF_BRACKET,
   SF_BRACKET,
+  THIRD_PLACE_BRACKET,
   FINAL_BRACKET,
   BRACKET_ROUNDS,
   type BracketMatchDef,
@@ -85,6 +86,7 @@ export function FixtureBracket() {
     { label: 'Octavos de Final', points: 15, matches: R16_BRACKET, dateRange: '8 – 11 Jul' },
     { label: 'Cuartos de Final', points: 20, matches: QF_BRACKET, dateRange: '14 – 15 Jul' },
     { label: 'Semifinales', points: 50, matches: SF_BRACKET, dateRange: '14 – 15 Jul' },
+    { label: 'Tercer Lugar', points: 30, matches: THIRD_PLACE_BRACKET, dateRange: '18 Jul' },
     { label: 'Final', points: 100, matches: FINAL_BRACKET, dateRange: '19 Jul' },
   ]
 

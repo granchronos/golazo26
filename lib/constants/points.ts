@@ -137,6 +137,8 @@ export const MAX_POSSIBLE_POINTS =
   4 * 20 +
   // Semi Finals: 2 matches × 50pts
   2 * 50 +
+  // Third Place: 1 match × 30pts
+  1 * 30 +
   // Final: 100pts
   100 +
   // Champion and Goleador agnostic choices: 15pts + 10pts
